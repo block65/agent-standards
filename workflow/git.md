@@ -3,10 +3,18 @@
 ## Conventional Commits
 
 Use [Conventional Commits](https://www.conventionalcommits.org/). Prefixes:
-`fix:`, `feat:`, `refactor:`, `chore:`, `build:`, `docs:`, `style:`, `test:`
+`fix:`, `feat:`, `refactor:`, `chore:`, `build:`, `ci:`, `docs:`, `style:`, `test:`
 
 Optional scope in parentheses when it clarifies the area: `feat(tls):`,
 `fix(exit):`, `refactor(proto):`. Use the crate, package, or module name as scope.
+
+### Release-triggering types
+
+`feat:`, `fix:`, and `perf:` create a release (minor, patch, patch respectively).
+Any type with `!` (e.g. `feat!:`) triggers a major release.
+
+`ci:`, `chore:`, `build:`, `docs:`, `style:`, `test:`, and `refactor:` do **not**
+trigger a release. Use `ci:` for CI/CD config changes, not `fix(ci):`.
 
 ## Commit Message Philosophy
 
