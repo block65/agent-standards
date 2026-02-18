@@ -6,7 +6,7 @@ Shared coding standards for AI agents.
 
 Add as a git submodule:
 ```sh
-git submodule add https://github.com/block65/agent-standards standards
+git submodule add git@github.com:block65/agent-standards.git standards
 ```
 
 In your project's `AGENTS.md`:
