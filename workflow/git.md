@@ -19,8 +19,8 @@ Use `ci:` for CI/CD changes — `fix(ci):` is a `fix` and triggers a release.
 Explain **why**, not what. Subject line short; body for context.
 
 ```
-# Bad:  feat(tls): add FingerprintVerifier struct
-# Good: feat(tls): support TOFU certificate pinning via SHA-256 fingerprint
+# Bad:  feat(foo): add Bar struct
+# Good: feat(foo): support baz via bar
 ```
 
 ## Hygiene
