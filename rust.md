@@ -31,6 +31,8 @@ Adapt feature flags to the project (e.g. `--features full`, `--all-features`).
 - **`#[must_use]`:** Apply to `Result` return types, builder methods, and lock guards.
 - **`#[non_exhaustive]`:** Use on types in published library crates. Not needed for
   internal workspace crates.
+- **Docs:** Document all public items with `///`. In published library crates, include
+  runnable `# Examples` to drive doctest coverage.
 
 ## Safety & Panics
 
@@ -60,6 +62,9 @@ Adapt feature flags to the project (e.g. `--features full`, `--all-features`).
 
 - Use async only for I/O-bound or high-concurrency tasks. Sync Rust is simpler.
 - Don't use `std::thread::sleep` in async tasks — use `tokio::time::sleep`.
+- **File I/O:** Use `tokio::fs` for simple individual operations. Use `spawn_blocking`
+  + `std::fs` for multiple sequential file operations that should run as a single
+  blocking unit.
 - Offload CPU-heavy work with `spawn_blocking`.
 - Prefer `CancellationToken` for graceful shutdown over complex drop-based cleanup.
 - Prefer message passing (channels) over shared state. If shared state is necessary,
@@ -80,6 +85,12 @@ Adapt feature flags to the project (e.g. `--features full`, `--all-features`).
 - Ensure feature combinations build correctly — consider `cargo hack --each-feature`
   in CI for published crates.
 
+## Workspace
+
+- Centralise dependency versions in `[workspace.dependencies]` to avoid version drift.
+- Split logic into separate crates only for clear architectural boundaries or measurable
+  compile-speed benefits — not speculatively.
+
 ## Testing
 
 - Focus tests on core logic and complex data paths.
@@ -94,5 +105,29 @@ Adapt feature flags to the project (e.g. `--features full`, `--all-features`).
 cargo check -q --all-targets
 cargo clippy -q --all-targets -- -D warnings
 cargo test -q --all-targets
-cargo audit          # or: cargo deny check
+cargo test -q --doc          # library crates with public APIs only
+cargo audit                  # or: cargo deny check
+cargo bloat                  # analyse binary size contributors
+cargo expand                 # debug macro expansion when needed
 ```
+
+## Observability & Output
+
+`println!` is banned in production code. Use `tracing` events for all diagnostics.
+
+### CLI (human-first)
+
+- **Two-tier output:** Separate user-facing status (styled text to `stderr`) from
+  internal diagnostics (`tracing` events, hidden by default, enabled via flags like
+  `--debug` / `--trace`).
+- **Stream discipline:** `stdout` is reserved exclusively for requested data output
+  (JSON, tables, etc.) so it can be piped. All other output goes to `stderr`.
+- **Binary size:** Prefer a lightweight custom `tracing::Subscriber` over the full
+  `tracing-subscriber` + `EnvFilter` stack (~400KB) for CLI binaries.
+
+### Server / daemon (machine-first)
+
+- **Single stream:** Log everything to `stdout`. Don't split streams.
+- **Format:** Structured JSON in production — plain text breaks log aggregation.
+- **Stack:** Use the full `tracing-subscriber` with `EnvFilter` and `fmt::json`.
+  Prioritise OpenTelemetry/Prometheus compatibility over binary size.
