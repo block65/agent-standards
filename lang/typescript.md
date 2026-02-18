@@ -7,5 +7,7 @@ Includes all [JavaScript Standards](javascript.md).
 - **Inference:** Prioritize type inference over hard-coded types where the context is clear.
 
 ## Project Verification
-- **Typecheck:** `pnpm exec tsc -b`
-- **Test:** `pnpm exec vitest`
+- **Tool Execution:** Use a task runner (e.g., `moon run <task>`) if available.
+- **Direct Execution:** If no task runner exists, prefer direct execution over `package.json` scripts:
+  - **Typecheck:** `pnpm exec tsc -b`
+  - **Test:** `pnpm exec vitest`
