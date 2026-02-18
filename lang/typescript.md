@@ -8,6 +8,8 @@ Includes all [JavaScript Standards](javascript.md).
 ## Type Safety
 - **No Casting:** Never use `as any` or type casting. Ensure the code is structurally sound.
 - **Inference:** Prioritize type inference over hard-coded types where the context is clear.
+- **`satisfies` over type annotation:** Prefer `const x = { ... } satisfies T` over `const x: T = { ... }`. Validates the shape while preserving inferred literal types.
+- **No enums:** Use `as const` objects with derived union types instead. Enums are not erasable TypeScript and produce runtime output.
 
 ## Project Verification
 - **Typecheck:** Use `tsc -b` or equivalent for verification only (no emit).
