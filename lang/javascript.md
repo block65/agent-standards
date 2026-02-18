@@ -20,4 +20,5 @@
 - **Implementation Hygiene:** Do not iterate on broken implementations. Identify the root cause and fix it before proceeding.
 
 ## Dependencies
-- **pnpm Catalogs:** Use [pnpm catalogs](https://pnpm.io/package_json#catalog) for dependency versioning if `catalog:` entries are present in the workspace. Do not hardcode versions in `package.json` for dependencies managed by a catalog.
+- **pnpm Catalogs:** Use [pnpm catalogs](https://pnpm.io/package_json#catalog) for dependency versioning if `catalog:` entries are present in the workspace. 
+- **Centralization:** If a dependency is used across multiple packages in a workspace, move it to the central catalog. Do not hardcode versions in individual `package.json` files for catalog-managed dependencies.
