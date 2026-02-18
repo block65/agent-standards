@@ -2,40 +2,29 @@
 
 ## Conventional Commits
 
-Use [Conventional Commits](https://www.conventionalcommits.org/). Prefixes:
-`fix:`, `feat:`, `refactor:`, `chore:`, `build:`, `ci:`, `docs:`, `style:`, `test:`
+Use [Conventional Commits](https://www.conventionalcommits.org/).
+Scope is optional: `feat(tls):`, `fix(exit):`. Use crate/module name.
 
-Optional scope in parentheses when it clarifies the area: `feat(tls):`,
-`fix(exit):`, `refactor(proto):`. Use the crate, package, or module name as scope.
+| Type | Release |
+|------|---------|
+| `feat:` | minor |
+| `fix:`, `perf:` | patch |
+| any `!` | major |
+| `ci:`, `chore:`, `build:`, `docs:`, `style:`, `test:`, `refactor:` | none |
 
-### Release-triggering types
+Use `ci:` for CI/CD changes — `fix(ci):` is a `fix` and triggers a release.
 
-`feat:`, `fix:`, and `perf:` create a release (minor, patch, patch respectively).
-Any type with `!` (e.g. `feat!:`) triggers a major release.
+## Messages
 
-`ci:`, `chore:`, `build:`, `docs:`, `style:`, `test:`, and `refactor:` do **not**
-trigger a release. Use `ci:` for CI/CD config changes, not `fix(ci):`.
-
-## Commit Message Philosophy
-
-Messages explain **why**, not what — git already tracks what changed.
+Explain **why**, not what. Subject line short; body for context.
 
 ```
-# Bad
-feat(tls): add FingerprintVerifier struct
-
-# Good
-feat(tls): support TOFU certificate pinning via SHA-256 fingerprint
+# Bad:  feat(tls): add FingerprintVerifier struct
+# Good: feat(tls): support TOFU certificate pinning via SHA-256 fingerprint
 ```
 
-Keep the subject line short. Use the body for context if needed.
+## Hygiene
 
-## Commit Hygiene
-
-- Each commit must be a single logical unit of related work
-- Split unrelated changes into separate commits
-- Stage related hunks and files together — never `git add -A` everything into one commit
-- Format/lint fixes go in their own `chore: lint` or `chore: fmt` commit
-- Add `Co-Authored-By` when an agent wrote the code — the human committing is the
-  author, the agent that wrote the changes is the co-author. Do not add `Co-Authored-By`
-  when the agent only wrote the commit message — that's not a code contribution.
+- One logical unit per commit; stage related hunks together
+- Format/lint fixes in their own `chore:` commit
+- `Co-Authored-By`: add when an agent wrote the code, not just the commit message
