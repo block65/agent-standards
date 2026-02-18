@@ -4,7 +4,8 @@ This repository contains engineering standards optimized for AI agent consumptio
 
 ## Languages
 
-### [Rust](lang/rust/)
+### [Rust](lang/rust.md)
+The canonical entry point for Rust standards.
 - [Core](lang/rust/core.md): Style, Lints, Verification, Safety.
 - [Concurrency](lang/rust/concurrency.md): Async hygiene and threading.
 - [Errors](lang/rust/errors.md): Application vs Library strategies.

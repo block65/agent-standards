@@ -10,7 +10,7 @@ In your project's `AGENTS.md`, instruct agents to read the relevant standard fir
 
 ```md
 Before starting any work, read `INDEX.md` and the relevant standards for this project:
-- Rust: `lang/rust/core.md` (and others in `lang/rust/` as needed)
+- Rust: `lang/rust.md`
 - Git: `workflow/git.md`
 ```
 
@@ -19,7 +19,8 @@ Before starting any work, read `INDEX.md` and the relevant standards for this pr
 | Path | Purpose |
 |---|---|
 | `INDEX.md` | Master index of all standards |
-| `lang/rust/` | Modular Rust engineering standards |
+| `lang/rust.md` | Rust standards entry point |
+| `lang/rust/` | Modular Rust standards |
 | `lang/typescript.md` | TypeScript coding standards |
 | `workflow/git.md` | Commit conventions |
 
