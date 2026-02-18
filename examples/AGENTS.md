@@ -3,6 +3,6 @@
 Before starting any work, read the following standards from the `standards/` submodule:
 
 - **Git & Workflow:** `standards/workflow/git.md`
-- **Rust Standards:** `standards/lang/rust.md`
+- **Rust Standards:** `standards/lang/rust/README.md`
 
-Refer to `standards/INDEX.md` for a full list of available modular standards.
+Refer to the `standards/README.md` for a full list of available standards.
