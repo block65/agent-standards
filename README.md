@@ -6,31 +6,21 @@ Shared coding standards for AI agents across projects. Add as a git submodule:
 git submodule add https://github.com/block65/agent-standards standards
 ```
 
-## Agent Entry Point
+## How to use with agents
 
-In your project's `AGENTS.md`, instruct agents to read the relevant standards:
+In your project's `AGENTS.md`, instruct agents to refer to these standards:
 
 ```md
-Before starting any work, read the following standards:
+Before starting any work, refer to the engineering standards:
 - Git & Workflow: `standards/workflow/git.md`
-- Rust: `standards/lang/rust/README.md`
+- Rust: `standards/lang/rust.md`
 ```
 
 ## Available Standards
 
 ### Languages
-- **[Rust](lang/rust/README.md)**: Modular standards for Core, Async, Errors, and Observability.
+- **[Rust](lang/rust.md)**: Entry point for modular Rust standards (Core, Async, Errors, etc.).
 - **[TypeScript](lang/typescript.md)**: Strict typing and modern patterns.
 
 ### Workflows
 - **[Git](workflow/git.md)**: Conventional commits and message philosophy.
-
----
-
-## Project-level AGENTS.md
-
-Project-specific `AGENTS.md` should only contain things that differ from these standards:
-- Toolchain specifics (nightly vs stable, edition)
-- Workspace structure and feature flags
-- Domain-specific conventions
-- Verify/build commands for this project
