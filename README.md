@@ -11,18 +11,16 @@ git submodule add git@github.com:block65/agent-standards.git standards
 
 In your project's `AGENTS.md`:
 ```md
-Refer to the following engineering standards:
-- Git & Workflow: `standards/workflow/git.md`
-- Rust: `standards/lang/rust.md`
+Refer to `standards/README.md` and load all applicable standards listed there.
 ```
 
-## Available Standards
+## Standards
 
-### Languages
-- **[Rust](lang/rust.md)**: Entry point for modular Rust standards.
-- **[TypeScript](lang/typescript.md)**: Strict typing and modern patterns.
-- **[JavaScript](lang/javascript.md)**: Modern API usage and general JS hygiene.
-
-### Workflows
-- **[Git](workflow/git.md)**: Conventional commits and message philosophy.
+### Always load
 - **[Communication](workflow/communication.md)**: Concise, objective interaction rules.
+- **[Git](workflow/git.md)**: Conventional commits and message philosophy.
+
+### Load if applicable
+- **[TypeScript](lang/typescript.md)**: Strict typing and modern patterns. Includes JavaScript standards.
+- **[JavaScript](lang/javascript.md)**: pnpm, modern API usage, and general JS hygiene.
+- **[Rust](lang/rust.md)**: Entry point for modular Rust standards.
