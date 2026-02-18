@@ -9,16 +9,19 @@ git submodule add https://github.com/block65/agent-standards standards
 In your project's `AGENTS.md`, instruct agents to read the relevant standard first:
 
 ```md
-Before starting any work, read `standards/rust.md` and `standards/git.md`.
+Before starting any work, read `INDEX.md` and the relevant standards for this project:
+- Rust: `lang/rust/core.md` (and others in `lang/rust/` as needed)
+- Git: `workflow/git.md`
 ```
 
 ## Files
 
-| File | Purpose |
+| Path | Purpose |
 |---|---|
-| `rust.md` | Rust coding standards |
-| `typescript.md` | TypeScript coding standards |
-| `git.md` | Commit conventions (shared across all projects) |
+| `INDEX.md` | Master index of all standards |
+| `lang/rust/` | Modular Rust engineering standards |
+| `lang/typescript.md` | TypeScript coding standards |
+| `workflow/git.md` | Commit conventions |
 
 ## Project-level AGENTS.md
 
