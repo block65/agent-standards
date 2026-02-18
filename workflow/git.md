@@ -36,4 +36,6 @@ Keep the subject line short. Use the body for context if needed.
 - Split unrelated changes into separate commits
 - Stage related hunks and files together — never `git add -A` everything into one commit
 - Format/lint fixes go in their own `chore: lint` or `chore: fmt` commit
-- Do not add `Co-Authored-By` just because an agent wrote the commit message
+- `Co-Authored-By` means someone helped write the commit message but didn't write the
+  code. If an agent wrote the code, the agent is the author — not a co-author. Don't
+  add `Co-Authored-By` trailers for agents that authored the changes.
