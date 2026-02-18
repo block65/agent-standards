@@ -20,7 +20,9 @@ Before starting any work, refer to the engineering standards:
 
 ### Languages
 - **[Rust](lang/rust.md)**: Entry point for modular Rust standards (Core, Async, Errors, etc.).
-- **[TypeScript](lang/typescript.md)**: Strict typing and modern patterns.
+- **[TypeScript](lang/typescript.md)**: Strict typing and modern patterns (includes JS standards).
+- **[JavaScript](lang/javascript.md)**: Modern API usage and general JS hygiene.
 
 ### Workflows
 - **[Git](workflow/git.md)**: Conventional commits and message philosophy.
+- **[Communication](workflow/communication.md)**: Concise, objective, and filler-free interaction rules.
