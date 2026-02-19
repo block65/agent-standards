@@ -12,7 +12,7 @@ Scope is optional: `feat(tls):`, `fix(exit):`. Use crate/module name.
 | any `!` | major |
 | `ci:`, `chore:`, `build:`, `docs:`, `style:`, `test:`, `refactor:` | none |
 
-Use `ci:` for CI/CD changes — `fix(ci):` is a `fix` and triggers a release.
+`ci:` = no release. `fix(ci):` = patch release — use intentionally when a CI fix warrants republishing.
 
 ## Messages
 
