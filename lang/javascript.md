@@ -1,5 +1,7 @@
 # JavaScript Standards
 
+**Prerequisite:** Also follow the rules in [Dependencies](../engineering/dependencies.md).
+
 ## Philosophy
 - **Web Native:** Prefer web-native solutions and browser-standard APIs where possible.
 

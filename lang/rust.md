@@ -1,5 +1,7 @@
 # Rust Engineering Standards
 
+**Prerequisite:** Also follow the rules in [Dependencies](../engineering/dependencies.md).
+
 Follow all modules below.
 
 - **[Core & Style](rust/core.md)**: Verify cycles, lints, and safety.
