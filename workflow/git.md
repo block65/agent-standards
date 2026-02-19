@@ -26,6 +26,7 @@ Explain **why**, not what. Subject line short; body for context.
 ## Hygiene
 
 - One logical unit per commit; stage related hunks together
+- Only commit files and hunks you changed for the current task. Do not stage unrelated files.
 - Format/lint fixes in their own `chore:` commit
 - `Co-Authored-By`: add when an agent wrote the code, not just the commit message
 - Avoid force push — merge instead of rebase to keep history linear and pushable normally
