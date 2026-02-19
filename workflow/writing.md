@@ -5,15 +5,15 @@ Modular rules for writing. Use the base rules below for everything, then add a s
 ## 1. Base Rules (Use for everything)
 
 ### No Fluff
-- **Delete Adjectives:** Remove "seamless," "cutting-edge," "powerful," "revolutionary."
+- **Delete Adjectives:** Remove subjective or hyperbolic descriptors.
 - **Fact-Based:** If a sentence works without the adjective, delete it.
-- **Write for Humans:** Avoid robotic or legalistic tones. Variegate sentence structures.
+    - ❌ "The [Adjective] [Component] [Adverb] [Action]s [Data]."
+    - ✅ "The [Component] [Action]s [Data] in [Metric]."
+
+### Write for Humans
+- **Structure:** Avoid robotic or legalistic tones. Variegate sentence structures.
+- **Cohesion:** Combine fragmented thoughts into cohesive paragraphs.
 
 ### Clarity & Formatting
-- **Headings:** Must predict content; no self-links.
+- **Headings:** Must predict content.
 - **Clarity:** Ensure clear antecedents for "it," "this," "that." No metaphors.
-
-## 2. Specific Modules
-- **[Technical Docs](writing/technical.md)**: Focus on objectivity (No "Your").
-- **[Marketing & Copy](writing/marketing.md)**: Focus on persuasion (Yes "Your").
-- **[How to use](writing/how-to-use.md)**: How to combine these rules for different tasks.

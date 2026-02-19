@@ -7,15 +7,15 @@
 
 ### The "Yes 'Your'" Mandate
 - **Rule:** Use "Your" to help the reader visualize the benefit.
-    - ✅ "Secure **your** infrastructure."
-    - ✅ "Deploy **your** first cluster in minutes."
+    - ✅ "Secure **your** [Asset]."
+    - ✅ "Deploy **your** first [Component] in minutes."
 
 ## 2. Benefit-First Framing
 - **Rule:** Never describe a feature without the benefit attached.
-    - ❌ "We use [Protocol] encryption."
-    - ✅ "Keep your data private with standard [Protocol] encryption."
+    - ❌ "We use [Feature]."
+    - ✅ "[Benefit] with standard [Feature]."
 
 ## 3. Call to Action (CTA)
 - **Active Verbs:** Start CTAs with a verb implying immediate value.
-    - ✅ "Start Tunneling" / "Build the Network"
+    - ✅ "[Action] the [Asset]" / "[Build] the [Result]"
     - ❌ "Learn More" / "Submit"
