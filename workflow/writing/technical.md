@@ -13,7 +13,7 @@
 
 ### System Behavior
 - **Subject = Component:** Do not use the product name as the subject of a functional description.
-    - ❌ "Wallhack creates a tunnel."
+    - ❌ "[Product] creates a tunnel."
     - ✅ "A tunnel is initialized."
 
 ## 2. Instruction Hierarchy

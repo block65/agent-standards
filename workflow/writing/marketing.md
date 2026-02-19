@@ -12,8 +12,8 @@
 
 ## 2. Benefit-First Framing
 - **Rule:** Never describe a feature without the benefit attached.
-    - ❌ "We use ChaCha20 encryption."
-    - ✅ "Keep your data private with standard ChaCha20 encryption."
+    - ❌ "We use [Protocol] encryption."
+    - ✅ "Keep your data private with standard [Protocol] encryption."
 
 ## 3. Call to Action (CTA)
 - **Active Verbs:** Start CTAs with a verb implying immediate value.
