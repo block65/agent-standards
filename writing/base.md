@@ -15,7 +15,7 @@ Modular rules for writing. Use the base rules below for everything, then add a s
 
 ### Clarity & Formatting
 - **Headings:** Must predict content.
-- **Clarity:** Ensure clear antecedents for "it," "this," "that." Introduce a term before using a definite article to reference it.
+- **Clarity:** Ensure clear antecedents for "it," "this," "that." Do not use "the [noun]" to reference a specific instance that has not been introduced.
 
 ### Prohibited Patterns
 - **Filler Transitions:** Do not use "However,", "Furthermore,", "Moreover,", "Additionally,", "It's important to note that," "In today's world,".
