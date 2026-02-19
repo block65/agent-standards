@@ -1,7 +1,7 @@
 # Module: Technical Documentation
 
-**Usage:** Load AFTER `writing.md` for Documentation/Support.
-**Purpose:** Enforces objectivity, precision, and instruction clarity.
+**Usage:** Load this file for Documentation/Support tasks. 
+**Includes:** All base rules from [writing.md](../writing.md).
 
 ## 1. Objectivity Rules
 

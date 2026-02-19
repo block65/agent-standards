@@ -1,7 +1,7 @@
 # Module: Marketing & Copywriting
 
-**Usage:** Load AFTER `writing.md` for Marketing/Sales/Social.
-**Purpose:** Optimizing for conversion, ownership, and benefits.
+**Usage:** Load this file for Marketing/Sales/Social tasks.
+**Includes:** All base rules from [writing.md](../writing.md).
 
 ## 1. Psychological Ownership
 
