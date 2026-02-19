@@ -22,3 +22,10 @@
 
 ## Forms & Validation
 - **Valibot** for schema validation. Use `safeParse` and map issues to field errors.
+
+## Context
+- **Validate provider:** Context hooks must throw if called outside their provider. Do not return undefined silently.
+
+## Composite Components
+- **Namespace pattern:** Group related components as named exports from a `parts` module (e.g., `Root`, `Header`, `Title`). Re-export them from the barrel as a namespace.
+- **No object assignment:** Do not assign components to an object literal (`Card.Root = Root`). Use `export { Root, Header }` from the parts file and `export * as Card from './parts.js'` from the barrel to preserve tree-shaking.
