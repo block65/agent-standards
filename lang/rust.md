@@ -1,5 +1,7 @@
 # Rust Engineering Standards
 
+Follow all modules below.
+
 - **[Core & Style](rust/core.md)**: Verify cycles, lints, and safety.
 - **[Error Handling](rust/errors.md)**: `anyhow` vs `thiserror`.
 - **[Async & Concurrency](rust/concurrency.md)**: `tokio`, channels, and threading.

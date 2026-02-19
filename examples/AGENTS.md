@@ -1,3 +1,7 @@
 # Agent Instructions
 
-Refer to `standards/README.md` and load all applicable standards listed there.
+Follow the rules in the following standards files:
+- `standards/workflow/communication.md`
+- `standards/workflow/git.md`
+- `standards/lang/typescript.md`
+- `standards/writing/technical.md`

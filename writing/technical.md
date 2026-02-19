@@ -1,7 +1,7 @@
 # Module: Technical Documentation
 
-**Usage:** Load this file for Documentation/Support tasks. 
-**Includes:** All base rules from [writing.md](../writing.md).
+**Usage:** Load this file for Documentation/Support tasks.
+**Prerequisite:** Also follow the base rules in [writing.md](../writing.md).
 
 ## 1. Objectivity Rules
 

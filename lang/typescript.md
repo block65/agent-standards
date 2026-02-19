@@ -1,6 +1,6 @@
 # TypeScript Standards
 
-Includes all [JavaScript Standards](javascript.md).
+**Prerequisite:** Also follow the rules in [JavaScript Standards](javascript.md).
 
 ## Philosophy
 - **TS Native:** We are TypeScript native; projects do not emit. TypeScript is used for type checking and as the primary source, not as a transpilation step.

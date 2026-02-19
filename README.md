@@ -23,7 +23,7 @@ Refer to the following standards from the `standards/` submodule:
 - **[Git](workflow/git.md)**: Conventional commits and message philosophy.
 
 ### Load if applicable
-- **[Writing (Base)](writing.md)**: Core rules for all content. (Included in sub-modules).
+- **[Writing (Base)](writing.md)**: Core rules for all content. (Referenced as a prerequisite by sub-modules).
 - **[Technical Docs](writing/technical.md)**: Objectivity and clarity (No "Your").
 - **[Marketing & Copy](writing/marketing.md)**: Persuasion and ownership (Yes "Your").
 - **[TypeScript](lang/typescript.md)**: Strict typing and modern patterns. Includes JavaScript standards.
