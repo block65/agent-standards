@@ -1,7 +1,7 @@
 # Module: Marketing & Copywriting
 
 **Usage:** Load this file for Marketing/Sales/Social tasks.
-**Prerequisite:** Also follow the base rules in [writing.md](../writing.md).
+**Prerequisite:** Also follow the base rules in [base.md](base.md).
 
 ## 1. Psychological Ownership
 
