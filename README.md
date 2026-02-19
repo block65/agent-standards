@@ -21,7 +21,7 @@ Refer to `standards/README.md` and load all applicable standards listed there.
 - **[Git](workflow/git.md)**: Conventional commits and message philosophy.
 
 ### Load if applicable
-- **[Writing](workflow/writing.md)**: Standards for marketing, technical docs, and general copy.
+- **[Writing](writing.md)**: Base rules for all content, plus technical and marketing sub-modules.
 - **[TypeScript](lang/typescript.md)**: Strict typing and modern patterns. Includes JavaScript standards.
 - **[JavaScript](lang/javascript.md)**: pnpm, modern API usage, and general JS hygiene.
 - **[Rust](lang/rust.md)**: Entry point for modular Rust standards.

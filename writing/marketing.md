@@ -1,6 +1,6 @@
 # Module: Marketing & Copywriting
 
-**Usage:** Load AFTER `workflow/writing.md` for Marketing/Sales/Social.
+**Usage:** Load AFTER `writing.md` for Marketing/Sales/Social.
 **Purpose:** Optimizing for conversion, ownership, and benefits.
 
 ## 1. Psychological Ownership

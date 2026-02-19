@@ -1,6 +1,6 @@
 # Module: Technical Documentation
 
-**Usage:** Load AFTER `workflow/writing.md` for Documentation/Support.
+**Usage:** Load AFTER `writing.md` for Documentation/Support.
 **Purpose:** Enforces objectivity, precision, and instruction clarity.
 
 ## 1. Objectivity Rules
