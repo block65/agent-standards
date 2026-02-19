@@ -21,6 +21,7 @@ Refer to the following standards from the `standards/` submodule:
 ### Always load
 - **[Communication](workflow/communication.md)**: Concise, objective interaction rules.
 - **[Git](workflow/git.md)**: Conventional commits and message philosophy.
+- **[Dependencies](workflow/dependencies.md)**: Source trust and version currency.
 
 ### Load if applicable
 - **[Writing (Base)](writing/base.md)**: Core rules for all content. (Referenced as a prerequisite by sub-modules).
