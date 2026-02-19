@@ -28,3 +28,4 @@ Explain **why**, not what. Subject line short; body for context.
 - One logical unit per commit; stage related hunks together
 - Format/lint fixes in their own `chore:` commit
 - `Co-Authored-By`: add when an agent wrote the code, not just the commit message
+- Avoid force push — merge instead of rebase to keep history linear and pushable normally
