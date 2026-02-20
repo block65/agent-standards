@@ -23,7 +23,10 @@ Refer to the following standards from the `standards/` submodule:
 - **[Git](workflow/git.md)**: Conventional commits and message philosophy.
 - **[Dependencies](engineering/dependencies.md)**: Source trust and version currency.
 
-### Load if applicable
+### Load if applicable (workflow)
+- **[TRIPLE](workflow/triple.md)**: Three-role peer programming workflow with impl agent, review agent, and human.
+
+### Load if applicable (content)
 - **[Writing (Base)](writing/base.md)**: Core rules for all content. (Referenced as a prerequisite by sub-modules).
 - **[Technical Docs](writing/technical.md)**: Objectivity and clarity (No "Your").
 - **[Marketing & Copy](writing/marketing.md)**: Persuasion and ownership (Yes "Your").
