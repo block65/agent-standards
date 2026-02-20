@@ -11,5 +11,8 @@
 - **`satisfies` over type annotation:** Prefer `const x = { ... } satisfies T` over `const x: T = { ... }`. Validates the shape while preserving inferred literal types.
 - **No enums:** Use `as const` objects with derived union types instead. Enums are not erasable TypeScript and produce runtime output.
 
+## Imports
+- **Extensions:** Use `.ts` in all import specifiers (`'./foo.ts'`), never `.js` or bare.
+
 ## Project Verification
 - **Typecheck:** Use `tsc -b` or equivalent for verification only (no emit).
