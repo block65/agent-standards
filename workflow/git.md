@@ -23,6 +23,18 @@ Explain **why**, not what. Subject line short; body for context.
 # Good: feat(foo): support baz via bar
 ```
 
+## Partial Staging (hunks)
+
+When a file has unrelated changes, stage only the relevant hunks without using `git add -p`:
+
+1. Generate a unified diff of only the hunks to stage
+2. Verify: `echo "[diff]" | git apply --cached --check`
+3. Apply: `echo "[diff]" | git apply --cached --whitespace=nowarn`
+4. Confirm: `git diff --cached`
+5. Commit, then repeat for remaining hunks
+
+Never stage unrelated hunks to avoid this process.
+
 ## Hygiene
 
 - One logical unit per commit; stage related hunks together
