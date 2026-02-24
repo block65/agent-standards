@@ -12,7 +12,7 @@ cargo fmt
 
 ## Lint & Style
 - **Zero-warning policy:** Fix root causes, use `// REASON:` for `#[allow]`.
-- **Modules:** Avoid `mod.rs`. Use 2018+ style.
+- **Modules:** Use 2018+ style (avoid `mod.rs`). Treat module roots as strict barrels — re-exports only; move all logic, traits, and types into dedicated sibling files.
 - **Derives:** `Debug`, `Clone`, `Default`, `PartialEq` where appropriate.
 - **`#[must_use]`:** Apply to `Result`, builders, and lock guards.
 - **Docs:** `///` for all public items.
