@@ -1,6 +1,6 @@
 # TRIPLE — Three-Role Iterative Peer Loop Engineering
 
-Also load: `workflow/git.md`
+Also load: `workflow/git.md`, `workflow/communication.md`
 
 A peer programming workflow where an implementation agent and a review agent
 collaborate with a human throughout development. The PR is a merge mechanism,
@@ -9,8 +9,8 @@ not a review forum — it must be approved and green before it is opened.
 ## Roles
 
 - **Human** — selects tasks, approves plans, triggers reviews, opens PRs, approves merges
-- **Impl agent** — implements, runs quality gates, commits, pushes
-- **Review agent** — reads files and git only; reports findings only; a finding is a file path, line reference, and specific issue — no prose beyond that; no running tests, no building, no code changes, no qualitative judgements, no encouragement, no verdicts
+- **Impl agent** — implements, runs quality checks, requests review, then revises, commits, pushes
+- **Review agent** — reads files and git only; outputs a numbered list of findings, each with a file/line reference and a concise explanation; ends with exactly one of: `LGTM` or `Needs fixes`; does not run tests, build, or modify code
 
 ## Phases
 
@@ -45,10 +45,10 @@ Create a branch from `main` before writing any code. Do not implement on `main`.
 Repeat as many times as needed:
 
 1. Implement a logical unit
-2. Run `just check` and fix all failures
+2. Run all quality checks and fix all failures
 3. Human invokes the review agent — it reviews the working tree diff against `main`
 4. Address all findings, loop back to 2
 5. Once the review agent has no findings, human reviews
 6. Human satisfied → commit
 
-Never commit unreviewed code. Never commit a broken or partial state.
+The impl agent must not commit autonomously. Never commit unreviewed code. Never commit a broken or partial state.
