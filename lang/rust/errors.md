@@ -2,4 +2,7 @@
 
 ## Application vs Library
 - **Applications:** Use `anyhow` + `.context()` for descriptive error chains.
-- **Libraries:** Public APIs use `thiserror`. Internal modules may use `anyhow`.
+- **Libraries:** 
+    - Public APIs use `thiserror`.
+    - Always `#[derive(Error, Debug)]`.
+    - Provide clear, actionable messages in `#[error("...")]`.
