@@ -8,7 +8,8 @@ not a review forum — it must be approved and green before it is opened.
 
 ## Roles
 
-- **Human** — selects tasks, approves plans, triggers reviews, opens PRs, approves merges
+- **Human** — selects tasks, approves plans, triggers reviews, approves merges
+- **Lead agent** — helps Human define TASK.md (Phase 1); after review passes, creates PR and merges (Phase 4); follows repo-specific commands from AGENTS.md
 - **Impl agent** — implements, runs quality checks, requests review, then revises, commits, pushes
 - **Review agent** — reads files and git only; outputs a numbered list of findings, each with a file/line reference and a concise explanation; ends with exactly one of: `LGTM` or `Needs fixes`; does not run tests, build, or modify code
 
@@ -16,7 +17,7 @@ not a review forum — it must be approved and green before it is opened.
 
 ### 1. Plan
 
-Human and impl agent define scope. Output is a **TASK.md** (local only — never committed, never pushed):
+Human and lead agent define scope. Output is a **TASK.md** (local only — never committed, never pushed):
 
 ```markdown
 # <short descriptive title>
@@ -52,3 +53,23 @@ Repeat as many times as needed:
 6. Human satisfied → commit
 
 The impl agent must not commit autonomously. Never commit unreviewed code. Never commit a broken or partial state.
+
+### 4. Finalise
+
+After review passes and the human is satisfied:
+
+1. Lead agent creates PR (using command defined in repo's AGENTS.md)
+2. Wait for CI to pass
+3. Human approves
+4. Lead agent merges (using command defined in repo's AGENTS.md)
+5. Lead agent cleans up branch
+
+## Repo-specific commands
+
+The calling repo's AGENTS.md must define PR and merge commands for the lead agent to use. Example:
+
+```markdown
+## PR & Merge (lead agent)
+- Create PR: <repo-specific command>
+- Merge: <repo-specific command>
+```
