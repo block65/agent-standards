@@ -1,0 +1,13 @@
+{
+  "name": "block65",
+  "owner": {
+    "name": "Block65"
+  },
+  "plugins": [
+    {
+      "name": "block65-tools",
+      "source": "./",
+      "description": "Block65's coding standards, workflow conventions, and skills for AI-assisted development"
+    }
+  ]
+}
