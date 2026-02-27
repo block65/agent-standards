@@ -25,7 +25,10 @@ Explain **why**, not what. Subject line short; body for context.
 
 ## Partial Staging (hunks)
 
-When a file has unrelated changes, stage only the relevant hunks without using `git add -p`:
+When a file has unrelated changes, stage only the relevant hunks without using `git add -p`.
+Use the `stage-hunk` skill — it reads the diff, extracts the matching hunks, and applies them to the index.
+
+If the skill is unavailable, do it manually:
 
 1. Generate a unified diff of only the hunks to stage
 2. Verify: `echo "[diff]" | git apply --cached --check`
