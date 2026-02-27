@@ -64,6 +64,10 @@ After review passes and the human is satisfied:
 4. Lead agent merges (using command defined in repo's AGENTS.md)
 5. Lead agent cleans up branch
 
+## Concerns
+
+After their primary output, impl and review agents surface any concerns — scope creep, architectural risks, missing requirements, tradeoffs. Addressed to the human, who decides whether to act, ignore, or escalate to the lead agent. For the review agent, concerns are separate from findings and do not affect the verdict.
+
 ## Repo-specific commands
 
 The calling repo's AGENTS.md must define PR and merge commands for the lead agent to use. Example:
