@@ -22,11 +22,11 @@ You stage or unstage specific hunks from a file. You do NOT commit.
    ```
    Use `--staged` when unstaging. Prints each hunk with index, line range, and preview.
 2. Match the description (`$ARGUMENTS[1]`) to the listed hunks.
-3. Call the script with hunk indices or line ranges:
+3. Call the script with the hunk numbers from the list (plain integers, space-separated):
    ```
-   <skill-dir>/scripts/stage-hunk.sh $ARGUMENTS[0] hunk:2
-   <skill-dir>/scripts/stage-hunk.sh --unstage $ARGUMENTS[0] hunk:1
-   <skill-dir>/scripts/stage-hunk.sh $ARGUMENTS[0] 10-25
+   <skill-dir>/scripts/stage-hunk.sh $ARGUMENTS[0] 2
+   <skill-dir>/scripts/stage-hunk.sh $ARGUMENTS[0] 1 3 5
+   <skill-dir>/scripts/stage-hunk.sh --unstage $ARGUMENTS[0] 1
    ```
 4. Report what was staged/unstaged.
 

@@ -2,36 +2,27 @@
 set -euo pipefail
 trap 'echo "bug: stage-hunk crashed unexpectedly — please report this" >&2' ERR
 
-# Stage or unstage specific lines from a git diff without interactive
-# prompts. Takes a file and a line/hunk spec, extracts matching hunks,
-# and applies them to the index. Does not commit.
+# Stage or unstage specific hunks from a git diff without interactive
+# prompts. Takes a file and one or more hunk indices (as shown by
+# --list-hunks), and applies them to the index. Does not commit.
 #
 # Usage:
-#   stage-hunk.sh <file> <line-spec>
-#   stage-hunk.sh --unstage <file> <line-spec>
+#   stage-hunk.sh <file> <N> [N ...]
+#   stage-hunk.sh --unstage <file> <N> [N ...]
 #   stage-hunk.sh --list-hunks [--staged] <file>
 #
-# Line spec formats:
-#   42            single line
-#   10-25         line range (inclusive)
-#   10-25,40-50   multiple ranges
-#   hunk:2        hunk by index (1-based)
-#   hunk:1,3      multiple hunks by index
-#
-# Lines refer to the WORKING TREE file (new side), not the original.
-#
 # Examples:
-#   stage-hunk.sh src/pets.md 11-14
-#   stage-hunk.sh src/pets.md hunk:2
-#   stage-hunk.sh --unstage src/pets.md hunk:1
+#   stage-hunk.sh src/pets.md 2
+#   stage-hunk.sh src/pets.md 1 3 5
+#   stage-hunk.sh --unstage src/pets.md 1
 #   stage-hunk.sh --list-hunks src/pets.md
 #   stage-hunk.sh --list-hunks --staged src/pets.md
 
 UNSTAGE=0
 
 usage() {
-  echo "Usage: $0 <file> <line-spec>" >&2
-  echo "       $0 --unstage <file> <line-spec>" >&2
+  echo "Usage: $0 <file> <N> [N ...]" >&2
+  echo "       $0 --unstage <file> <N> [N ...]" >&2
   echo "       $0 --list-hunks [--staged] <file>" >&2
   exit 1
 }
@@ -100,10 +91,20 @@ if [[ "${1:-}" == "--unstage" ]]; then
   shift
 fi
 
-[[ $# -ne 2 ]] && usage
+[[ $# -lt 2 ]] && usage
 
-FILE="$1"
-LINE_SPEC="$2"
+FILE="$1"; shift
+
+# Remaining args are hunk indices (plain integers, 1-based, as shown by --list-hunks)
+declare -A wanted_hunks
+for arg in "$@"; do
+  if [[ "$arg" =~ ^[0-9]+$ ]]; then
+    wanted_hunks["$arg"]=1
+  else
+    echo "error: expected hunk index (integer), got: $arg" >&2
+    usage
+  fi
+done
 
 # Get the appropriate diff
 if [[ $UNSTAGE -eq 1 ]]; then
@@ -120,48 +121,32 @@ else
   fi
 fi
 
-# If line spec uses hunk:N notation, resolve to line ranges
-if [[ "$LINE_SPEC" =~ ^hunk: ]]; then
-  hunk_spec="${LINE_SPEC#hunk:}"
-  # Parse which hunk indices are requested
-  declare -A wanted_hunks
-  IFS=',' read -ra hunk_parts <<< "$hunk_spec"
-  for h in "${hunk_parts[@]}"; do
-    if [[ "$h" =~ ^[0-9]+$ ]]; then
-      wanted_hunks["$h"]=1
-    else
-      echo "error: invalid hunk index: $h" >&2
-      exit 1
-    fi
-  done
-
-  # Walk diff with -U0 to get finest-grained hunks matching --list-hunks
-  if [[ $UNSTAGE -eq 1 ]]; then
-    DIFF_U0=$(git diff -U0 --cached -- "$FILE")
-  else
-    DIFF_U0=$(git diff -U0 -- "$FILE")
-  fi
-  hunk_idx=0
-  resolved_ranges=()
-  while IFS= read -r line; do
-    if [[ "$line" =~ ^@@\ -([0-9]+)(,([0-9]+))?\ \+([0-9]+)(,([0-9]+))?\ @@ ]]; then
-      ((hunk_idx++)) || true
-      if [[ -n "${wanted_hunks[$hunk_idx]:-}" ]]; then
-        new_start="${BASH_REMATCH[4]}"
-        new_count="${BASH_REMATCH[6]:-1}"
-        new_end=$(( new_start + new_count - 1 ))
-        resolved_ranges+=("${new_start}-${new_end}")
-      fi
-    fi
-  done <<< "$DIFF_U0"
-
-  if [[ ${#resolved_ranges[@]} -eq 0 ]]; then
-    echo "error: no hunks matched indices $hunk_spec (file has $hunk_idx hunks)" >&2
-    exit 1
-  fi
-
-  LINE_SPEC=$(IFS=','; echo "${resolved_ranges[*]}")
+# Resolve hunk indices to line ranges using U0 diff (matches --list-hunks numbering)
+if [[ $UNSTAGE -eq 1 ]]; then
+  DIFF_U0=$(git diff -U0 --cached -- "$FILE")
+else
+  DIFF_U0=$(git diff -U0 -- "$FILE")
 fi
+hunk_idx=0
+resolved_ranges=()
+while IFS= read -r line; do
+  if [[ "$line" =~ ^@@\ -([0-9]+)(,([0-9]+))?\ \+([0-9]+)(,([0-9]+))?\ @@ ]]; then
+    ((hunk_idx++)) || true
+    if [[ -n "${wanted_hunks[$hunk_idx]:-}" ]]; then
+      new_start="${BASH_REMATCH[4]}"
+      new_count="${BASH_REMATCH[6]:-1}"
+      new_end=$(( new_start + new_count - 1 ))
+      resolved_ranges+=("${new_start}-${new_end}")
+    fi
+  fi
+done <<< "$DIFF_U0"
+
+if [[ ${#resolved_ranges[@]} -eq 0 ]]; then
+  echo "error: no hunks matched indices $* (file has $hunk_idx hunks)" >&2
+  exit 1
+fi
+
+LINE_SPEC=$(IFS=','; echo "${resolved_ranges[*]}")
 
 # Parse line spec into an array of min,max pairs
 parse_ranges() {
@@ -373,7 +358,7 @@ flush_hunk() {
 PATCH=$(build_patch)
 
 if [[ -z "$PATCH" ]]; then
-  echo "error: no hunks matched lines $LINE_SPEC in $FILE" >&2
+  echo "error: no hunks matched indices $* in $FILE" >&2
   exit 1
 fi
 
@@ -406,9 +391,9 @@ if ! apply_patch 2>/dev/null; then
 fi
 
 if [[ $UNSTAGE -eq 1 ]]; then
-  echo "unstaged lines $LINE_SPEC from $FILE"
+  echo "unstaged hunks $* from $FILE"
 else
-  echo "staged lines $LINE_SPEC from $FILE"
+  echo "staged hunks $* from $FILE"
 fi
 
 # Show what's staged so the caller can verify

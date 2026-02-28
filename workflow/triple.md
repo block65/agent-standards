@@ -58,11 +58,12 @@ The impl agent must not commit autonomously. Never commit unreviewed code. Never
 
 After review passes and the human is satisfied:
 
-1. Lead agent creates PR (using command defined in repo's AGENTS.md)
-2. Wait for CI to pass
-3. Human approves
-4. Lead agent merges (using command defined in repo's AGENTS.md)
-5. Lead agent cleans up branch
+1. Lead agent reads `git log main..HEAD` and `git diff main...HEAD` — implementation often diverges from the plan; the PR body must reflect what was actually built, not TASK.md
+2. Lead agent creates PR (using command defined in repo's AGENTS.md)
+3. Wait for CI to pass
+4. Human approves
+5. Lead agent merges (using command defined in repo's AGENTS.md)
+6. Lead agent cleans up branch
 
 ## Concerns
 
