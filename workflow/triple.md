@@ -50,7 +50,7 @@ Repeat as many times as needed:
 3. Human invokes the review agent — it reviews the working tree diff against `main`
 4. Address all findings, loop back to 2
 5. Once the review agent has no findings, human reviews
-6. Human satisfied → commit
+6. Human satisfied → commit and push
 
 The impl agent must not commit autonomously. Never commit unreviewed code. Never commit a broken or partial state.
 
