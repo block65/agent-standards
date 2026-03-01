@@ -43,5 +43,5 @@ Never stage unrelated hunks to avoid this process.
 - One logical unit per commit; stage related hunks together
 - Only commit files and hunks you changed for the current task. Do not stage unrelated files.
 - Format/lint fixes in their own `chore:` commit
-- `Co-Authored-By`: add when an agent wrote the code, not just the commit message
+- `Co-Authored-By`: only add when the agent wrote the actual code (apart from one-liners) and not just asked to commit
 - Avoid force push — merge instead of rebase to keep history linear and pushable normally
