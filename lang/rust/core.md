@@ -21,6 +21,10 @@ cargo fmt
 - **Unsafe:** Requires `// SAFETY: <justification>`.
 - **Panics:** No `unwrap()`/`expect()` in prod. Use `// INVARIANT:` if provably safe.
 
+## API Design
+- **Methods over free functions (C-METHOD):** Add behaviour via `impl`, not `fn func(obj, ...)`. Enables dot-operator discovery and chaining.
+- **Extension traits for external types:** If you don't own the type (e.g. generated protobuf structs), define a `FooExt` trait in your crate and `impl FooExt for Foo`. Preserves `obj.method()` ergonomics without coupling crates.
+
 ## Ownership
 - Prefer `&T` for reading, `&mut T` for modifying.
 - Use `Arc<T>` for shared thread ownership, `Cow<'_, T>` for deferred allocation.
