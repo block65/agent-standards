@@ -14,6 +14,9 @@
 - **Early returns:** Return early rather than nesting in `if/else` blocks.
 - **`iife()` for complex `const` values:** Use `iife()` from `@block65/toolkit` for `const` values needing branching logic, instead of `let` + reassignment or raw `(() => {})()`.
 
+## Exports
+- **No namespace objects:** Never build namespaces by property assignment (`Foo.Bar = Bar`). Use module re-exports (`export * as Foo from './parts.ts'`) for tree-shaking and static analysis.
+
 ## APIs & Modernity
 - **Deprecated APIs:** Never use deprecated APIs (e.g., `btoa`). Use modern, standard alternatives.
 
