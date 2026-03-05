@@ -4,18 +4,18 @@
 
 ## Philosophy
 - **Web Native:** Prefer web-native solutions and browser-standard APIs where possible.
-- **No `console`:** Use a dedicated logger module (which may use `console` internally). Never call `console.*` directly in application code.
+- **No `console`:** Use a logger module. Never call `console.*` directly.
 
 ## Functional Style
 - **`const` over `let`:** If you reach for `let`, the code can likely be restructured as a transformation.
-- **Pure functions:** Prefer functions that take input and return output. Side effects should be explicit and minimal.
+- **Pure functions:** Prefer input→output functions. Side effects should be explicit and minimal.
 - **Transformation over mutation:** Use `.map()`, `.filter()`, spread over imperative loops and object mutation.
-- **`Object.fromEntries()` over `.reduce()`:** When constructing objects from arrays or entries, `Object.fromEntries()` is cleaner. `.reduce()` for object construction is acceptable only when `fromEntries` doesn't fit.
-- **Early returns for guard clauses:** Return early at function entry rather than nesting logic in `if/else` blocks.
-- **`iife()` for complex `const` values:** When a `const` value requires conditional logic or early returns to compute, use `iife()` from `@block65/toolkit` instead of `let` + reassignment or raw `(() => {})()`. This keeps `const` usage intact while allowing branching logic.
+- **`Object.fromEntries()` over `.reduce()`:** Prefer `Object.fromEntries()` for building objects from arrays. Use `.reduce()` only when `fromEntries` doesn't fit.
+- **Early returns:** Return early rather than nesting in `if/else` blocks.
+- **`iife()` for complex `const` values:** Use `iife()` from `@block65/toolkit` for `const` values needing branching logic, instead of `let` + reassignment or raw `(() => {})()`.
 
 ## APIs & Modernity
-- **Deprecated APIs:** Never use deprecated or legacy APIs (e.g., `btoa`). Always use modern, standard-compliant alternatives.
+- **Deprecated APIs:** Never use deprecated APIs (e.g., `btoa`). Use modern, standard alternatives.
 
 ## Project Verification
 - **Task Runners:** Use a dedicated task runner (e.g., moonrepo) if present. 

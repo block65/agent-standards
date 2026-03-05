@@ -26,8 +26,8 @@
 - **Valibot** for schema validation. Use `safeParse` and map issues to field errors.
 
 ## Context
-- **Validate provider:** Context hooks must throw if called outside their provider. Do not return undefined silently.
+- **Validate provider:** Context hooks must throw if called outside their provider.
 
 ## Composite Components
-- **Namespace pattern:** Group related components as named exports from a `parts` module (e.g., `Root`, `Header`, `Title`). Re-export them from the barrel as a namespace.
-- **No object assignment:** Do not assign components to an object literal (`Card.Root = Root`). Use `export { Root, Header }` from the parts file and `export * as Card from './parts.js'` from the barrel to preserve tree-shaking.
+- **Namespace pattern:** Export related components from a `parts` module (`Root`, `Header`, `Title`). Re-export as a namespace from the barrel.
+- **No object assignment:** Never use `Card.Root = Root`. Use `export * as Card from './parts.ts'` from the barrel for tree-shaking.
