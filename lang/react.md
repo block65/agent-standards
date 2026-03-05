@@ -4,16 +4,18 @@
 
 ## Components
 - **Function declarations:** Use `function ComponentName()`, not arrow functions assigned to variables.
-- **No `FC`:** Do not use `React.FC` or `FC`. Type props directly on the function parameter.
+- **No `FC`:** Do not use `React.FC` or `FC`. Type props directly on the function parameter with a `Props` interface.
 - **Props:** Use `interface Props` or inline object types. Avoid `type` aliases for props.
+- **Named imports:** Always use named imports from React (`import { useState } from 'react'`), never `import React`.
 
 ## i18n
 - **All user-facing strings must be translatable.** Use `<FormattedMessage>` with `defaultMessage` and `description`.
 - **No hardcoded strings** in JSX for anything a user reads.
 
 ## Styling
-- **Vanilla Extract only.** No CSS modules, no inline styles, no Tailwind.
+- **Vanilla Extract only.** No CSS modules, no Tailwind.
 - **Co-locate styles:** `*.css.ts` files next to the component they style.
+- **No `style` prop:** Never pass inline styles via the `style` prop.
 
 ## State
 - **Server state:** Use `@tanstack/react-query`. Wrap queries in custom hooks.

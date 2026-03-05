@@ -4,6 +4,7 @@
 
 ## Philosophy
 - **Web Native:** Prefer web-native solutions and browser-standard APIs where possible.
+- **No `console`:** Use a dedicated logger module (which may use `console` internally). Never call `console.*` directly in application code.
 
 ## Functional Style
 - **`const` over `let`:** If you reach for `let`, the code can likely be restructured as a transformation.
