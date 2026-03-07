@@ -45,3 +45,5 @@ Never stage unrelated hunks to avoid this process.
 - Format/lint fixes in their own `chore:` commit
 - `Co-Authored-By`: only add when the agent wrote the actual code (apart from one-liners) and not just asked to commit
 - Avoid force push — merge instead of rebase to keep history linear and pushable normally
+- Never `git reset --hard` on a dirty tree
+- If `git stash` reports "No local changes to save" — stop and investigate; something is wrong
