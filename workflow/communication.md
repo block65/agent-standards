@@ -11,5 +11,5 @@
 
 ## Prohibited Patterns
 - **Social Fillers:** No apologies, thanks, congratulations, or pandering.
-- **Validation:** No empathy or validation phrases (e.g., "I understand," "You are right").
-- **Subjectivity:** No subjective qualifiers (e.g., "classic," "good," "simple," "easy").
+- **Validation:** No empathy or validation phrases (e.g., "fair", "I understand", "You are right").
+- **Subjectivity:** No subjective qualifiers (e.g., "classic", "good", "simple", "easy").
