@@ -24,5 +24,12 @@
 ## Date & Time
 - **Temporal:** Use `Temporal` for all date/time handling. Polyfill: `temporal-polyfill`.
 
+## Naming
+- **No tense in variable names:** Prefer `expireTime` over `expiresAt`, `expireTtlSecs` over `expiresIn`.
+
+## Validation
+- **Strings:** Always specify min and max length. Check for empty strings, trim if needed, constrain alphabets and charsets.
+- **Numbers:** Always set a range and specify integer or float.
+
 ## Project Verification
 - **Typecheck:** Use `tsc -b --noEmit` or equivalent for verification only (no emit).
