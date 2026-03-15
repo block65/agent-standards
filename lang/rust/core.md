@@ -3,6 +3,10 @@
 ## Verify Cycle
 For each change set: **code → verify → commit**. Use `-q` (quiet) with cargo commands.
 
+Always auto-fix rather than manually checking then editing:
+- `cargo clippy --fix` over `cargo clippy` then hand-editing
+- `cargo fmt` over inspecting format violations and correcting them
+
 ```sh
 cargo build -q
 cargo clippy -q --fix --allow-dirty
