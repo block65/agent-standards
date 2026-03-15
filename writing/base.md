@@ -22,9 +22,7 @@ Modular rules for writing. Use the base rules below for everything, then add a s
 - **Excessive Em-Dashes:** Do not use em-dashes as a crutch for sentence structure.
 - **Unnecessary Lists:** Use prose when a list adds no structural value.
 
-## 2. Specific Modules
-- **[Technical Docs](writing/technical.md)**: Objectivity and clarity (No "Your").
-- **[Marketing & Copy](writing/marketing.md)**: Persuasion and ownership (Yes "Your").
-
-## 3. Modules
+## 2. Modules
 Each module file below references this base file as a prerequisite.
+- **[Technical Docs](technical.md)**: Objectivity and clarity (No "Your").
+- **[Marketing & Copy](marketing.md)**: Persuasion and ownership (Yes "Your").
