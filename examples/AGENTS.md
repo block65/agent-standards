@@ -1,8 +1,5 @@
 # Agent Instructions
 
-Follow the rules in the following standards files:
-- `standards/engineering/testing.md`
-- `standards/workflow/communication.md`
-- `standards/workflow/git.md`
-- `standards/lang/typescript.md`
-- `standards/writing/technical.md`
+**Always:** `cat standards/index.md` — follow all "Always load" standards listed there.
+**Before writing or modifying TypeScript/JavaScript:** STOP. `cat standards/lang/typescript.md` and follow it.
+**Before writing technical documentation:** STOP. `cat standards/writing/technical.md` and follow it.
