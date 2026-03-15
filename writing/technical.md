@@ -18,9 +18,12 @@
 
 ## 2. Instruction Hierarchy
 Follow this strict order for guides:
-1.  **Context (Why):** Explain the problem.
-2.  **Establish (What):** Define the object/default.
-3.  **Action (How):** The imperative instruction.
+1.  **Context:** Explain the problem being solved.
+2.  **Establish:** Define the object or its default state.
+3.  **Action:** The imperative instruction.
 
 * ❌ "To [Result], click [Action]."
 * ✅ "[Component] performs [Function] at the [Layer]. To [Action] it, run the [Command]."
+
+## 3. Language
+- **Death metaphors:** No casual death/violence language (e.g., "the connection dies", "if it's dead"). Established technical terms are fine (e.g., "OOM killer", "kill signal", "killed by SIGTERM").
