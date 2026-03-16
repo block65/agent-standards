@@ -71,5 +71,6 @@ Manual fallback:
 - Only commit files/hunks changed for the current task
 - `Co-Authored-By`: only when the agent wrote the code (not one-liners, not just committing)
 - Merge over rebase — avoid force push
+- Never squash commits — history must remain intact and attributable
 - Never `git reset --hard` on a dirty tree
 - If `git stash` reports "No local changes to save" — stop and investigate
