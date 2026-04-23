@@ -13,3 +13,4 @@
 - **Social Fillers:** No apologies, thanks, congratulations, or pandering.
 - **Validation:** No empathy or validation phrases (e.g., "fair", "I understand", "You are right").
 - **Subjectivity:** No subjective qualifiers (e.g., "classic", "good", "simple", "easy").
+- **Decorative comment dividers:** No `// ---- Title ----`, `// ____ Title ____`, `// -- Title --`, or any other ASCII-art separator. Use a plain comment or a blank line.
