@@ -25,17 +25,30 @@
 - **Separate files over inline exports:** Do not pile exports into one file for the sake of it. Split into focused files when it aids readability. Use a barrel (`main.ts`) only as a convenience re-export layer for consumers and tree-shaking — the barrel is not where logic lives. Never `index.ts`.
 
 ## Error Handling
-- **Never empty `catch`:** Either log, transform, or explicitly comment why swallowing is justified.
-- **Never `.catch(() => {})`:** Same rule. A suppressed rejection needs a justifying comment.
+- **Never silently swallow rejections.** All of these are bugs disguised as defensive code:
+  - `.catch(() => {})`
+  - `.catch(() => undefined)`
+  - `.catch(noop)`
+  - `.catch(() => ({ items: [] }))` — fabricating an empty/default success shape from a failure is the worst variant; downstream code can't tell the difference between "no items" and "the call failed". If you must return a fallback shape, log/report the error first and document why a fallback is the right behaviour at this boundary.
+  - empty `catch (e) {}`
 - **Never `catch (e) { throw e }`:** No-op. Delete it.
 - **Never `void somePromise()`:** Always `await`, `return`, or route through an established pattern. Add a comment when the intent is non-obvious.
 - **Route through the established error path:** Do not bypass the project's error handler.
 
 ## Structure
 - **No deep call stacks:** If following the execution path takes more than a few jumps, flatten the abstraction.
+- **Single-caller across packages is a smell.** A function exported from package `a` with exactly one caller in package `b` is in the wrong place. Either move it to the caller's package (it isn't really shared) or audit whether the caller is the wrong place for that logic. Cross-package indirection that serves no other consumer is friction without payoff.
 
 ## Type Coercion
 - **`.toString()` over `String()`:** Use `value.toString()` for string conversion, not `String(value)`.
+- **`Number.parseInt` / `Number.parseFloat` over `Number()`:** Be explicit about radix and float vs int. `Number.parseInt(s, 10)` for integers; `Number.parseFloat(s)` for floats. `Number(s)` hides the parse mode and silently coerces booleans, `null`, and arrays.
+
+## URLs and Paths
+- **Never concatenate URLs or paths by string.** Build with `new URL(path, base)` so encoding, slashes, and query strings are correct. `${host}/${path}` produces double-slashes, missing slashes, and unencoded segments.
+- **For filesystem paths,** use `node:path` (`path.join`, `path.resolve`) — never string concat.
+
+## Truthiness Filters
+- **`.filter(isTruthy)` over `.filter(Boolean)`:** Use a typed `isTruthy` predicate (e.g. from `@block65/toolkit`) so TypeScript narrows the result type. `.filter(Boolean)` does the runtime work but TS cannot narrow the element type from it.
 
 ## APIs & Modernity
 - **Deprecated APIs:** Never use deprecated APIs (e.g., `btoa`). Use modern, standard alternatives.
