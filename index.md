@@ -12,6 +12,8 @@
 - **[Writing (Base)](writing/base.md)**: Core rules for all content. (Referenced as a prerequisite by sub-modules).
 - **[Technical Docs](writing/technical.md)**: Objectivity and clarity (No "Your").
 - **[Marketing & Copy](writing/marketing.md)**: Persuasion and ownership (Yes "Your").
+- **[Testing Philosophy](engineering/testing.md)**: Tests-as-adversaries framing, robustness hierarchy, mocking rules. (Referenced as a prerequisite by `vitest.md` and `playwright.md`).
+- **[Vitest](engineering/vitest.md)**: Unit/integration test rules for TypeScript projects.
 - **[Playwright E2E](engineering/playwright.md)**: E2E test rules, selector priority, structure, and anti-patterns.
 - **[TypeScript](lang/typescript.md)**: Strict typing and modern patterns.
 - **[React](lang/react.md)**: Component patterns, i18n, styling, and state management.

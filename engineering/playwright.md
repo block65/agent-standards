@@ -1,5 +1,7 @@
 # Playwright E2E Standards
 
+Also load: `engineering/testing.md` (testing philosophy and mocking rules).
+
 E2E tests replace a human QA tester. Their job is to exercise real flows the way a real user does and fail loudly when the product is broken. Tests that exist only to be green are worse than no tests at all.
 
 ## Non-negotiables
@@ -91,10 +93,10 @@ Fill forms the way a user does: all fields a user would reasonably fill, with re
 
 ```ts
 // ✅ Happy-path signup
-await page.getByLabel('Full name').fill('Alex Tan');
+await page.getByLabel('Full name').fill(faker.person.fullName());
 await page.getByLabel('Work email').fill(`qa-${crypto.randomUUID()}@example.test`);
-await page.getByLabel('Company').fill('Acme Corp');
-await page.getByLabel('Password', { exact: true }).fill('CorrectHorseBatteryStaple!1');
+await page.getByLabel('Company').fill(faker.company.name());
+await page.getByLabel('Password', { exact: true }).fill(faker.internet.password({ length: 20 }));
 await page.getByLabel(/i agree to the terms/i).check();
 await page.getByRole('button', { name: 'Create account' }).click();
 
@@ -197,6 +199,7 @@ Flaky tests erode trust faster than missing tests.
 2. Second: the test is waiting on the wrong thing (loadstate instead of a specific response, timeout instead of a visible element). Rewrite the wait.
 3. `retries: 1` in CI is acceptable for infrastructure blips, not for gluing broken tests together. A test that needs 3 retries is broken.
 4. Never paper over a flake with `waitForTimeout`. Find the actual signal.
+5. **Never raise `actionTimeout`, `navigationTimeout`, or `testTimeout` to absorb a flake.** SLOW = FAIL — see `engineering/testing.md`.
 
 ## Anti-patterns
 
@@ -230,7 +233,7 @@ await page.getByLabel('Email').fill('a@b.c');
 await page.getByLabel('Password').fill('x');
 // ✅ Realistic user input
 await page.getByLabel('Email').fill(`qa-${crypto.randomUUID()}@example.test`);
-await page.getByLabel('Password').fill('CorrectHorseBatteryStaple!1');
+await page.getByLabel('Password').fill(faker.internet.password({ length: 20 }));
 ```
 
 ```ts
@@ -257,6 +260,7 @@ await expect(page.getByRole('row')).toHaveCount(expected);
 export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
+  // 1 retry to absorb infra blips only — not flaky tests. A test that needs 2+ retries is broken.
   retries: process.env.CI ? 1 : 0,
   reporter: [['html'], ['list']],
   use: {
