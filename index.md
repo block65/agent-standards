@@ -2,6 +2,7 @@
 
 ## Always load
 - **[Communication](workflow/communication.md)**: Concise, objective interaction rules.
+- **[Banned Words](workflow/banned-words.md)**: Vocabulary that signals imminent destructive action — stop and self-report.
 - **[Git](workflow/git.md)**: Conventional commits and message philosophy.
 - **[Dependencies](engineering/dependencies.md)**: Source trust and version currency.
 
