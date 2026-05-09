@@ -13,9 +13,13 @@
 - **No enums:** Use `as const` objects with derived union types instead. Enums are not erasable TypeScript and produce runtime output.
 - **No non-null assertions:** Never use `!` postfix. Narrow `null`/`undefined` with type guards.
 - **No runtime hacks to avoid type errors.** Fix the type.
+- **Conditional spreads use a ternary, never `&&`:** Write `{ ...(cond ? { foo: bar } : {}) }`, never `{ ...(cond && { foo: bar }) }`. The `&&` form returns the falsy operand verbatim, so TS types the spread as `false | { foo: bar }`. In generic or mapped-type contexts the union spread of a primitive can widen the surrounding object with an `[x: string]: any` index signature — every named field silently degrades to `any` and the poison propagates through derived types. The ternary resolves cleanly to `Partial<{ foo: bar }>`. Safe variants: `...(maybe || {})`, `...(maybe ?? {})`, `...maybeObj` where `maybeObj: T | undefined`.
 
 ## Imports/Exports
 - **Extensions:** Use `.ts` in all import specifiers (`'./foo.ts'`), never `.js` or bare.
+
+## File Organization
+- **Types near the top:** Declare all `interface` and `type` definitions at the top of the file — after imports and module constants (see [JavaScript Standards](javascript.md)), before any functions, classes, or implementation. A reader scanning the file should see the shape of the data before the logic that operates on it. Do not interleave types with implementation.
 
 ## File Naming
 - **Components:** `Component.ts` and `Component.css.ts`.

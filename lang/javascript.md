@@ -19,6 +19,12 @@
 - **No nested ternaries:** Use `iife()` with a `switch` or `if/else` for multi-branch expressions.
 - **`iife()` for complex `const` values:** Use `iife()` from `@block65/toolkit` for `const` values needing branching logic, instead of `let` + reassignment or raw `(() => {})()`.
 
+## Imports
+- **Imports stay contiguous:** Keep all `import` statements as one unbroken block at the top of the file. Never interleave declarations, types, constants, functions, or any other code between imports. Side-effect imports go in the same block. If you need a constant or helper in the import region, it goes *below* the imports, not inside them.
+
+## File Organization
+- **Module constants at the top:** True module-level constants — fixed values that never change at runtime, typically `UPPER_SNAKE_CASE` (`const MAX_RETRIES = 3`, `const API_VERSION = 'v2'`) — go directly below the imports, before any functions, classes, or executable logic. A reader should see the file's "knobs" up front. Do not scatter `const FOO = ...` declarations next to the function that happens to use them when the value is genuinely module-scoped configuration.
+
 ## Exports
 - **No namespace objects:** Never build namespaces by property assignment (`Foo.Bar = Bar`). Use module re-exports (`export * as Foo from './parts.ts'`).
 - **No unused exports:** Never `export` a function, type, or value that is not imported elsewhere. `export` is a public contract, not a default.
@@ -38,6 +44,7 @@
 ## Structure
 - **No deep call stacks:** If following the execution path takes more than a few jumps, flatten the abstraction.
 - **Single-caller across packages is a smell.** A function exported from package `a` with exactly one caller in package `b` is in the wrong place. Either move it to the caller's package (it isn't really shared) or audit whether the caller is the wrong place for that logic. Cross-package indirection that serves no other consumer is friction without payoff.
+- **Promote generic helpers to the shared toolkit.** Generic utilities (string/array/date manipulation, type guards, small predicates) belong in the shared toolkit (`@block65/toolkit` or equivalent), not feature modules. The toolkit is tree-shaken, so unused helpers cost nothing. Domain-specific logic stays local. Grep the toolkit before writing a new helper to avoid duplicating what already exists.
 
 ## Type Coercion
 - **`.toString()` over `String()`:** Use `value.toString()` for string conversion, not `String(value)`.
