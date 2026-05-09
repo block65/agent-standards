@@ -26,7 +26,7 @@ Describe behaviour, not implementation.
 
 ```ts
 // ✅
-test('rejects requests when the user lacks the listings.publish scope')
+test('rejects requests when the user lacks the items.write scope')
 // ❌
 test('checkScope returns false')
 ```
@@ -82,9 +82,9 @@ Assert on the error type, not the message string. `CustomError` subclasses survi
 
 ```ts
 // ❌
-await expect(publish()).rejects.toThrow('User does not have permission');
+await expect(action()).rejects.toThrow('User does not have permission');
 // ✅
-await expect(publish()).rejects.toBeInstanceOf(PermissionDeniedError);
+await expect(action()).rejects.toBeInstanceOf(PermissionDeniedError);
 ```
 
 If a fragment of the message carries information you actually care about, regex-match the fragment — never the full sentence.
@@ -108,12 +108,12 @@ expect(user.email).toMatch(/@/);
 For shape checks, use a type-guard predicate:
 
 ```ts
-function isOrgMember(value: unknown): value is OrgMember {
+function isMember(value: unknown): value is Member {
   return typeof value === 'object' && value !== null && 'role' in value;
 }
 
-const member = response.members.find((m) => m.userId === bobId);
-assert(isOrgMember(member), 'expected member with bobId to have OrgMember shape');
+const member = response.members.find((m) => m.userId === targetId);
+assert(isMember(member), 'expected member with targetId to have Member shape');
 
 expect(member.role).toBe('admin');
 ```
@@ -124,12 +124,12 @@ Anti-pattern:
 
 ```ts
 // ❌ Non-null assertion — no runtime check, unhelpful failure
-const member = response.members.find((m) => m.userId === bobId)!;
+const member = response.members.find((m) => m.userId === targetId)!;
 expect(member.role).toBe('admin');
 
 // ✅ Assert, then read
-const member = response.members.find((m) => m.userId === bobId);
-assert(member, 'expected member with bobId');
+const member = response.members.find((m) => m.userId === targetId);
+assert(member, 'expected member with targetId');
 expect(member.role).toBe('admin');
 ```
 
@@ -254,5 +254,5 @@ expect(received).toHaveLength(1);
 
 // ✅ Await the signal the production code already emits
 const message = await subscriber.next();
-expect(message).toMatchObject({ topic: 'orders.created' });
+expect(message).toMatchObject({ topic: 'events.created' });
 ```

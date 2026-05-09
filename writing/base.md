@@ -2,27 +2,25 @@
 
 Modular rules for writing. Use the base rules below for everything, then add a specific module if needed.
 
-## 1. Base Rules (Use for everything)
+## No Fluff & High Signal
+- **Delete adjectives:** Remove subjective or hyperbolic descriptors. If a sentence works without the adjective, delete it.
+- **No unsubstantiated claims:** Avoid bold assertions like "this is rarely done" or "industry standard" unless they are verifiable facts. If there is no evidence, do not state it.
 
-### No Fluff & High Signal
-- **Delete Adjectives:** Remove subjective or hyperbolic descriptors. If a sentence works without the adjective, delete it.
-- **No Unsubstantiated Claims:** Avoid bold assertions like "this is rarely done" or "industry standard" unless they are verifiable facts. If there is no evidence, do not state it.
-
-### Write for Humans
+## Write for Humans
 - **Structure:** Avoid robotic or legalistic tones. Vary sentence structure.
 - **Cohesion:** Combine fragmented thoughts into cohesive paragraphs.
-- **No Metaphors:** Do not use metaphors, analogies, or figurative language.
+- **No metaphors:** Do not use metaphors, analogies, or figurative language.
 
-### Clarity & Formatting
+## Clarity & Formatting
 - **Headings:** Must predict content.
-- **Clarity:** Ensure clear antecedents for "it," "this," "that." Do not use "the [noun]" to reference a specific instance that has not been introduced.
+- **Antecedents:** Ensure clear antecedents for "it", "this", "that". Do not use "the [noun]" to reference a specific instance that has not been introduced.
 
-### Prohibited Patterns
-- **Filler Transitions:** Do not use "However,", "Furthermore,", "Moreover,", "Additionally,", "It's important to note that," "In today's world,".
-- **Excessive Em-Dashes:** Do not use em-dashes as a crutch for sentence structure.
-- **Unnecessary Lists:** Use prose when a list adds no structural value.
+## Prohibited Patterns
+- **Filler transitions:** Do not use "However,", "Furthermore,", "Moreover,", "Additionally,", "It's important to note that,", "In today's world,".
+- **Excessive em-dashes:** Do not use em-dashes as a crutch for sentence structure.
+- **Unnecessary lists:** Use prose when a list adds no structural value.
 
-## 2. Modules
+## Modules
 Each module file below references this base file as a prerequisite.
 - **[Technical Docs](technical.md)**: Objectivity and clarity (No "Your").
 - **[Marketing & Copy](marketing.md)**: Persuasion and ownership (Yes "Your").

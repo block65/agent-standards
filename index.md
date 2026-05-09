@@ -5,6 +5,7 @@
 - **[Banned Words](workflow/banned-words.md)**: Vocabulary that signals imminent destructive action — stop and self-report.
 - **[Git](workflow/git.md)**: Conventional commits and message philosophy.
 - **[Dependencies](engineering/dependencies.md)**: Source trust and version currency.
+- **[Code Review](engineering/code-review.md)**: Common bugs and review behaviours.
 
 ## Load if applicable (workflow)
 - **[TRIPLE](workflow/triple.md)**: Three-role peer programming workflow with impl agent, review agent, and human.
@@ -16,6 +17,7 @@
 - **[Testing Philosophy](engineering/testing.md)**: Tests-as-adversaries framing, robustness hierarchy, mocking rules. (Referenced as a prerequisite by `vitest.md` and `playwright.md`).
 - **[Vitest](engineering/vitest.md)**: Unit/integration test rules for TypeScript projects.
 - **[Playwright E2E](engineering/playwright.md)**: E2E test rules, selector priority, structure, and anti-patterns.
+- **[Database](engineering/database.md)**: Schema and column conventions.
 - **[TypeScript](lang/typescript.md)**: Strict typing and modern patterns.
 - **[React](lang/react.md)**: Component patterns, i18n, styling, and state management.
 - **[JavaScript](lang/javascript.md)**: pnpm, modern API usage, and general JS hygiene.

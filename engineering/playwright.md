@@ -33,7 +33,7 @@ Use the first option that works. Drop down only when the current tier genuinely 
 | 5        | `getByTestId(id)`                   | Icon buttons, decorative containers, list items without user-visible identifying text |
 | 6        | CSS / XPath                         | **Banned.** If you reach here, you've skipped a step.                                 |
 
-**Add `data-testid` proactively** when none of 1–4 work. Kebab-case, describes the thing not the location: `data-testid="listing-card"`, `data-testid="delete-confirm-button"`. Never `data-testid="div-2"`.
+**Add `data-testid` proactively** when none of 1–4 work. Kebab-case, describes the thing not the location: `data-testid="item-card"`, `data-testid="delete-confirm-button"`. Never `data-testid="div-2"`.
 
 ## Test structure
 
@@ -43,9 +43,9 @@ Describe user-visible behaviour, not implementation.
 
 ```ts
 // ✅
-test('user can publish a draft listing and see it on their dashboard')
+test('user can submit a draft item and see it on their dashboard')
 // ❌
-test('POST /listings returns 200 and dashboard query refetches')
+test('POST /items returns 200 and dashboard query refetches')
 ```
 
 ### Three phases with `test.step()`
@@ -53,23 +53,23 @@ test('POST /listings returns 200 and dashboard query refetches')
 Every test has three phases. Use `test.step()` to make them visible in the trace viewer. Do not use `console.log` as a substitute.
 
 ```ts
-test('user can publish a draft listing', async ({ page, authedUser }) => {
+test('user can submit a draft item', async ({ page, authedUser }) => {
   await test.step('create draft via API', async () => {
-    await authedUser.api.createListing({ status: 'draft', title: 'Test cottage' });
+    await authedUser.api.createItem({ status: 'draft', title: 'Test item' });
   });
 
-  await test.step('publish from dashboard', async () => {
+  await test.step('submit from dashboard', async () => {
     await page.goto('/dashboard');
     await page
-      .getByRole('row', { name: /test cottage/i })
-      .getByRole('button', { name: 'Publish' })
+      .getByRole('row', { name: /test item/i })
+      .getByRole('button', { name: 'Submit' })
       .click();
-    await page.getByRole('button', { name: 'Confirm publish' }).click();
+    await page.getByRole('button', { name: 'Confirm submit' }).click();
   });
 
-  await test.step('listing appears in public results', async () => {
-    await page.goto('/listings');
-    await expect(page.getByRole('link', { name: /test cottage/i })).toBeVisible();
+  await test.step('item appears in public results', async () => {
+    await page.goto('/items');
+    await expect(page.getByRole('link', { name: /test item/i })).toBeVisible();
   });
 });
 ```
@@ -84,7 +84,7 @@ Every test creates its own data. No shared mutable state. Two parallel runs of t
 
 ```ts
 const email = `qa-${crypto.randomUUID()}@example.test`;
-const title = `Test listing ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+const title = `Test item ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 ```
 
 ## Filling forms
@@ -222,7 +222,7 @@ if (await page.getByText('Promo banner').isVisible()) {
 await page.locator('div.card > div:nth-child(2) button.primary').click();
 // ✅ Role-based, or add a testid
 await page
-  .getByRole('article', { name: /test cottage/i })
+  .getByRole('article', { name: /test item/i })
   .getByRole('button', { name: 'Publish' })
   .click();
 ```
