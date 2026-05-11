@@ -10,6 +10,23 @@ Tests are diagnostic instruments. Their job is to *try to break the system* and 
 - **Test the system, not a simulation of it.** Drive the production code path. Mocks belong at the network boundary, not inside the unit under test.
 - **Failures must be loud and observable.** Swallowing an error, returning `undefined`, or "recovering" silently is a bug, not robustness. Surface what happened — error type, status, UI feedback.
 
+## One test per failure mode
+
+A test earns its place only if it can fail on a bug no other test catches. Before adding one, name the failure mode it surfaces that the rest of the suite would miss. If you can't, don't add it.
+
+- **When two tests cover the same failure, delete the lower-level one.** The test closest to the user contract owns the behavior. The same happy path asserted at unit, integration, and e2e is one signal carried by three failures — three things to maintain, zero extra bugs caught.
+- **Exception: the lower-level test reaches a branch the higher one can't** — a rare error path, a race, a numerical edge. The retained test must do something the higher-level test *cannot*, not the same thing faster.
+
+```ts
+// ❌ Same happy path, three layers, one bug surface
+test('validateItem accepts a valid item', ...)
+test('createItem persists a valid item', ...)
+test('POST /items creates an item', ...)
+
+// ✅ Keep the test closest to the contract; the others add no failure mode
+test('POST /items creates an item', ...)
+```
+
 ## Non-negotiable inputs
 
 - **Real randomness, every run.** UUIDs, timestamps, faker output without a fixed seed. No canonical "Test User" that papers over collisions. A test passing once with `id: 1` tells you nothing about the id a real user generates. **Print the seed/inputs on failure** so flakes are reproducible — randomness without traceability is just noise.
