@@ -244,7 +244,7 @@ expect(true).toBe(true);
 
 // ✅ The migration must succeed; if it doesn't, the test must fail
 await migrate();
-expect(await db.tableExists('users')).toBe(true);
+await expect(db.tableExists('users')).resolves.toBe(true);
 ```
 
 ```ts
