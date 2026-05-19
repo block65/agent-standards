@@ -3,14 +3,17 @@
 **Prerequisite:** Also follow the rules in [Dependencies](../engineering/dependencies.md).
 
 ## Philosophy
+
 - **Web Native:** Prefer web-native solutions and browser-standard APIs.
 - **No `console`:** Use a logger module. Never call `console.*` directly.
 
 ## Logging
+
 - **Log generously:** `debug` for flow, `warn` for recoverable conditions, `error` for failures.
 - **Never delete logs** after adding them. Adjust the level or compile them out if needed — silent code paths are impossible to debug in retrospect.
 
 ## Functional Style
+
 - **`const` over `let`:** If you reach for `let`, the code can likely be restructured as a transformation. Never use a `let` + mutation block (`let x; if (...) x = a; else x = b`). Compute the value in an expression and assign to `const`.
 - **Pure functions:** Prefer input→output functions. Side effects should be explicit and minimal.
 - **Transformation over mutation:** Use `.map()`, `.filter()`, spread over imperative loops and object mutation. Never build an array with `const arr = []; arr.push(...)` — use `.map()`, `.flatMap()`, `.filter()`, or `.reduce()`. Never build an object by constructing an empty `{}` and then mutating it — use `Object.fromEntries`, spread, or a builder that preserves types.
@@ -20,17 +23,21 @@
 - **`iife()` for complex `const` values:** Use `iife()` from `@block65/toolkit` for `const` values needing branching logic, instead of `let` + reassignment or raw `(() => {})()`.
 
 ## Imports
-- **Imports stay contiguous:** Keep all `import` statements as one unbroken block at the top of the file. Never interleave declarations, types, constants, functions, or any other code between imports. Side-effect imports go in the same block. If you need a constant or helper in the import region, it goes *below* the imports, not inside them.
+
+- **Imports stay contiguous:** Keep all `import` statements as one unbroken block at the top of the file. Never interleave declarations, types, constants, functions, or any other code between imports. Side-effect imports go in the same block. If you need a constant or helper in the import region, it goes _below_ the imports, not inside them.
 
 ## File Organization
+
 - **Module constants at the top:** True module-level constants — fixed values that never change at runtime, typically `UPPER_SNAKE_CASE` (`const MAX_RETRIES = 3`, `const API_VERSION = 'v2'`) — go directly below the imports, before any functions, classes, or executable logic. A reader should see the file's "knobs" up front. Do not scatter `const FOO = ...` declarations next to the function that happens to use them when the value is genuinely module-scoped configuration.
 
 ## Exports
+
 - **No namespace objects:** Never build namespaces by property assignment (`Foo.Bar = Bar`). Use module re-exports (`export * as Foo from './parts.ts'`).
 - **No unused exports:** Never `export` a function, type, or value that is not imported elsewhere. `export` is a public contract, not a default.
 - **Separate files over inline exports:** Do not pile exports into one file for the sake of it. Split into focused files when it aids readability. Use a barrel (`main.ts`) only as a convenience re-export layer for consumers and tree-shaking — the barrel is not where logic lives. Never `index.ts`.
 
 ## Error Handling
+
 - **Never silently swallow rejections.** All of these are bugs disguised as defensive code:
   - `.catch(() => {})`
   - `.catch(() => undefined)`
@@ -42,64 +49,79 @@
 - **Route through the established error path:** Do not bypass the project's error handler.
 
 ## Structure
+
 - **No deep call stacks:** If following the execution path takes more than a few jumps, flatten the abstraction.
 - **Single-caller across packages is a smell.** A function exported from package `a` with exactly one caller in package `b` is in the wrong place. Either move it to the caller's package (it isn't really shared) or audit whether the caller is the wrong place for that logic. Cross-package indirection that serves no other consumer is friction without payoff.
 - **Promote generic helpers to the shared toolkit.** Generic utilities (string/array/date manipulation, type guards, small predicates) belong in the shared toolkit (`@block65/toolkit` or equivalent), not feature modules. The toolkit is tree-shaken, so unused helpers cost nothing. Domain-specific logic stays local. Grep the toolkit before writing a new helper to avoid duplicating what already exists.
 
 ## Type Coercion
+
 - **`.toString()` over `String()`:** Use `value.toString()` for string conversion, not `String(value)`.
 - **`Number.parseInt` / `Number.parseFloat` over `Number()`:** Be explicit about radix and float vs int. `Number.parseInt(s, 10)` for integers; `Number.parseFloat(s)` for floats. `Number(s)` hides the parse mode and silently coerces booleans, `null`, and arrays.
 
 ## URLs and Paths
+
 - **Never concatenate URLs or paths by string.** Build with `new URL(path, base)` so encoding, slashes, and query strings are correct. `${host}/${path}` produces double-slashes, missing slashes, and unencoded segments.
 - **For filesystem paths,** use `node:path` (`path.join`, `path.resolve`) — never string concat.
 
 ## Truthiness Filters
+
 - **`.filter(isTruthy)` over `.filter(Boolean)`:** Use a typed `isTruthy` predicate (e.g. from `@block65/toolkit`) so TypeScript narrows the result type. `.filter(Boolean)` does the runtime work but TS cannot narrow the element type from it.
 
 ## APIs & Modernity
+
 - **Deprecated APIs:** Never use deprecated APIs (e.g., `btoa`). Use modern, standard alternatives.
 
 ## Project Verification
-- **Task Runners:** Use a dedicated task runner (e.g., moonrepo) if present. 
+
+- **Task Runners:** Use a dedicated task runner (e.g., moonrepo) if present.
 - **Scripts:** If no task runner exists, `package.json` scripts are acceptable.
 - **Implementation Hygiene:** Do not iterate on broken implementations. Identify the root cause and fix it before proceeding.
 
 ## Dependencies
+
 - **pnpm Catalogs:** If `catalog:` protocol entries exist in the workspace, use them for versioning.
-- **Centralization:** Move any dependency used in multiple packages to the central workspace catalog. 
+- **Centralization:** Move any dependency used in multiple packages to the central workspace catalog.
 - **Syntax:** Use `"dependency-name": "catalog:"` in `package.json`. Never hardcode version strings for dependencies managed by a catalog.
 
 ## Naming
+
 - **Never `index.ts`:** Entry points and barrels are always `main.ts`.
 - **No tense in variable names:** Prefer `expireTime` over `expiresAt`, `expireTtlSecs` over `expiresIn`.
 - **Intentional abbreviations only:** Conventional short names (`i`, `j`, `n`) are fine. Domain abbreviations (`ms`, `ctx`, `req`) only when unambiguous and consistent across the codebase. Never abbreviate when the short form is ambiguous.
 - **Grep before naming:** Search the codebase before naming anything. Match the established vocabulary — `create` vs `insert`, `log` vs `entry`, etc.
 
 ## Date & Time
+
 - **Temporal:** Use `Temporal` for all date/time handling. Polyfill: `temporal-polyfill`.
 
 ## Nullability
+
 - **`undefined` over `null`:** Prefer `undefined` for absent values. Use `null` only when an external API demands it.
 - **No empty defaults for missing data:** Never default to `{}` or `[]` to mean "not loaded" or "not applicable". Use `undefined`.
 - **Intentional `??`:** Only use `??` when the fallback is semantically meaningful. Do not use it to paper over a value that should not be nullable in the first place.
 
 ## Validation
+
 - **Strings:** Always specify min and max length. Check for empty strings, trim if needed, constrain alphabets and charsets.
 - **Numbers:** Always set a range and specify integer or float.
 
 ## Readability
+
 - Generously use whitespace between lines of code to make code easier to read and to group related lines together.
 - **Destructuring:** Always destructure arrays and objects rather than accessing by index or property chain. `const [first] = arr` not `arr[0]`. `const { id, name } = user` not `user.id` / `user.name` repeated. Destructure at the top of the scope so narrowing and defaults are declared once — not scattered through the function as repeated property guard clauses.
-  
+
 ## Testing
+
 - **`CustomError` over string matching:** Differentiate error types with `CustomError`, not string comparison.
 
 ## i18n
+
 - **react-intl:** Never set explicit IDs — they are auto-generated.
 - **Tree-shaking:** Use `defineMessage` for single strings, `defineMessages` for enums/groups.
 - **Common strings:** Store shared strings like "Saved" and "Updated" in a central `i18n.ts` file.
 
 ## Troubleshooting
+
 - **Diagnostic approach:** Use evidence-based exploration. Identify the root cause before changing anything — do not whack-a-mole.
 - **Enable logging:** Do not be afraid to add or enable debug/trace logging to track down errors.

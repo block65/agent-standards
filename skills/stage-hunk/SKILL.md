@@ -40,4 +40,3 @@ If `$ARGUMENTS` is empty or contains only the file path with no description, rep
 If `--list-hunks` output is insufficient to match the description,
 try `git diff -U10 -- "$FILE"` for more context. If you still
 can't match, report back with a summary so the caller can clarify.
-

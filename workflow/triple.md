@@ -23,15 +23,19 @@ Human and lead agent define scope. Output is a **TASK.md** (local only — never
 # <short descriptive title>
 
 ## Scope
+
 <high-level area of the codebase — not a file list>
 
 ## Out of scope
+
 <what not to touch>
 
 ## Why
+
 <motivation — what problem does this solve>
 
 ## Notes
+
 <optional — specific constraints or context>
 ```
 
@@ -75,6 +79,7 @@ The calling repo's AGENTS.md must define PR and merge commands for the lead agen
 
 ```markdown
 ## PR & Merge (lead agent)
+
 - Create PR: <repo-specific command>
 - Merge: <repo-specific command>
 ```

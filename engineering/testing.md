@@ -1,6 +1,6 @@
 # Testing Philosophy
 
-Tests are diagnostic instruments. Their job is to *try to break the system* and surface what's wrong — not to validate that today's code works. The win condition is a system robust enough that you cannot break it, not a green check.
+Tests are diagnostic instruments. Their job is to _try to break the system_ and surface what's wrong — not to validate that today's code works. The win condition is a system robust enough that you cannot break it, not a green check.
 
 ## Mental model
 
@@ -15,7 +15,7 @@ Tests are diagnostic instruments. Their job is to *try to break the system* and 
 A test earns its place only if it can fail on a bug no other test catches. Before adding one, name the failure mode it surfaces that the rest of the suite would miss. If you can't, don't add it.
 
 - **When two tests cover the same failure, delete the lower-level one.** The test closest to the user contract owns the behavior. The same happy path asserted at unit, integration, and e2e is one signal carried by three failures — three things to maintain, zero extra bugs caught.
-- **Exception: the lower-level test reaches a branch the higher one can't** — a rare error path, a race, a numerical edge. The retained test must do something the higher-level test *cannot*, not the same thing faster.
+- **Exception: the lower-level test reaches a branch the higher one can't** — a rare error path, a race, a numerical edge. The retained test must do something the higher-level test _cannot_, not the same thing faster.
 
 ```ts
 // ❌ Same happy path, three layers, one bug surface
@@ -58,7 +58,7 @@ A test that's flaky on a 5-second timeout but green on a 30-second timeout has n
 
 ## Observing vs. asserting
 
-There is one legitimate kind of test change: sharpening *how* the test observes the system, without changing *what* it asserts.
+There is one legitimate kind of test change: sharpening _how_ the test observes the system, without changing _what_ it asserts.
 
 - **Cheating (banned):** widening assertions, mocking past the boundary, swallowing errors, stubbing the thing under test, reducing scope.
 - **Sharpening observation (allowed):** awaiting the actual completion signal the production code emits instead of polling shared state; subscribing to an event instead of guessing when it's done; using a deterministic readiness signal already part of the production surface.
@@ -80,7 +80,9 @@ The contract under test must stay the same. If the production code breaks, the t
 - **Real backing services where you can.** For tests that touch a database, queue, or cache, run the real thing in a container (testcontainers) — not an in-memory fake. Fake Postgres has different semantics from real Postgres; a test that passes against the fake is not the test you wanted.
 
 ### TypeScript (Node.js / Cloudflare)
+
 - Use `msw` (Mock Service Worker). Intercepts at the request layer so the same handlers cover Node, browsers, and Workers. Don't reach for `undici`'s `MockAgent` or `fetchMock` — they intercept below the app's `fetch` and miss serialization bugs `msw` catches.
 
 ### Rust
+
 - Use `wiremock`. Start a local mock server and point your concrete client at the local URL.

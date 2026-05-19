@@ -1,6 +1,7 @@
 # Agent Standards
 
 ## Always load
+
 - **[Communication](workflow/communication.md)**: Concise, objective interaction rules.
 - **[Banned Words](workflow/banned-words.md)**: Vocabulary that signals imminent destructive action — stop and self-report.
 - **[Git](workflow/git.md)**: Conventional commits and message philosophy.
@@ -8,9 +9,11 @@
 - **[Code Review](engineering/code-review.md)**: Common bugs and review behaviours.
 
 ## Load if applicable (workflow)
+
 - **[TRIPLE](workflow/triple.md)**: Three-role peer programming workflow with impl agent, review agent, and human.
 
 ## Load if applicable (content)
+
 - **[Writing (Base)](writing/base.md)**: Core rules for all content. (Referenced as a prerequisite by sub-modules).
 - **[Technical Docs](writing/technical.md)**: Objectivity and clarity (No "Your").
 - **[Marketing & Copy](writing/marketing.md)**: Persuasion and ownership (Yes "Your").

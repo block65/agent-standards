@@ -43,9 +43,9 @@ Describe user-visible behaviour, not implementation.
 
 ```ts
 // ✅
-test('user can submit a draft item and see it on their dashboard')
+test("user can submit a draft item and see it on their dashboard");
 // ❌
-test('POST /items returns 200 and dashboard query refetches')
+test("POST /items returns 200 and dashboard query refetches");
 ```
 
 ### Three phases with `test.step()`
@@ -53,23 +53,23 @@ test('POST /items returns 200 and dashboard query refetches')
 Every test has three phases. Use `test.step()` to make them visible in the trace viewer. Do not use `console.log` as a substitute.
 
 ```ts
-test('user can submit a draft item', async ({ page, authedUser }) => {
-  await test.step('create draft via API', async () => {
-    await authedUser.api.createItem({ status: 'draft', title: 'Test item' });
+test("user can submit a draft item", async ({ page, authedUser }) => {
+  await test.step("create draft via API", async () => {
+    await authedUser.api.createItem({ status: "draft", title: "Test item" });
   });
 
-  await test.step('submit from dashboard', async () => {
-    await page.goto('/dashboard');
+  await test.step("submit from dashboard", async () => {
+    await page.goto("/dashboard");
     await page
-      .getByRole('row', { name: /test item/i })
-      .getByRole('button', { name: 'Submit' })
+      .getByRole("row", { name: /test item/i })
+      .getByRole("button", { name: "Submit" })
       .click();
-    await page.getByRole('button', { name: 'Confirm submit' }).click();
+    await page.getByRole("button", { name: "Confirm submit" }).click();
   });
 
-  await test.step('item appears in public results', async () => {
-    await page.goto('/items');
-    await expect(page.getByRole('link', { name: /test item/i })).toBeVisible();
+  await test.step("item appears in public results", async () => {
+    await page.goto("/items");
+    await expect(page.getByRole("link", { name: /test item/i })).toBeVisible();
   });
 });
 ```
@@ -93,18 +93,19 @@ Fill forms the way a user does: all fields a user would reasonably fill, with re
 
 ```ts
 // ✅ Happy-path signup
-await page.getByLabel('Full name').fill(faker.person.fullName());
-await page.getByLabel('Work email').fill(`qa-${crypto.randomUUID()}@example.test`);
-await page.getByLabel('Company').fill(faker.company.name());
-await page.getByLabel('Password', { exact: true }).fill(faker.internet.password({ length: 20 }));
+await page.getByLabel("Full name").fill(faker.person.fullName());
+await page.getByLabel("Work email").fill(`qa-${crypto.randomUUID()}@example.test`);
+await page.getByLabel("Company").fill(faker.company.name());
+await page.getByLabel("Password", { exact: true }).fill(faker.internet.password({ length: 20 }));
 await page.getByLabel(/i agree to the terms/i).check();
-await page.getByRole('button', { name: 'Create account' }).click();
+await page.getByRole("button", { name: "Create account" }).click();
 
 await expect(page).toHaveURL(/\/onboarding/);
-await expect(page.getByRole('heading', { name: /welcome/i })).toBeVisible();
+await expect(page.getByRole("heading", { name: /welcome/i })).toBeVisible();
 ```
 
 Validation tests cover omission, but:
+
 - One missing field per test, not combinatorial coverage.
 - A representative sample (email format, password strength, terms unchecked) — not every field.
 - Field-level validation is mostly unit/component territory. E2E validates that the product surfaces errors correctly for the **shapes** of failure, not every permutation.
@@ -115,20 +116,20 @@ Validation tests cover omission, but:
 
 ```ts
 // ❌ brittle
-await expect(page.getByRole('alert')).toHaveText('Please enter a valid email address.');
+await expect(page.getByRole("alert")).toHaveText("Please enter a valid email address.");
 
 // ✅ resilient
-await expect(page.getByRole('alert')).toContainText(/valid email/i);
+await expect(page.getByRole("alert")).toContainText(/valid email/i);
 ```
 
 ### Dynamic values: assert presence or pattern
 
 ```ts
 // ❌ asserts a specific timestamp
-await expect(page.getByTestId('created-at')).toHaveText('Nov 17, 2025 14:32');
+await expect(page.getByTestId("created-at")).toHaveText("Nov 17, 2025 14:32");
 
 // ✅ asserts the shape
-await expect(page.getByTestId('created-at')).toHaveText(/\w+ \d{1,2}, \d{4}/);
+await expect(page.getByTestId("created-at")).toHaveText(/\w+ \d{1,2}, \d{4}/);
 ```
 
 ### Web-first assertions only
@@ -138,10 +139,10 @@ await expect(page.getByTestId('created-at')).toHaveText(/\w+ \d{1,2}, \d{4}/);
 ```ts
 // ❌ double-waiting, and isVisible() doesn't retry
 await page.waitForTimeout(1000);
-expect(await page.locator('.success').isVisible()).toBe(true);
+expect(await page.locator(".success").isVisible()).toBe(true);
 
 // ✅
-await expect(page.getByRole('status')).toContainText(/saved/i);
+await expect(page.getByRole("status")).toContainText(/saved/i);
 ```
 
 ### Assert the outcome, not the mechanism
@@ -159,6 +160,7 @@ Test everything a real user can do. Within every flow, also cover:
 - **Idiot-proofing** — confirm dialogs before destructive actions, unsaved-changes warnings, recovery from errors.
 
 **Push down to unit/component:**
+
 - Exhaustive validation permutations (every field's every error message)
 - Pure client-side state toggles (tabs, accordions, dropdown open/close) when isolated from any data flow
 - Copy and translations
@@ -205,53 +207,53 @@ Flaky tests erode trust faster than missing tests.
 
 ```ts
 // ❌ Skip to hide a failure
-test.skip(Math.random() > 0.5, 'sometimes flaky');
+test.skip(Math.random() > 0.5, "sometimes flaky");
 // ✅ Fix the cause or delete the test
 ```
 
 ```ts
 // ❌ Branch inside test
-if (await page.getByText('Promo banner').isVisible()) {
-  await page.getByRole('button', { name: 'Apply' }).click();
+if (await page.getByText("Promo banner").isVisible()) {
+  await page.getByRole("button", { name: "Apply" }).click();
 }
 // ✅ Two tests: "checkout without promo" and "checkout with active promo banner"
 ```
 
 ```ts
 // ❌ CSS selector reaching into implementation
-await page.locator('div.card > div:nth-child(2) button.primary').click();
+await page.locator("div.card > div:nth-child(2) button.primary").click();
 // ✅ Role-based, or add a testid
 await page
-  .getByRole('article', { name: /test item/i })
-  .getByRole('button', { name: 'Publish' })
+  .getByRole("article", { name: /test item/i })
+  .getByRole("button", { name: "Publish" })
   .click();
 ```
 
 ```ts
 // ❌ Minimum-viable form fill
-await page.getByLabel('Email').fill('a@b.c');
-await page.getByLabel('Password').fill('x');
+await page.getByLabel("Email").fill("a@b.c");
+await page.getByLabel("Password").fill("x");
 // ✅ Realistic user input
-await page.getByLabel('Email').fill(`qa-${crypto.randomUUID()}@example.test`);
-await page.getByLabel('Password').fill(faker.internet.password({ length: 20 }));
+await page.getByLabel("Email").fill(`qa-${crypto.randomUUID()}@example.test`);
+await page.getByLabel("Password").fill(faker.internet.password({ length: 20 }));
 ```
 
 ```ts
 // ❌ Sleep-based wait
-await page.getByRole('button', { name: 'Save' }).click();
+await page.getByRole("button", { name: "Save" }).click();
 await page.waitForTimeout(2000);
-await expect(page.locator('.toast')).toBeVisible();
+await expect(page.locator(".toast")).toBeVisible();
 // ✅ Effect-based
-await page.getByRole('button', { name: 'Save' }).click();
-await expect(page.getByRole('status')).toContainText(/saved/i);
+await page.getByRole("button", { name: "Save" }).click();
+await expect(page.getByRole("status")).toContainText(/saved/i);
 ```
 
 ```ts
 // ❌ networkidle on a SaaS app with long-poll or websockets
-await page.waitForLoadState('networkidle');
+await page.waitForLoadState("networkidle");
 // ✅ Wait on the specific thing you care about
-await expect(page.getByRole('table')).toBeVisible();
-await expect(page.getByRole('row')).toHaveCount(expected);
+await expect(page.getByRole("table")).toBeVisible();
+await expect(page.getByRole("row")).toHaveCount(expected);
 ```
 
 ## Config baseline
@@ -262,17 +264,17 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   // 1 retry to absorb infra blips only — not flaky tests. A test that needs 2+ retries is broken.
   retries: process.env.CI ? 1 : 0,
-  reporter: [['html'], ['list']],
+  reporter: [["html"], ["list"]],
   use: {
-    baseURL: process.env.BASE_URL ?? 'http://localhost:3000',
-    trace: 'on-first-retry',
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    baseURL: process.env.BASE_URL ?? "http://localhost:3000",
+    trace: "on-first-retry",
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
     actionTimeout: 10_000,
     navigationTimeout: 30_000,
   },
   projects: [
-    { name: 'chromium', use: devices['Desktop Chrome'] },
+    { name: "chromium", use: devices["Desktop Chrome"] },
     // add webkit/firefox only if you ship there
   ],
 });
@@ -281,6 +283,7 @@ export default defineConfig({
 ## Mental model
 
 A user:
+
 - Doesn't know the DOM — navigates by roles, labels, visible text.
 - Doesn't reload to check — the UI updates.
 - Fills realistic values, not minimum placeholders.

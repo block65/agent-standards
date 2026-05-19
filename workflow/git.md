@@ -4,12 +4,12 @@
 
 Format: `type(scope): subject` — scope optional, use crate/module name.
 
-| Type | Release | When |
-|------|---------|------|
-| `feat:` | minor | New capability |
-| `fix:`, `perf:` | patch | Runtime behavior change |
-| any `!` | major | Breaking change |
-| `chore:`, `style:`, `refactor:`, `build:`, `ci:`, `docs:`, `test:` | none | Non-functional |
+| Type                                                               | Release | When                    |
+| ------------------------------------------------------------------ | ------- | ----------------------- |
+| `feat:`                                                            | minor   | New capability          |
+| `fix:`, `perf:`                                                    | patch   | Runtime behavior change |
+| any `!`                                                            | major   | Breaking change         |
+| `chore:`, `style:`, `refactor:`, `build:`, `ci:`, `docs:`, `test:` | none    | Non-functional          |
 
 `ci:` = no release. `fix(ci):` = patch — use only when a CI fix warrants republishing.
 
@@ -54,6 +54,7 @@ fix(proxy): reject malformed Transfer-Encoding headers per RFC 9112
 When a file has unrelated changes, stage only relevant hunks. Use the `stage-hunk` skill if available.
 
 Manual fallback:
+
 1. Generate unified diff of target hunks
 2. `echo "$DIFF" | git apply --cached --check`
 3. `echo "$DIFF" | git apply --cached --whitespace=nowarn`

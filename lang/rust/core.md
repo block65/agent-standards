@@ -1,9 +1,11 @@
 # Rust Core Standards
 
 ## Verify Cycle
+
 For each change set: **code → verify → commit**. Use `-q` (quiet) with cargo commands.
 
 Always auto-fix rather than manually checking then editing:
+
 - `cargo clippy --fix` over `cargo clippy` then hand-editing
 - `cargo fmt` over inspecting format violations and correcting them
 
@@ -15,6 +17,7 @@ cargo fmt
 ```
 
 ## Lint & Style
+
 - **Zero-warning policy:** Fix root causes, use `// REASON:` for `#[allow]`.
 - **Modules:** Use 2018+ style (avoid `mod.rs`). Treat module roots as strict barrels — re-exports only; move all logic, traits, and types into dedicated sibling files.
 - **Derives:** `Debug`, `Clone`, `Default`, `PartialEq` where appropriate.
@@ -23,14 +26,17 @@ cargo fmt
 - **Variable names:** Use descriptive names in `let` bindings, function parameters, and struct fields. No single-character names (except loop indices `i`/`j`/`k` and coordinates `x`/`y`/`z` in geometry/math) and no opaque abbreviations (`pa`, `ns`, `r`, `ru`, `lhs`). Shadow the original name when cloning or reborrowing: `let metrics = Arc::clone(&metrics)` not `let m = Arc::clone(&metrics)`.
 
 ## Safety & Panics
+
 - **Unsafe:** Requires `// SAFETY: <justification>`.
 - **Panics:** No `unwrap()`/`expect()` in prod. Use `// INVARIANT:` if provably safe.
 
 ## API Design
+
 - **Methods over free functions (C-METHOD):** Add behaviour via `impl`, not `fn func(obj, ...)`. Enables dot-operator discovery and chaining.
 - **Extension traits for external types:** If you don't own the type (e.g. generated protobuf structs), define a `FooExt` trait in your crate and `impl FooExt for Foo`. Preserves `obj.method()` ergonomics without coupling crates.
 
 ## Ownership
+
 - Prefer `&T` for reading, `&mut T` for modifying.
 - Use `Arc<T>` for shared thread ownership, `Cow<'_, T>` for deferred allocation.
 - Use `Config`/`Options` structs over long parameter lists.

@@ -26,9 +26,9 @@ Describe behaviour, not implementation.
 
 ```ts
 // ✅
-test('rejects requests when the user lacks the items.write scope')
+test("rejects requests when the user lacks the items.write scope");
 // ❌
-test('checkScope returns false')
+test("checkScope returns false");
 ```
 
 ## Structure
@@ -36,8 +36,8 @@ test('checkScope returns false')
 Arrange / Act / Assert, in order, with whitespace between phases.
 
 ```ts
-test('parseConfig defaults missing optional fields', () => {
-  const raw = { host: 'localhost' };
+test("parseConfig defaults missing optional fields", () => {
+  const raw = { host: "localhost" };
 
   const config = parseConfig(raw);
 
@@ -49,7 +49,7 @@ test('parseConfig defaults missing optional fields', () => {
 Every test owns its data. No `beforeAll` mutation that other tests rely on.
 
 ```ts
-const tableName = `test_${crypto.randomUUID().replaceAll('-', '_')}`;
+const tableName = `test_${crypto.randomUUID().replaceAll("-", "_")}`;
 ```
 
 ## Async
@@ -58,7 +58,7 @@ Always `await`. Always assert on the resolved value, not the promise.
 
 ```ts
 // ❌ no await — the test ends before the assertion runs
-fetchUser(id).then((u) => expect(u.email).toBe('...'));
+fetchUser(id).then((u) => expect(u.email).toBe("..."));
 
 // ✅
 const user = await fetchUser(id);
@@ -71,10 +71,10 @@ await expect(fetchUser(id)).resolves.toMatchObject({ id });
 For things that settle eventually, use `expect.poll` with a meaningful timeout. Never `setTimeout` in a test.
 
 ```ts
-await expect.poll(() => store.get(id), { timeout: 5_000 }).toMatchObject({ status: 'ready' });
+await expect.poll(() => store.get(id), { timeout: 5_000 }).toMatchObject({ status: "ready" });
 ```
 
-When the production code emits a completion signal (event, promise, callback), await *that* — never poll shared state hoping it caught up. See "Observing vs. asserting" in `engineering/testing.md`.
+When the production code emits a completion signal (event, promise, callback), await _that_ — never poll shared state hoping it caught up. See "Observing vs. asserting" in `engineering/testing.md`.
 
 ## Errors
 
@@ -82,7 +82,7 @@ Assert on the error type, not the message string. `CustomError` subclasses survi
 
 ```ts
 // ❌
-await expect(action()).rejects.toThrow('User does not have permission');
+await expect(action()).rejects.toThrow("User does not have permission");
 // ✅
 await expect(action()).rejects.toBeInstanceOf(PermissionDeniedError);
 ```
@@ -96,10 +96,10 @@ Don't reach for `!` (non-null assertion) in test code. It silences the type syst
 Use `assert` from vitest to verify and narrow in one step:
 
 ```ts
-import { assert } from 'vitest';
+import { assert } from "vitest";
 
 const user = await fetchUser(id);
-assert(user, 'fetchUser returned no user');
+assert(user, "fetchUser returned no user");
 // `user` is now non-null both at runtime and to the type system
 
 expect(user.email).toMatch(/@/);
@@ -109,13 +109,13 @@ For shape checks, use a type-guard predicate:
 
 ```ts
 function isMember(value: unknown): value is Member {
-  return typeof value === 'object' && value !== null && 'role' in value;
+  return typeof value === "object" && value !== null && "role" in value;
 }
 
 const member = response.members.find((m) => m.userId === targetId);
-assert(isMember(member), 'expected member with targetId to have Member shape');
+assert(isMember(member), "expected member with targetId to have Member shape");
 
-expect(member.role).toBe('admin');
+expect(member.role).toBe("admin");
 ```
 
 `expect(x).toBeDefined()` does not narrow — TypeScript still sees `x` as possibly `undefined` after. Use `assert` when you need narrowing.
@@ -125,12 +125,12 @@ Anti-pattern:
 ```ts
 // ❌ Non-null assertion — no runtime check, unhelpful failure
 const member = response.members.find((m) => m.userId === targetId)!;
-expect(member.role).toBe('admin');
+expect(member.role).toBe("admin");
 
 // ✅ Assert, then read
 const member = response.members.find((m) => m.userId === targetId);
-assert(member, 'expected member with targetId');
-expect(member.role).toBe('admin');
+assert(member, "expected member with targetId");
+expect(member.role).toBe("admin");
 ```
 
 ## Snapshots
@@ -165,7 +165,7 @@ When the same non-deterministic shape recurs across many tests, register a **cus
 
 ```ts
 expect.addSnapshotSerializer({
-  test: (val) => typeof val === 'string' && /^[0-9a-f-]{36}$/.test(val),
+  test: (val) => typeof val === "string" && /^[0-9a-f-]{36}$/.test(val),
   serialize: () => '"<uuid>"',
 });
 ```
@@ -227,10 +227,7 @@ expect(user).toMatchInlineSnapshot();
 //   id: 'abc-123', createdAt: '2026-05-03T...' change every run
 
 // ✅ Property matchers replace the non-deterministic fields
-expect(user).toMatchInlineSnapshot(
-  { id: expect.any(String), createdAt: expect.any(Date) },
-  `...`,
-);
+expect(user).toMatchInlineSnapshot({ id: expect.any(String), createdAt: expect.any(Date) }, `...`);
 ```
 
 ```ts
@@ -244,7 +241,7 @@ expect(true).toBe(true);
 
 // ✅ The migration must succeed; if it doesn't, the test must fail
 await migrate();
-await expect(db.tableExists('users')).resolves.toBe(true);
+await expect(db.tableExists("users")).resolves.toBe(true);
 ```
 
 ```ts
@@ -254,5 +251,5 @@ expect(received).toHaveLength(1);
 
 // ✅ Await the signal the production code already emits
 const message = await subscriber.next();
-expect(message).toMatchObject({ topic: 'events.created' });
+expect(message).toMatchObject({ topic: "events.created" });
 ```
