@@ -1,7 +1,5 @@
 # JavaScript Standards
 
-**Prerequisite:** Also follow the rules in [Dependencies](../engineering/dependencies.md).
-
 ## Philosophy
 
 - **Web Native:** Prefer web-native solutions and browser-standard APIs.
@@ -76,7 +74,6 @@
 
 - **Task Runners:** Use a dedicated task runner (e.g., moonrepo) if present.
 - **Scripts:** If no task runner exists, `package.json` scripts are acceptable.
-- **Implementation Hygiene:** Do not iterate on broken implementations. Identify the root cause and fix it before proceeding.
 
 ## Dependencies
 
