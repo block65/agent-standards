@@ -12,11 +12,26 @@ uses `git diff -U0` (the finest-grained split). Does not commit.
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
 from dataclasses import dataclass, field
 from typing import NoReturn
+
+
+def chdir_to_repo_for(file: str) -> str:
+    """Resolve `file` to absolute, chdir to its directory, and return the absolute path.
+
+    Lets the script work regardless of the caller's cwd: all subsequent `git`
+    calls run inside the target file's repository.
+    """
+    abspath = os.path.abspath(file)
+    parent = os.path.dirname(abspath) or "."
+    if not os.path.isdir(parent):
+        die(f"directory does not exist: {parent}")
+    os.chdir(parent)
+    return abspath
 
 HUNK_RE = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@(.*)$")
 
@@ -267,7 +282,7 @@ def main(argv: list[str]) -> None:
             rest = rest[1:]
         if len(rest) != 1:
             usage()
-        list_hunks(rest[0], staged=staged)
+        list_hunks(chdir_to_repo_for(rest[0]), staged=staged)
         return
 
     unstage = False
@@ -276,7 +291,7 @@ def main(argv: list[str]) -> None:
         argv = argv[1:]
     if len(argv) < 2:
         usage()
-    stage(argv[0], argv[1:], unstage=unstage)
+    stage(chdir_to_repo_for(argv[0]), argv[1:], unstage=unstage)
 
 
 if __name__ == "__main__":
