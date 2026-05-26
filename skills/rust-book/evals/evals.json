@@ -1,0 +1,43 @@
+{
+  "skill_name": "rust-book",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Write an AGENTS.md guide for our Rust repo focused on error handling and concurrent tool execution. The project uses tokio and has multiple agents calling external APIs in parallel.",
+      "expected_output": "A dense AGENTS.md with: actionable rules for Result/Error types, the ? operator, custom error types via thiserror/anyhow, Arc<Mutex<T>> patterns for shared state, mpsc channels, and tokio::spawn patterns. Should reference Rust Book chapters ch09 and ch16/ch17.",
+      "files": [],
+      "assertions": [
+        "The output is a Markdown document with clear section headers",
+        "The guide covers Result<T, E> and the ? operator for error propagation",
+        "The guide includes at least one concrete Rust code snippet",
+        "The guide addresses concurrent execution (threads, async, or channels)",
+        "The guide avoids generic advice and stays Rust-specific"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I'm setting up a new Rust project. Can you set up the rust-book knowledge base using the Rust book source at /tmp/rust-book/src, then generate an idiomatic Rust style guide covering ownership, traits, and collections for our team?",
+      "expected_output": "First runs the distiller script (or explains how to if not already done), then uses get_table_of_contents to identify chapters ch04 (ownership), ch08 (collections), ch10 (traits), then generates a style guide grounded in those chapters.",
+      "files": [],
+      "assertions": [
+        "The agent checks for or attempts to run the distiller script",
+        "The agent consults the Table of Contents to identify relevant chapters",
+        "The final guide covers ownership/borrowing rules",
+        "The final guide covers trait usage patterns",
+        "The final guide includes code examples"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Generate a concise Rust best-practices cheat sheet for smart pointers and interior mutability. Format it as a table of when to use Box, Rc, Arc, RefCell, and Mutex.",
+      "expected_output": "A structured reference document (possibly with a table) covering Box<T>, Rc<T>, Arc<T>, RefCell<T>, and Mutex<T> with use cases and trade-offs, drawn from Rust Book chapter 15.",
+      "files": [],
+      "assertions": [
+        "The output includes Box<T>, Rc<T>, Arc<T>, RefCell<T>, and Mutex<T>",
+        "The output includes a comparison table or structured list of when to use each",
+        "The output includes at least one code snippet showing the syntax",
+        "The content is Rust-specific and technically accurate"
+      ]
+    }
+  ]
+}
