@@ -13,6 +13,9 @@
 
 - **All user-facing strings must be translatable.** Use `<FormattedMessage>` with `defaultMessage` and `description`. `description` is mandatory — it provides translator context.
 - **No hardcoded strings** in JSX for anything a user reads.
+- **Never set explicit IDs** — react-intl auto-generates them.
+- **Tree-shaking:** `defineMessage` for single strings, `defineMessages` for enums/groups.
+- **Common strings:** store shared strings like "Saved" and "Updated" in a central `i18n.ts` file.
 
 ## Styling
 

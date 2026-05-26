@@ -115,12 +115,6 @@
 
 - **`CustomError` over string matching:** Differentiate error types with `CustomError`, not string comparison.
 
-## i18n
-
-- **react-intl:** Never set explicit IDs — they are auto-generated.
-- **Tree-shaking:** Use `defineMessage` for single strings, `defineMessages` for enums/groups.
-- **Common strings:** Store shared strings like "Saved" and "Updated" in a central `i18n.ts` file.
-
 ## Troubleshooting
 
 - **Diagnostic approach:** Use evidence-based exploration. Identify the root cause before changing anything — do not whack-a-mole.
