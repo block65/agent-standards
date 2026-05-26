@@ -11,16 +11,16 @@ files instead of grep/tail/sed against stdout or `trace.zip`.**
 
 ## What lives under `.last-run/`
 
-| File | When written | What it contains |
-| --- | --- | --- |
-| `failures.md` | every run | Index of failed tests + "tests that ran" table on green runs |
-| `failures/<slug>.md` | failures only | Per-failure detail: error, page errors, console, 4xx/5xx, slowest action/request, timeline, time budget, artifacts |
-| `passes/<slug>.md` | passes with trace | Per-pass anti-claim summary: verdict + slowest action/request + time budget |
-| `timings.md` | every run | Per-test latency table: backend p50/p95, frontend p50/p95, slowest action, slowest backend |
-| `trends.jsonl` | every run (append) | One row per test per run, ring-buffered (50/test). Read by `compare`. |
-| `logs.md` | failures + logSources configured | Service-side logs interleaved by timestamp, delta-between-entries column |
-| `sources.json` | runs with logSources configured | Source list the `logs` subcommand reads by default |
-| `report.json` | every run | Playwright's built-in JSON report (structured) |
+| File                 | When written                     | What it contains                                                                                                   |
+| -------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `failures.md`        | every run                        | Index of failed tests + "tests that ran" table on green runs                                                       |
+| `failures/<slug>.md` | failures only                    | Per-failure detail: error, page errors, console, 4xx/5xx, slowest action/request, timeline, time budget, artifacts |
+| `passes/<slug>.md`   | passes with trace                | Per-pass anti-claim summary: verdict + slowest action/request + time budget                                        |
+| `timings.md`         | every run                        | Per-test latency table: backend p50/p95, frontend p50/p95, slowest action, slowest backend                         |
+| `trends.jsonl`       | every run (append)               | One row per test per run, ring-buffered (50/test). Read by `compare`.                                              |
+| `logs.md`            | failures + logSources configured | Service-side logs interleaved by timestamp, delta-between-entries column                                           |
+| `sources.json`       | runs with logSources configured  | Source list the `logs` subcommand reads by default                                                                 |
+| `report.json`        | every run                        | Playwright's built-in JSON report (structured)                                                                     |
 
 ## The exact debugging procedure
 
@@ -28,9 +28,11 @@ files instead of grep/tail/sed against stdout or `trace.zip`.**
    `cd tests/e2e && pnpm test ...`, that's it.
 
 2. **Read the failure index first.**
+
    ```
    Read <e2e-dir>/.last-run/failures.md
    ```
+
    On a green run it says `0` failures and lists tests that ran — don't
    invent a problem. On a red run it links per-failure detail.
 
@@ -43,17 +45,17 @@ files instead of grep/tail/sed against stdout or `trace.zip`.**
    - **Network failures** — 4xx/5xx with status, method, URL, ms. Also
      surfaces requests that never resolved (`statusText: "(no response)"`).
    - **Slowest requests** — top 5 with median context
-   - **Failing actions** — Playwright calls that errored; *incomplete*
+   - **Failing actions** — Playwright calls that errored; _incomplete_
      actions (killed by timeout/crash) are tagged so they aren't missed.
      Each failing action includes Playwright's **actionability log** — the
      internal step-by-step ("attempting click action", "element is outside
      of the viewport", "retrying click action") that tells you EXACTLY
-     why the retry loop failed. Highlighted phrases like *outside of the
-     viewport* / *intercepts pointer events* / *not stable* are the actual
+     why the retry loop failed. Highlighted phrases like _outside of the
+     viewport_ / _intercepts pointer events_ / _not stable_ are the actual
      cause. The error message is usually just "Timeout exceeded" — the
      actionability log is where the truth lives.
    - **Slowest actions** — top 5 with median context
-   - **Timeline at failure** *(only on timeout / interrupted / incomplete)* —
+   - **Timeline at failure** _(only on timeout / interrupted / incomplete)_ —
      the last ~2.5s of events before the test died, time-ordered
    - **Time budget** — % of test duration in navigation / waiting on UI /
      user interactions / other. Distinguishes "test is mis-waiting" from
@@ -92,16 +94,16 @@ files instead of grep/tail/sed against stdout or `trace.zip`.**
 Before saying any of these in a report, you **must** cite specific numbers.
 Adjectives without numbers are not a diagnosis.
 
-| Claim | What to cite |
-| --- | --- |
-| "The test is **slow**." | Row from `timings.md` showing duration + backend p50/p95 + slowest action. Or `passes/<slug>.md`'s verdict line. |
-| "The backend is **slow**." | The backend p95 + "slowest backend" cells. If p95 < 500 ms, the backend isn't slow — re-diagnose. |
-| "The test is **flaky**." | Output from `pnpm exec playwright-harness compare <test>`. If pass-rate is ≥ 90% over recent runs, it's a **specific regression**, not flake. |
-| "There's a **race condition**." | The timeline section + the network call that arrived after the assertion fired. Both in the per-failure markdown. |
-| "The page is **flickering / re-rendering / shifting**." | Re-renders in React/Vue/Svelte do NOT cause layout shift by default — the reconciler diffs into existing DOM nodes with the same dimensions. If you're tempted to blame "re-renders", the trace's **actionability log** for the failing action tells you the real reason (e.g. *element is outside of the viewport*, *intercepts pointer events*). A click that fails 30+ times across 20 seconds isn't a button that keeps moving — it's a button that was never in the right place. Read the log; don't speculate about a layout shift you didn't observe. |
-| "Transient / dev-server slowness / cold paths / miniflare / workerd / vite / hot-reload." | None of these are a diagnosis. They're a refusal to look. The failure either had a slowest action ≥ a threshold (cite the row from the per-failure md or `timings.md`) or it didn't. If it didn't, the cause isn't slowness — re-diagnose. **Dev-server hand-wave claims need the same numerical citation as everything else.** If `compare <test>` shows 9/10 passes, the one red isn't "the dev server" — it's a specific event that didn't fire on this run. |
-| "I cannot pinpoint this from harness data alone." | Acceptable **only** after you've named every section you checked and what each one said. "No 4xx/5xx, no console errors, no service WARN/ERROR" is not a check of the harness data — it's a partial check. Did you also look at the slowest action's `target`, the in-window service-log section (which can be empty *and still informative*), the time budget, the ★-marked critical-path requests, the timeline-at-failure section if status=timedOut, and the `(no response)` rows in the network-failures table for stuck-in-flight requests? If you skipped any, the claim is premature. |
-| "The SSE / streaming endpoint is **hung**." | A `text/event-stream` (or other streaming) endpoint showing as `(no response)` / `-1ms` is the protocol working as designed — the connection is held open for the test's lifetime. The trace can see the connection state but **not** whether events are flowing. Four indistinguishable cases from trace alone: (a) connection healthy + events flowing + client handles them, (b) connection healthy + events flowing + client drops them, (c) connection healthy + no events emitted, (d) connection genuinely stuck. Two ways to tell which: the `## Streaming activity` section in the per-failure md (present when the project uses `@block65/playwright-harness/fixtures` — gives byte counts and last-chunk timestamps); the in-window service-log section / `logs.md` (only useful if the project's server logs emit lines). If neither is available, ask before guessing. |
+| Claim                                                                                     | What to cite                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "The test is **slow**."                                                                   | Row from `timings.md` showing duration + backend p50/p95 + slowest action. Or `passes/<slug>.md`'s verdict line.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| "The backend is **slow**."                                                                | The backend p95 + "slowest backend" cells. If p95 < 500 ms, the backend isn't slow — re-diagnose.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| "The test is **flaky**."                                                                  | Output from `pnpm exec playwright-harness compare <test>`. If pass-rate is ≥ 90% over recent runs, it's a **specific regression**, not flake.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| "There's a **race condition**."                                                           | The timeline section + the network call that arrived after the assertion fired. Both in the per-failure markdown.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| "The page is **flickering / re-rendering / shifting**."                                   | Re-renders in React/Vue/Svelte do NOT cause layout shift by default — the reconciler diffs into existing DOM nodes with the same dimensions. If you're tempted to blame "re-renders", the trace's **actionability log** for the failing action tells you the real reason (e.g. _element is outside of the viewport_, _intercepts pointer events_). A click that fails 30+ times across 20 seconds isn't a button that keeps moving — it's a button that was never in the right place. Read the log; don't speculate about a layout shift you didn't observe.                                                                                                                                                                                                                                                                                                                        |
+| "Transient / dev-server slowness / cold paths / miniflare / workerd / vite / hot-reload." | None of these are a diagnosis. They're a refusal to look. The failure either had a slowest action ≥ a threshold (cite the row from the per-failure md or `timings.md`) or it didn't. If it didn't, the cause isn't slowness — re-diagnose. **Dev-server hand-wave claims need the same numerical citation as everything else.** If `compare <test>` shows 9/10 passes, the one red isn't "the dev server" — it's a specific event that didn't fire on this run.                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| "I cannot pinpoint this from harness data alone."                                         | Acceptable **only** after you've named every section you checked and what each one said. "No 4xx/5xx, no console errors, no service WARN/ERROR" is not a check of the harness data — it's a partial check. Did you also look at the slowest action's `target`, the in-window service-log section (which can be empty _and still informative_), the time budget, the ★-marked critical-path requests, the timeline-at-failure section if status=timedOut, and the `(no response)` rows in the network-failures table for stuck-in-flight requests? If you skipped any, the claim is premature.                                                                                                                                                                                                                                                                                       |
+| "The SSE / streaming endpoint is **hung**."                                               | A `text/event-stream` (or other streaming) endpoint showing as `(no response)` / `-1ms` is the protocol working as designed — the connection is held open for the test's lifetime. The trace can see the connection state but **not** whether events are flowing. Four indistinguishable cases from trace alone: (a) connection healthy + events flowing + client handles them, (b) connection healthy + events flowing + client drops them, (c) connection healthy + no events emitted, (d) connection genuinely stuck. Two ways to tell which: the `## Streaming activity` section in the per-failure md (present when the project uses `@block65/playwright-harness/fixtures` — gives byte counts and last-chunk timestamps); the in-window service-log section / `logs.md` (only useful if the project's server logs emit lines). If neither is available, ask before guessing. |
 
 If you cannot cite the relevant cell, the claim is unsupported — say so and
 stop, do not retry-and-hope.
@@ -116,13 +118,13 @@ is a regression even when the test is "green".
 
 **The failure modes to watch for in yourself:**
 
-| What you were tempted to do | Why it's wrong |
-| --- | --- |
-| `toHaveCount(N)` → `toBeVisible()` on a different element | Count assertions verify the **data layer** ("N rows exist", "exactly one charge fired"). Visibility of a sibling/parent proves the UI rendered something; not that the action that *should* have produced N items actually did. If the duplicate-prevention is broken, the visibility assertion still passes. |
-| `toHaveText("exact thing")` → `toBeVisible()` | Was specific content under test? Then content matters — drop to `toContainText(/shape/i)`, not visibility. |
-| `getByRole(specific)` → `getByRole(generic)` or `.first()` | The original selector encoded *what* the user is looking at. Generic + `.first()` matches whatever is on screen — not necessarily the thing under test. |
-| `toHaveURL(...)` → anything | URL assertions were banned to begin with (see Block65 Playwright standard). If you're tempted to "fix" a URL assertion by weakening it, delete it instead — the next action's auto-wait verifies arrival. |
-| Removing an assertion entirely | If the original assertion was load-bearing, deletion = silent regression. If the assertion was always wrong (e.g. asserting on a URL), say so explicitly in the diff: "Removing per Block65 Playwright standard rule X." |
+| What you were tempted to do                                | Why it's wrong                                                                                                                                                                                                                                                                                                |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `toHaveCount(N)` → `toBeVisible()` on a different element  | Count assertions verify the **data layer** ("N rows exist", "exactly one charge fired"). Visibility of a sibling/parent proves the UI rendered something; not that the action that _should_ have produced N items actually did. If the duplicate-prevention is broken, the visibility assertion still passes. |
+| `toHaveText("exact thing")` → `toBeVisible()`              | Was specific content under test? Then content matters — drop to `toContainText(/shape/i)`, not visibility.                                                                                                                                                                                                    |
+| `getByRole(specific)` → `getByRole(generic)` or `.first()` | The original selector encoded _what_ the user is looking at. Generic + `.first()` matches whatever is on screen — not necessarily the thing under test.                                                                                                                                                       |
+| `toHaveURL(...)` → anything                                | URL assertions were banned to begin with (see Block65 Playwright standard). If you're tempted to "fix" a URL assertion by weakening it, delete it instead — the next action's auto-wait verifies arrival.                                                                                                     |
+| Removing an assertion entirely                             | If the original assertion was load-bearing, deletion = silent regression. If the assertion was always wrong (e.g. asserting on a URL), say so explicitly in the diff: "Removing per Block65 Playwright standard rule X."                                                                                      |
 
 **The protocol when an assertion fails:**
 
@@ -130,15 +132,15 @@ is a regression even when the test is "green".
    4xx/5xx, slow step, console error).
 2. If the cause is in the **app**, fix the app. Do not touch the assertion.
 3. If the cause is the assertion being **wrong** (e.g. the design changed and
-   the test was never updated), update it to a *more-specific* assertion that
-   reflects the new design — not a *weaker* one. Cite the design change in
+   the test was never updated), update it to a _more-specific_ assertion that
+   reflects the new design — not a _weaker_ one. Cite the design change in
    the test comment.
 4. If you genuinely cannot tell whether the assertion or the app is wrong,
    stop and ask. The cost of a "green test that doesn't test anything" is
    far higher than the cost of pausing for a human.
 
 A useful self-check: "If the behavior under test silently broke tomorrow,
-would my new assertion catch it?" If the answer is *no*, the new assertion is
+would my new assertion catch it?" If the answer is _no_, the new assertion is
 wrong, regardless of whether it's green today.
 
 ## CLI commands
@@ -170,15 +172,15 @@ That's not a style preference — it's a hard cost. **Before reaching for
 bash, check whether the harness or Playwright itself has the primitive you
 need.** If it does, use it; the invocation is allow-listed and won't block.
 
-| What you were about to bash | Use this instead |
-| --- | --- |
+| What you were about to bash                                              | Use this instead                                                                                                                                                                             |
+| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `for i in 1 2 3; do pnpm exec playwright test … done` (sample pass-rate) | `pnpm exec playwright test … --repeat-each 3`. Playwright runs the spec N times sequentially, all results land in `trends.jsonl`, then `playwright-harness compare <test>` reads the result. |
-| `tail`/`grep` server logs by hand | `pnpm exec playwright-harness logs [--grep <pat>] [--min-severity warning] [--window <a>..<b>]` |
-| Pipe `tilt logs …` / `wrangler tail …` through `grep` | Define a `logSource` in `defineReporter({...})`; the reporter persists it to `sources.json` so the `logs` subcommand picks it up automatically. |
-| `unzip trace.zip` / `bsdtar -xf` | `pnpm exec playwright-harness trace --latest` (or a slug-prefix) |
-| `cat`/`head`/`tail` a `.last-run/` file | `Read` directly — the tool already takes a path |
-| Roll your own pass-rate calc from logs | `pnpm exec playwright-harness compare <test>` |
-| Diff this run vs last run by hand | Same — `compare` shows drift over the trend buffer |
+| `tail`/`grep` server logs by hand                                        | `pnpm exec playwright-harness logs [--grep <pat>] [--min-severity warning] [--window <a>..<b>]`                                                                                              |
+| Pipe `tilt logs …` / `wrangler tail …` through `grep`                    | Define a `logSource` in `defineReporter({...})`; the reporter persists it to `sources.json` so the `logs` subcommand picks it up automatically.                                              |
+| `unzip trace.zip` / `bsdtar -xf`                                         | `pnpm exec playwright-harness trace --latest` (or a slug-prefix)                                                                                                                             |
+| `cat`/`head`/`tail` a `.last-run/` file                                  | `Read` directly — the tool already takes a path                                                                                                                                              |
+| Roll your own pass-rate calc from logs                                   | `pnpm exec playwright-harness compare <test>`                                                                                                                                                |
+| Diff this run vs last run by hand                                        | Same — `compare` shows drift over the trend buffer                                                                                                                                           |
 
 The harness is "complete" when an agent never has to reach for bash to
 debug a test failure. If you find yourself doing so and there's no clear
@@ -195,6 +197,7 @@ thing a team automates — and notes about "this is interactive" are usually
 stale relative to the current implementation.
 
 A useful self-check before declining:
+
 - Does the relevant `*.setup.ts` / fixture / `globalSetup` file exist?
 - Does it read from anything that looks like an automation source — server
   logs, a test mail server, an API client, a service in `test-mode`?
@@ -230,9 +233,11 @@ shows service logs interleaved by timestamp with delta-between-entries —
 read that first.
 
 If logs.md isn't present or you need more lines, use the CLI:
+
 ```
 pnpm exec playwright-harness logs --min-severity warning
 ```
+
 This reads `.last-run/sources.json` (set by the project's reporter
 config) and runs each command, parsing per-source format.
 

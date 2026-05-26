@@ -10,7 +10,7 @@ E2E tests replace a human QA tester. Their job is to exercise real flows the way
 
 2. **Never branch inside a test.** No `if`/`switch`/`try` to handle alternate product states. One test = one linear user journey. If the product behaves two ways, write two tests.
 
-3. **Never use arbitrary sleeps.** `page.waitForTimeout(N)`, custom `sleep()`, `setTimeout` — all banned. Playwright's web-first assertions auto-wait. Wait for *UI effects* (a visible element, a status message, a row appearing). Do not wait on network responses as a primary synchronisation strategy — `page.waitForResponse` is an escape hatch for silent background work only, see the assertions section.
+3. **Never use arbitrary sleeps.** `page.waitForTimeout(N)`, custom `sleep()`, `setTimeout` — all banned. Playwright's web-first assertions auto-wait. Wait for _UI effects_ (a visible element, a status message, a row appearing). Do not wait on network responses as a primary synchronisation strategy — `page.waitForResponse` is an escape hatch for silent background work only, see the assertions section.
 
 4. **Never match exact copy.** Use regex and `toContainText` for human-facing strings when copy genuinely is the thing under test. For identity assertions (which page am I on, which row is this), don't match copy at all — see the selector rules below.
 
@@ -61,7 +61,7 @@ await page
 
 Filtering by data the test created is consistent with the no-text-matching rule: the string is yours, not the product's. Do not invent dynamic testids like `data-testid={`row-${user.id}`}` to avoid this pattern — that's testid sprawl, and role-based collection selection is the correct tool.
 
-This is also how navigation is *implicitly* verified in most tests. After clicking "Listings" in the nav, the test's next action is typically to find a specific listing — `page.getByRole("row").filter({ hasText: listingTitle })`. The row can't be found unless the listings page mounted and the data loaded. The find *is* the navigation check; no separate page-identity assertion is needed.
+This is also how navigation is _implicitly_ verified in most tests. After clicking "Listings" in the nav, the test's next action is typically to find a specific listing — `page.getByRole("row").filter({ hasText: listingTitle })`. The row can't be found unless the listings page mounted and the data loaded. The find _is_ the navigation check; no separate page-identity assertion is needed.
 
 ### Job 3: terminal-step assertions (the test's last action)
 
@@ -70,9 +70,7 @@ When the test's last step has no follow-up action whose auto-wait would verify s
 ```ts
 // ✅ Terminal step: confirm the user's data appears where they expect
 await page.getByRole("link", { name: "View invoice" }).click();
-await expect(
-  page.getByRole("article").filter({ hasText: invoiceNumber }),
-).toBeVisible();
+await expect(page.getByRole("article").filter({ hasText: invoiceNumber })).toBeVisible();
 ```
 
 For "did the user leave page X" (logout, cancel, close modal), use the negative form on something the previous page contained — typically a role-based element, falling back to a testid if no role fits:
@@ -86,16 +84,16 @@ await expect(page.getByRole("navigation", { name: "Primary" })).not.toBeVisible(
 
 Most pages don't need one. A test that navigates to a page and then does something on that page is verified by the doing — no marker required. A testid on a page-level component is justified only when:
 
-- The test is a terminal step *and* the page has no structural role or content that uniquely identifies it (a dashboard of mixed widgets, a profile page, a status screen with no specific list or form).
+- The test is a terminal step _and_ the page has no structural role or content that uniquely identifies it (a dashboard of mixed widgets, a profile page, a status screen with no specific list or form).
 - After all other options — role of the structural element, role + filter on user data, role of the primary content region — none can pick out "the user reached this page" without ambiguity.
 
-Even then, the testid is the assertion of *last resort* for a terminal step, not a routine identity marker for every page. The `ListingsPage` and `OrgPage` style of page-wide testid is mostly unnecessary; the things on the listings page have roles, and the things in the org have data the test produced.
+Even then, the testid is the assertion of _last resort_ for a terminal step, not a routine identity marker for every page. The `ListingsPage` and `OrgPage` style of page-wide testid is mostly unnecessary; the things on the listings page have roles, and the things in the org have data the test produced.
 
 ### Roles before testids when adding semantics
 
 Before adding a testid to a button-shaped div, a custom dropdown, an unnamed nav, or any other element with a clear semantic role it currently lacks: **fix the role first.** A `<div onClick>` should become a `<button>`. A custom combobox needs `role="combobox"` and the required ARIA properties. A page with multiple `<nav>` regions needs `aria-label` on each.
 
-Genuine double win: accessibility correctness *and* testability, with the test improvement as a side effect of fixing the real problem. Testid is the right tool when role + accessible name genuinely can't pick out the element (one of several menu items, an icon button with no name, a state container that needs disambiguation); roles are the right tool for *what kind of thing* (a button, a navigation region, a heading). Never invent ARIA roles for application-specific concepts — the role taxonomy is fixed, and roles that lie are worse than testids.
+Genuine double win: accessibility correctness _and_ testability, with the test improvement as a side effect of fixing the real problem. Testid is the right tool when role + accessible name genuinely can't pick out the element (one of several menu items, an icon button with no name, a state container that needs disambiguation); roles are the right tool for _what kind of thing_ (a button, a navigation region, a heading). Never invent ARIA roles for application-specific concepts — the role taxonomy is fixed, and roles that lie are worse than testids.
 
 ### Adding testids: convention
 
@@ -121,9 +119,7 @@ The native OS file picker cannot be driven through the DOM, and clicking the vis
 
 ```ts
 // ✅ Drive the file input directly
-await page
-  .getByLabel("Upload avatar")
-  .setInputFiles("./fixtures/avatar.png");
+await page.getByLabel("Upload avatar").setInputFiles("./fixtures/avatar.png");
 await expect(page.getByTestId("avatar-preview")).toBeVisible();
 ```
 
@@ -157,7 +153,7 @@ await page
   .click();
 ```
 
-A navigation event firing doesn't prove the right destination was reached — error pages, login redirects, and onboarding detours all fire `framenavigated` too. Explicit `waitForURL`, `waitForLoadState`, or `waitForEvent('framenavigated')` are only correct for the narrow case of multi-step redirect chains where you need to wait for the *final* navigation before asserting. Even then, the actual verification is done by the next action you perform.
+A navigation event firing doesn't prove the right destination was reached — error pages, login redirects, and onboarding detours all fire `framenavigated` too. Explicit `waitForURL`, `waitForLoadState`, or `waitForEvent('framenavigated')` are only correct for the narrow case of multi-step redirect chains where you need to wait for the _final_ navigation before asserting. Even then, the actual verification is done by the next action you perform.
 
 `waitForLoadState('networkidle')` is banned outright on any app with websockets, long-polling, analytics beacons, or background refresh — which is most SaaS apps. It will either time out or pass meaninglessly. Wait on the specific thing you care about.
 
@@ -229,16 +225,14 @@ test("user can submit a draft item", async ({ page, authedUser }) => {
   await test.step("item appears in public results", async () => {
     await page.getByRole("link", { name: "Browse items" }).click();
     // Terminal step — assert what the user came to see
-    await expect(
-      page.getByRole("link").filter({ hasText: itemTitle }),
-    ).toBeVisible();
+    await expect(page.getByRole("link").filter({ hasText: itemTitle })).toBeVisible();
   });
 });
 ```
 
 ### Setup through the fastest reliable path
 
-UI is for exercising the feature *under test*. Everything else — auth, seed data, account state — goes through the API or a fixture. Do not log in through the login form in every test; use `storageState`.
+UI is for exercising the feature _under test_. Everything else — auth, seed data, account state — goes through the API or a fixture. Do not log in through the login form in every test; use `storageState`.
 
 ### Isolation
 
@@ -323,9 +317,10 @@ If a state change matters, it changes the UI — different buttons appear, diffe
 
 ```ts
 // ❌ Reading state through an attribute
-await expect(
-  page.getByRole("article").filter({ hasText: title }),
-).toHaveAttribute("data-status", "active");
+await expect(page.getByRole("article").filter({ hasText: title })).toHaveAttribute(
+  "data-status",
+  "active",
+);
 
 // ✅ The user-visible consequence of "active" is that Pause exists
 await page
@@ -335,9 +330,9 @@ await page
   .click();
 ```
 
-If the state has no user-visible consequence, you're testing internal behaviour and the test belongs in a different layer (unit, component, or contract tests on the state machine). If the state *does* have a UI consequence but you're tempted to skip checking it because "I just want to confirm the listing is active before continuing", that's not a test, it's hedging against your own setup — drop it. The next step will fail loudly if the setup was wrong.
+If the state has no user-visible consequence, you're testing internal behaviour and the test belongs in a different layer (unit, component, or contract tests on the state machine). If the state _does_ have a UI consequence but you're tempted to skip checking it because "I just want to confirm the listing is active before continuing", that's not a test, it's hedging against your own setup — drop it. The next step will fail loudly if the setup was wrong.
 
-The exception is Playwright's built-in ARIA-state assertions: `toBeDisabled()`, `toBeChecked()`, `toBeFocused()`, `toBeExpanded()`. These check states that *are* user-visible by definition (a disabled button looks disabled to a screen reader and to a user) and use ARIA, not custom data attributes.
+The exception is Playwright's built-in ARIA-state assertions: `toBeDisabled()`, `toBeChecked()`, `toBeFocused()`, `toBeExpanded()`. These check states that _are_ user-visible by definition (a disabled button looks disabled to a screen reader and to a user) and use ARIA, not custom data attributes.
 
 ## Coverage strategy
 
@@ -385,7 +380,7 @@ Keep locators inline in the test when used once. Promote to a page-object helper
 
 ### Multiple user roles
 
-When the product has distinct user types (admin, viewer, member, expired-trial, etc.), write a fixture per role. Do not parameterise a single `authedUser` fixture and branch inside the test on which role it produced — that violates the no-branching rule. The fixture *body* can take parameters and call `createUserViaApi({ role: 'admin' })`; the *test* receives a fully-formed `adminUser` and never asks what role it is.
+When the product has distinct user types (admin, viewer, member, expired-trial, etc.), write a fixture per role. Do not parameterise a single `authedUser` fixture and branch inside the test on which role it produced — that violates the no-branching rule. The fixture _body_ can take parameters and call `createUserViaApi({ role: 'admin' })`; the _test_ receives a fully-formed `adminUser` and never asks what role it is.
 
 ## Flakiness
 
@@ -437,24 +432,43 @@ await expect(page).toHaveURL(/\/dashboard/);
 await expect(page.getByRole("heading", { name: /dashboard/i })).toBeVisible();
 await expect(page.getByTestId("dashboard")).toBeVisible();
 // ✅ No identity assertion — do the next thing
-await page.getByRole("row").filter({ hasText: itemTitle }).getByRole("button", { name: "Edit" }).click();
+await page
+  .getByRole("row")
+  .filter({ hasText: itemTitle })
+  .getByRole("button", { name: "Edit" })
+  .click();
 ```
 
 ```ts
 // ❌ Ceremonial page-identity testid before doing the next thing
 await page.getByRole("link", { name: "Listings" }).click();
 await expect(page.getByTestId("ListingsPage")).toBeVisible();
-await page.getByRole("row").filter({ hasText: title }).getByRole("button", { name: "Edit" }).click();
+await page
+  .getByRole("row")
+  .filter({ hasText: title })
+  .getByRole("button", { name: "Edit" })
+  .click();
 // ✅ Drop the assertion — the row filter's auto-wait verifies the listings page rendered
 await page.getByRole("link", { name: "Listings" }).click();
-await page.getByRole("row").filter({ hasText: title }).getByRole("button", { name: "Edit" }).click();
+await page
+  .getByRole("row")
+  .filter({ hasText: title })
+  .getByRole("button", { name: "Edit" })
+  .click();
 ```
 
 ```ts
 // ❌ Text-scoping a region
-await page.getByText("Account settings").locator("..").getByRole("button", { name: "Save" }).click();
+await page
+  .getByText("Account settings")
+  .locator("..")
+  .getByRole("button", { name: "Save" })
+  .click();
 // ✅ Scope by a landmark role, not by copy
-await page.getByRole("region", { name: "Account settings" }).getByRole("button", { name: "Save" }).click();
+await page
+  .getByRole("region", { name: "Account settings" })
+  .getByRole("button", { name: "Save" })
+  .click();
 ```
 
 ```ts
@@ -478,9 +492,10 @@ await page.getByRole("row").filter({ hasText: item.title }).click();
 
 ```ts
 // ❌ Reading internal state through a data attribute
-await expect(
-  page.getByRole("article").filter({ hasText: title }),
-).toHaveAttribute("data-status", "active");
+await expect(page.getByRole("article").filter({ hasText: title })).toHaveAttribute(
+  "data-status",
+  "active",
+);
 await page.getByRole("button", { name: "Edit" }).click();
 // ✅ The state's UI consequence is the assertion — and the next step
 await page

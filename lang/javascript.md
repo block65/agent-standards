@@ -44,7 +44,7 @@
   2. Rethrow so the established handler captures it (wrap with `{ cause: err }` if adding context).
   3. Log at the appropriate level — `error`, `warn`, `debug`, or `trace` per the Logging rubric.
   4. Throw a `CustomError` enriched with `debug` and `details` fields so the UI layer can surface useful context to the user.
-  A catch that does none of these is a swallow, regardless of how it's spelled.
+     A catch that does none of these is a swallow, regardless of how it's spelled.
 - **Preserve the cause** when wrapping: always pass `{ cause: err }` so the original stack survives.
 - **Never silently swallow rejections.** All of these are bugs disguised as defensive code:
   - `.catch(() => {})`
