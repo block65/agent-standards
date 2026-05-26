@@ -93,6 +93,29 @@ A running list of things to eat.
 - Sun Cake
 EOF
 
+cat > src/dup.md << 'EOF'
+intro line
+aaa
+bbb
+ccc
+PIVOT
+ddd
+eee
+fff
+spacer one
+spacer two
+spacer three
+spacer four
+aaa
+bbb
+ccc
+PIVOT
+ddd
+eee
+fff
+tail line
+EOF
+
 git add -A
 git commit -m "test fixtures"
 
@@ -183,6 +206,34 @@ A running list of things to eat.
 - Gua Bao
 - Milkfish Belly Soup
 - Braised Pork Rice
+EOF
+
+# Two identical 7-line blocks (regions A and B) plus a tail change. Changing
+# the PIVOT in region A (hunk 1) and the tail (hunk 2) makes two widely-spaced
+# hunks. The block content is identical, so a patch emitted with the WRONG @@
+# start coordinate gets relocated by git onto region B — exposing any cross-hunk
+# header bug that fuzz would otherwise hide.
+cat > src/dup.md << 'EOF'
+intro line
+aaa
+bbb
+ccc
+PIVOT_NEW
+ddd
+eee
+fff
+spacer one
+spacer two
+spacer three
+spacer four
+aaa
+bbb
+ccc
+PIVOT
+ddd
+eee
+fff
+tail changed
 EOF
 
 echo "Test repo ready at $DIR"

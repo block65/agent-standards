@@ -5,7 +5,7 @@ set -euo pipefail
 # Usage: run-tests.sh
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-STAGE="$SCRIPT_DIR/scripts/stage-hunk.sh"
+STAGE="$SCRIPT_DIR/scripts/stage_hunk.py"
 SETUP="$SCRIPT_DIR/tests/setup-test-repo.sh"
 PASS=0
 FAIL=0
@@ -296,6 +296,23 @@ run_test "addition adjacent to deletion (taiwan)" eval19
 run_test "three pure-deletions 1,3,5 (taiwan)" eval20
 run_test "--unstage one pure-deletion (taiwan)" eval21
 
+# Eval 22: Cross-hunk header coordinates (dup.md). Stage hunk 1 — region A's
+# PIVOT change at line 5 — while an identical block (region B, PIVOT at line 16)
+# sits below. If an emitted hunk carries the wrong @@ start, git relocates the
+# change onto region B. Assert it landed on region A and was actually staged.
+eval22() {
+  "$STAGE" src/dup.md 1
+  local staged at
+  staged=$(git diff --cached src/dup.md)
+  echo "$staged" | grep -q '^+PIVOT_NEW' || return 1
+  # Hunk must anchor in region A (old line <= 8), not region B (~13).
+  at=$(echo "$staged" | grep -oE '^@@ -[0-9]+' | grep -oE '[0-9]+' | head -1)
+  [[ -n "$at" && "$at" -le 8 ]] || return 1
+  # Region A's change must now be staged, so it is gone from the unstaged diff.
+  ! git diff src/dup.md | grep -q '^+PIVOT_NEW'
+}
+run_test "cross-hunk header coords land on right block (dup)" eval22
+
 echo ""
-echo "$PASS passed, $FAIL failed out of 21"
+echo "$PASS passed, $FAIL failed out of 22"
 [[ $FAIL -eq 0 ]]
