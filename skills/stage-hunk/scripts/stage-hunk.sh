@@ -121,7 +121,12 @@ else
   fi
 fi
 
-# Resolve hunk indices to line ranges using U0 diff (matches --list-hunks numbering)
+# Resolve hunk indices using the U0 diff (matches --list-hunks numbering).
+# Modifications and additions are recorded as new-side line ranges. Pure
+# deletions (new_count = 0) have no new-side lines, so they are recorded as
+# old-side ranges instead. Both are matched geometrically in flush_hunk, so
+# resolution stays correct regardless of how U0 splits hunks that the
+# patch-building U3 diff later merges back together.
 if [[ $UNSTAGE -eq 1 ]]; then
   DIFF_U0=$(git diff -U0 --cached -- "$FILE")
 else
@@ -129,19 +134,27 @@ else
 fi
 hunk_idx=0
 resolved_ranges=()
+delete_old_ranges=()
 while IFS= read -r line; do
   if [[ "$line" =~ ^@@\ -([0-9]+)(,([0-9]+))?\ \+([0-9]+)(,([0-9]+))?\ @@ ]]; then
     ((hunk_idx++)) || true
     if [[ -n "${wanted_hunks[$hunk_idx]:-}" ]]; then
+      old_start="${BASH_REMATCH[1]}"
+      old_count="${BASH_REMATCH[3]:-1}"
       new_start="${BASH_REMATCH[4]}"
       new_count="${BASH_REMATCH[6]:-1}"
-      new_end=$(( new_start + new_count - 1 ))
-      resolved_ranges+=("${new_start}-${new_end}")
+      if [[ $new_count -eq 0 ]]; then
+        old_end=$(( old_start + old_count - 1 ))
+        delete_old_ranges+=("${old_start}-${old_end}")
+      else
+        new_end=$(( new_start + new_count - 1 ))
+        resolved_ranges+=("${new_start}-${new_end}")
+      fi
     fi
   fi
 done <<< "$DIFF_U0"
 
-if [[ ${#resolved_ranges[@]} -eq 0 ]]; then
+if [[ ${#resolved_ranges[@]} -eq 0 && ${#delete_old_ranges[@]} -eq 0 ]]; then
   echo "error: no hunks matched indices $* (file has $hunk_idx hunks)" >&2
   exit 1
 fi
@@ -166,9 +179,15 @@ parse_ranges() {
 
 RANGES=$(parse_ranges "$LINE_SPEC") || exit 1
 
+# Old-side ranges for pure-deletion hunks (selecting deletions that have no
+# new-side line to match against).
+OLD_LINE_SPEC=$(IFS=','; echo "${delete_old_ranges[*]}")
+OLD_RANGES=$(parse_ranges "$OLD_LINE_SPEC") || exit 1
+
 # Check if a new-side line number falls within any requested range
 in_range() {
   local line="$1"
+  [[ -z "$RANGES" ]] && return 1
   while read -r range_start range_end; do
     if [[ $line -ge $range_start && $line -le $range_end ]]; then
       return 0
@@ -177,11 +196,26 @@ in_range() {
   return 1
 }
 
+# Check if an old-side line number falls within a selected pure-deletion
+# range. This is how deletions are gated, mirroring how in_range gates
+# additions by new-side geometry.
+in_old_range() {
+  local line="$1"
+  [[ -z "$OLD_RANGES" ]] && return 1
+  while read -r range_start range_end; do
+    if [[ $line -ge $range_start && $line -le $range_end ]]; then
+      return 0
+    fi
+  done <<< "$OLD_RANGES"
+  return 1
+}
+
 # Build a filtered patch.
-# Strategy: walk the diff line by line, tracking new-side line numbers.
-# For each hunk, keep context lines as-is, keep deletions/additions only
-# if the corresponding new-side line is in range. If a hunk has no
-# selected changes after filtering, drop it entirely.
+# Strategy: walk the diff line by line, tracking both new-side and old-side
+# line numbers. For each hunk, keep context lines as-is, keep additions
+# whose new-side line is in range, and keep deletions whose new-side line is
+# in range (modifications) or whose old-side line is in a pure-deletion
+# range. If a hunk has no selected changes after filtering, drop it.
 #
 # HAZARD: BASH_REMATCH is global — any [[ =~ ]] in a called function
 # (e.g. flush_hunk) will overwrite it. Always capture BASH_REMATCH
@@ -194,6 +228,7 @@ build_patch() {
   local hunk_header=""
   local old_start=0 new_start=0 new_count=0
   local current_new_line=0
+  local current_old_line=0
   local header_lines=()
 
   while IFS= read -r line; do
@@ -222,25 +257,30 @@ build_patch() {
 
       hunk_lines=()
       current_new_line=$new_start
+      current_old_line=$old_start
       continue
     fi
 
-    # Track lines within a hunk
+    # Track lines within a hunk. Each entry carries both the new-side and
+    # old-side line number; flush_hunk gates additions by new-side ranges
+    # and pure deletions by old-side ranges.
     case "${line:0:1}" in
       " ")
-        hunk_lines+=("ctx|$current_new_line|$line")
+        hunk_lines+=("ctx|$current_new_line|$current_old_line|$line")
         ((current_new_line++)) || true
+        ((current_old_line++)) || true
         ;;
       "+")
-        hunk_lines+=("add|$current_new_line|$line")
+        hunk_lines+=("add|$current_new_line|$current_old_line|$line")
         ((current_new_line++)) || true
         ;;
       "-")
-        hunk_lines+=("del|$current_new_line|$line")
+        hunk_lines+=("del|$current_new_line|$current_old_line|$line")
+        ((current_old_line++)) || true
         ;;
       *)
         # "\ No newline at end of file" or similar
-        hunk_lines+=("meta|$current_new_line|$line")
+        hunk_lines+=("meta|$current_new_line|$current_old_line|$line")
         ;;
     esac
   done <<< "$DIFF"
@@ -257,7 +297,9 @@ IS_HEADER_PRINTED=0
 NEW_OFFSET=0
 
 flush_hunk() {
-  # Filter: keep context, keep del/add only if in range
+  # Filter: keep context; keep an addition when its new-side line is
+  # selected, and keep a deletion when its new-side line is selected (a
+  # modification) or its old-side line is selected (a pure deletion).
   local filtered=()
   local has_selected_changes=0
   local is_previous_line_kept=1
@@ -265,7 +307,9 @@ flush_hunk() {
   for entry in "${hunk_lines[@]}"; do
     local type="${entry%%|*}"
     local rest="${entry#*|}"
-    local line_number="${rest%%|*}"
+    local new_line_number="${rest%%|*}"
+    rest="${rest#*|}"
+    local old_line_number="${rest%%|*}"
     local content="${rest#*|}"
 
     case "$type" in
@@ -274,7 +318,7 @@ flush_hunk() {
         is_previous_line_kept=1
         ;;
       add)
-        if in_range "$line_number"; then
+        if in_range "$new_line_number"; then
           filtered+=("$content")
           has_selected_changes=1
           is_previous_line_kept=1
@@ -290,7 +334,7 @@ flush_hunk() {
         fi
         ;;
       del)
-        if in_range "$line_number"; then
+        if in_range "$new_line_number" || in_old_range "$old_line_number"; then
           filtered+=("$content")
           has_selected_changes=1
           is_previous_line_kept=1

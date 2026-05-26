@@ -79,6 +79,20 @@ Makes anything glow in the dark.
 - 1 haunted lantern
 EOF
 
+cat > src/taiwan.md << 'EOF'
+# Taiwan Delicacies
+A running list of things to eat.
+- Beef Noodle Soup
+- Xiao Long Bao
+- Bubble Tea
+- Oyster Omelette
+- Stinky Tofu
+- Pineapple Cake
+- Gua Bao
+- Braised Pork Rice
+- Sun Cake
+EOF
+
 git add -A
 git commit -m "test fixtures"
 
@@ -154,6 +168,21 @@ Makes anything glow in the dark.
 
 - 4 firefly tears
 - 1 haunted lantern
+EOF
+
+# Dense list with interleaved pure deletions, a modification, and an
+# addition — U0 splits these finer than U3 merges them, which is the
+# scenario that exposes pure-deletion staging bugs.
+cat > src/taiwan.md << 'EOF'
+# Taiwan Delicacies
+A running list of things to eat.
+- Xiao Long Bao
+- Bubble Tea with extra pearls
+- Oyster Omelette
+- Pineapple Cake
+- Gua Bao
+- Milkfish Belly Soup
+- Braised Pork Rice
 EOF
 
 echo "Test repo ready at $DIR"
