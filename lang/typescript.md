@@ -27,7 +27,7 @@
 
 ## File Naming
 
-- **Components:** `Component.ts` and `Component.css.ts`.
+- **Components:** `Component.tsx` and `Component.css.ts`.
 - **Hooks:** `use-hook.ts` (kebab-case with `use-` prefix).
 
 ## Project Verification

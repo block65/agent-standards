@@ -1,6 +1,6 @@
 # Vitest Standards
 
-Also load: `engineering/testing.md` (testing philosophy and mocking rules).
+**Prerequisite:** Also follow the rules in [Testing Philosophy](testing.md).
 
 Vitest is the unit and integration test surface for TypeScript projects — pure logic, modules, and small system slices that don't need a browser.
 

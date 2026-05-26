@@ -1,6 +1,6 @@
 # Playwright E2E Standards
 
-Also load: `engineering/testing.md` (testing philosophy and mocking rules).
+**Prerequisite:** Also follow the rules in [Testing Philosophy](testing.md).
 
 E2E tests replace a human QA tester. Their job is to exercise real flows the way a real user does and fail loudly when the product is broken. Tests that exist only to be green are worse than no tests at all.
 
