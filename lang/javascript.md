@@ -7,7 +7,8 @@
 
 ## Logging
 
-- **Log generously:** `debug` for flow, `warn` for recoverable conditions, `error` for failures.
+- **Log generously:** `trace` for noisy detail that would otherwise be swallowed (failed parses, feature-test misses, optional-path errors), `debug` for flow, `warn` for recoverable conditions, `error` for failures.
+- **Use the right level.** An expected-but-noted condition is `debug` or `trace`, not `error`. Reserve `error` for things an operator should investigate. The codebase under-leverages levels — pick deliberately.
 - **Never delete logs** after adding them. Adjust the level or compile them out if needed — silent code paths are impossible to debug in retrospect.
 
 ## Functional Style
@@ -36,12 +37,22 @@
 
 ## Error Handling
 
+- **Default is bubble.** Most code should let rejections propagate. If the framework above already turns rejections into observable state — React Query exposes `query.error`, route loaders surface to error boundaries, Hono handlers route through the error pipeline, `withSentry`/equivalents capture unhandled rejections — adding `.catch(console.error)` or wrapping in `try/catch` does nothing the framework isn't already doing. Delete it; just `await`.
+- **Catch only at boundaries where the rejection has nowhere else to go.** Fire-and-forget `waitUntil` / keepalive POSTs (response already sent), top-level entry points outside any handler, code that must continue past a non-essential failure. Everywhere else, bubble.
+- **Every catch must do one of:**
+  1. Manually report — `captureException(err)` or equivalent.
+  2. Rethrow so the established handler captures it (wrap with `{ cause: err }` if adding context).
+  3. Log at the appropriate level — `error`, `warn`, `debug`, or `trace` per the Logging rubric.
+  4. Throw a `CustomError` enriched with `debug` and `details` fields so the UI layer can surface useful context to the user.
+  A catch that does none of these is a swallow, regardless of how it's spelled.
+- **Preserve the cause** when wrapping: always pass `{ cause: err }` so the original stack survives.
 - **Never silently swallow rejections.** All of these are bugs disguised as defensive code:
   - `.catch(() => {})`
   - `.catch(() => undefined)`
   - `.catch(noop)`
+  - `.catch(console.error)` / `.catch(console.warn)` — `console` is banned (see Philosophy) and these almost always sit under a framework that already observes the rejection. Delete them.
   - `.catch(() => ({ items: [] }))` — fabricating an empty/default success shape from a failure is the worst variant; downstream code can't tell the difference between "no items" and "the call failed". If you must return a fallback shape, log/report the error first and document why a fallback is the right behaviour at this boundary.
-  - empty `catch (e) {}`
+  - empty `catch (e) {}` or argless `catch {}` with no body
 - **Never `catch (e) { throw e }`:** No-op. Delete it.
 - **Never `void somePromise()`:** Always `await`, `return`, or route through an established pattern. Add a comment when the intent is non-obvious.
 - **Route through the established error path:** Do not bypass the project's error handler.
