@@ -13,6 +13,11 @@ This skill powers a two-phase system for producing high-quality, idiomatic Rust 
 - **Phase 1 (Build-time):** Run `distill.py` once to pre-process the Rust Book into dense, token-efficient chapter summaries.
 - **Phase 2 (Run-time):** A Planner agent uses `get_table_of_contents` to identify relevant chapters, then an Implementation agent uses `fetch_distilled_chapters` to retrieve only the needed content and write the final guide.
 
+### Paths — two kinds, don't confuse them
+
+- **Shipped skill assets** (`scripts/distill.py`, `references/toc.md`) live inside this skill's own directory. Always address them as `${CLAUDE_PLUGIN_ROOT}/skills/rust-book/...` so the path resolves whether the skill is installed as a plugin or standalone. Do not look for them under a bare `~/.claude/skills/...` path, and do not go hunting for them with the Explore agent — they are exactly where `${CLAUDE_PLUGIN_ROOT}` says.
+- **Generated distilled cache** (`distilled/`) is written once and shared across all projects, so it lives in a stable home location — `~/.claude/skills/rust-book/distilled/` — that survives plugin reinstalls/updates. This is the default `--out-dir` baked into `distill.py`.
+
 ---
 
 ## Phase 1: One-Time Setup — Distill the Rust Book
@@ -27,7 +32,7 @@ ls ~/.claude/skills/rust-book/distilled/
 If it's empty or missing, run the distiller against a local clone of the Rust Book:
 
 ```bash
-python ~/.claude/skills/rust-book/scripts/distill.py \
+python "${CLAUDE_PLUGIN_ROOT}/skills/rust-book/scripts/distill.py" \
   --src-dir /path/to/rust-lang/book/src \
   --provider claude-cli   # or: gemini-cli, copilot-cli
 ```
@@ -47,7 +52,7 @@ Once `~/.claude/skills/rust-book/distilled/` is populated, use the two runtime o
 
 **How to execute:** Read the static ToC file:
 ```
-~/.claude/skills/rust-book/references/toc.md
+${CLAUDE_PLUGIN_ROOT}/skills/rust-book/references/toc.md
 ```
 
 This file lists all chapters with their IDs and one-sentence descriptions. Return it as text.
@@ -90,7 +95,7 @@ Here is the canonical flow when a user asks for a Rust guide:
 User: "Write an AGENTS.md for our Rust repo focusing on error handling and concurrency."
 
 1. PLANNER:
-   - Read references/toc.md
+   - Read ${CLAUDE_PLUGIN_ROOT}/skills/rust-book/references/toc.md
    - Identify relevant chapter IDs (e.g., ["ch09", "ch16"])
 
 2. FETCH CONTENT — two paths, try in order:
@@ -168,7 +173,9 @@ Keep the output dense and actionable — no narrative, no "getting started" fluf
 
 ## Troubleshooting
 
-**Distiller fails with API errors:** Check that the `ANTHROPIC_API_KEY` (or `GEMINI_API_KEY` / `OPENAI_API_KEY`) environment variable is set.
+**Distiller fails to invoke the provider:** The distiller shells out to a local CLI (`claude`, `gemini`, or `copilot`) — no API keys. Confirm the chosen `--provider`'s CLI is installed and authenticated (e.g. run `claude -p hi` to check).
+
+**`${CLAUDE_PLUGIN_ROOT}` is empty:** You're likely running outside the plugin runtime. Either invoke via the skill, or substitute the skill's real directory for `${CLAUDE_PLUGIN_ROOT}/skills/rust-book` in the commands above.
 
 **Chapter file not found:** The distiller names files based on the source markdown filename. Run `ls ~/.claude/skills/rust-book/distilled/` to see available chapters and adjust chapter IDs accordingly.
 
