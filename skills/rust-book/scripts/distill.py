@@ -1,13 +1,22 @@
 #!/usr/bin/env python3
 """
-Rust Book Distiller — Phase 1 build-time script.
+Rust Book Distiller — chapter → dense architectural rules.
 
-Reads chapters from a local rust-lang/book/src clone and distills each
-into dense architectural rules using a local CLI tool. Outputs to a shared
-cache directory for use by the rust-book skill's Phase 2 tools.
+Reads chapters either from a local rust-lang/book/src clone (--src-dir) or
+straight from GitHub (--from-github), and distills each into dense
+architectural rules using a local CLI tool. Output goes to a shared cache
+directory for use by the rust-book skill's Phase 2 tools.
+
+The GitHub mode powers "distill on read": when the skill hits a cache miss
+for a chapter, it runs this script with --from-github --chapter chNN. The raw
+markdown is fetched and compressed entirely inside this subprocess, so the
+full chapter text never enters the calling agent's context — only the distilled
+file does. That is the whole point of the skill: save context tokens.
 
 Usage:
-  python distill.py --src-dir /path/to/rust-lang/book/src
+  python distill.py --src-dir /path/to/rust-lang/book/src      # local clone
+  python distill.py --from-github --chapter ch09               # one chapter from GitHub
+  python distill.py --from-github                              # whole book from GitHub
 
 Providers (no API keys or pip installs required):
   claude-cli  — uses `claude` (Claude Code CLI)
@@ -16,13 +25,18 @@ Providers (no API keys or pip installs required):
 """
 
 import argparse
+import json
 import re
 import subprocess
 import sys
 import time
+import urllib.request
 from pathlib import Path
 
 DEFAULT_OUT_DIR = Path.home() / ".claude" / "skills" / "rust-book" / "distilled"
+
+GITHUB_API = "https://api.github.com/repos/rust-lang/book/contents/src"
+GITHUB_RAW = "https://raw.githubusercontent.com/rust-lang/book"
 
 EXTRACTION_PROMPT = """\
 You are a senior Rust architect. Read this chapter and extract ONLY the 'What' and 'How'. \
@@ -84,22 +98,44 @@ def get_chapter_slug(filename: str) -> str:
     return f"{prefix}_{rest}" if rest else prefix
 
 
-def group_chapter_files(src_dir: Path) -> dict:
-    """Group all .md files by chapter prefix (ch01, ch02, ...).
+def _http_get(url: str) -> bytes:
+    req = urllib.request.Request(url, headers={"User-Agent": "rust-book-distiller"})
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        return resp.read()
 
-    Returns dict mapping chapter_id → sorted list of Path objects.
-    Skips appendix and non-chapter files.
-    """
+
+def _is_chapter_file(name: str) -> bool:
+    """True for chapter source files; skips SUMMARY.md, appendices, non-chapters."""
+    if not name.endswith(".md"):
+        return False
+    if name == "SUMMARY.md" or name.startswith("appendix"):
+        return False
+    return re.match(r'^ch\d+', name) is not None
+
+
+def group_local_chapters(src_dir: Path) -> dict:
+    """Map chapter_id → sorted list of filenames from a local src dir."""
     chapters = {}
     for md_file in sorted(src_dir.glob("*.md")):
-        name = md_file.name
-        if name == "SUMMARY.md" or name.startswith("appendix"):
+        if not _is_chapter_file(md_file.name):
             continue
-        match = re.match(r'^(ch\d+)', name)
-        if not match:
+        chapter_id = re.match(r'^(ch\d+)', md_file.name).group(1)
+        chapters.setdefault(chapter_id, []).append(md_file.name)
+    return chapters
+
+
+def group_github_chapters(ref: str) -> dict:
+    """Map chapter_id → sorted list of filenames in rust-lang/book/src at `ref`."""
+    listing = json.loads(_http_get(f"{GITHUB_API}?ref={ref}").decode("utf-8"))
+    chapters = {}
+    for entry in listing:
+        name = entry.get("name", "")
+        if not _is_chapter_file(name):
             continue
-        chapter_id = match.group(1)
-        chapters.setdefault(chapter_id, []).append(md_file)
+        chapter_id = re.match(r'^(ch\d+)', name).group(1)
+        chapters.setdefault(chapter_id, []).append(name)
+    for chapter_id in chapters:
+        chapters[chapter_id].sort()
     return chapters
 
 
@@ -108,8 +144,16 @@ def main():
         description="Distill the Rust Book chapters into dense architectural rule sets."
     )
     parser.add_argument(
-        "--src-dir", required=True,
-        help="Path to a local rust-lang/book/src/ directory"
+        "--src-dir", default=None,
+        help="Path to a local rust-lang/book/src/ directory (omit when using --from-github)"
+    )
+    parser.add_argument(
+        "--from-github", action="store_true",
+        help="Fetch chapter markdown straight from rust-lang/book on GitHub instead of a local clone"
+    )
+    parser.add_argument(
+        "--ref", default="main",
+        help="Git ref (branch/tag) to fetch from with --from-github (default: main)"
     )
     parser.add_argument(
         "--out-dir", default=str(DEFAULT_OUT_DIR),
@@ -138,16 +182,33 @@ def main():
     )
     args = parser.parse_args()
 
-    src_dir = Path(args.src_dir).expanduser().resolve()
-    out_dir = Path(args.out_dir).expanduser().resolve()
-
-    if not src_dir.exists():
-        print(f"Error: --src-dir '{src_dir}' does not exist.", file=sys.stderr)
+    if not args.from_github and not args.src_dir:
+        print("Error: pass --src-dir <local book/src> or --from-github.", file=sys.stderr)
         sys.exit(1)
 
+    out_dir = Path(args.out_dir).expanduser().resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    chapters = group_chapter_files(src_dir)
+    if args.from_github:
+        source_label = f"github:rust-lang/book@{args.ref}/src"
+        try:
+            chapters = group_github_chapters(args.ref)
+        except Exception as e:
+            print(f"Error: could not list chapters from GitHub: {e}", file=sys.stderr)
+            sys.exit(1)
+
+        def read_chapter_text(name):
+            return _http_get(f"{GITHUB_RAW}/{args.ref}/src/{name}").decode("utf-8")
+    else:
+        src_dir = Path(args.src_dir).expanduser().resolve()
+        if not src_dir.exists():
+            print(f"Error: --src-dir '{src_dir}' does not exist.", file=sys.stderr)
+            sys.exit(1)
+        source_label = str(src_dir)
+        chapters = group_local_chapters(src_dir)
+
+        def read_chapter_text(name):
+            return (src_dir / name).read_text(encoding="utf-8")
 
     if args.chapter:
         chapter_id = args.chapter.lower()
@@ -159,7 +220,7 @@ def main():
 
     model_label = args.model or "(CLI default)"
     print(f"Provider: {args.provider} / Model: {model_label}")
-    print(f"Source:   {src_dir}")
+    print(f"Source:   {source_label}")
     print(f"Output:   {out_dir}")
     print(f"Chapters: {len(chapters)}")
     print()
@@ -167,9 +228,8 @@ def main():
     processed = 0
     skipped = 0
 
-    for chapter_id, files in sorted(chapters.items()):
-        first_name = files[0].name
-        slug = get_chapter_slug(first_name)
+    for chapter_id, names in sorted(chapters.items()):
+        slug = get_chapter_slug(names[0])
         out_file = out_dir / f"{slug}_distilled.md"
 
         if out_file.exists() and not args.overwrite:
@@ -177,7 +237,11 @@ def main():
             skipped += 1
             continue
 
-        combined = [f.read_text(encoding="utf-8") for f in files]
+        try:
+            combined = [read_chapter_text(n) for n in names]
+        except Exception as e:
+            print(f"  [error] {chapter_id}: could not read source: {e}", file=sys.stderr)
+            continue
         chapter_text = "\n\n".join(combined)
 
         # Truncate to ~80k chars — leave headroom for the prompt in the CLI's context window
@@ -195,7 +259,7 @@ def main():
 
         header = (
             f"# Distilled: {chapter_id.upper()}\n\n"
-            f"> Source: {', '.join(f.name for f in files)}\n"
+            f"> Source: {', '.join(names)}\n"
             f"> Provider: {args.provider} / {model_label}\n\n"
             f"---\n\n"
         )

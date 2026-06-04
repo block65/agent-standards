@@ -10,8 +10,13 @@ This skill powers a two-phase system for producing high-quality, idiomatic Rust 
 
 ## Architecture Overview
 
-- **Phase 1 (Build-time):** Run `distill.py` once to pre-process the Rust Book into dense, token-efficient chapter summaries.
-- **Phase 2 (Run-time):** A Planner agent uses `get_table_of_contents` to identify relevant chapters, then an Implementation agent uses `fetch_distilled_chapters` to retrieve only the needed content and write the final guide.
+The whole point of this skill is to **save context tokens**: the orchestrating agent should only ever see *distilled* chapters — never the full Rust Book text. Distillation always happens out-of-context (inside `distill.py`'s subprocess), so the raw chapter never enters the agent's window.
+
+- **Distilled cache (the product):** dense, token-efficient chapter summaries in `distilled/`. Reading these is cheap.
+- **Distill on read (cache miss):** when a needed chapter isn't cached, run `distill.py --from-github --chapter chNN`. It fetches the raw markdown from GitHub and compresses it *inside the subprocess*, writing the distilled file. Only that file enters context. The cache self-populates over time.
+- **Phase 1 (optional pre-warm):** run `distill.py` once over the whole book to fill the cache up front instead of lazily. Not a prerequisite — the skill works cold, distilling chapters on demand.
+
+> Do **not** WebFetch or Read raw chapters into the agent's context as a "fallback" — that pulls the full chapter into the window every time and defeats the entire purpose of the skill. Always go through `distill.py`.
 
 ### Paths — two kinds, don't confuse them
 
@@ -20,7 +25,9 @@ This skill powers a two-phase system for producing high-quality, idiomatic Rust 
 
 ---
 
-## Phase 1: One-Time Setup — Distill the Rust Book
+## Phase 1: Optional Pre-Warm — Distill the Whole Book Up Front
+
+This is **optional**. The skill distills chapters on demand (see Phase 2), so you can skip straight to generating guides. Pre-warming just fills the entire cache in one batch so later runs never pay the first-touch distill cost.
 
 The distilled knowledge base lives at `~/.claude/skills/rust-book/distilled/` — shared across all projects, so you only do this once.
 
@@ -29,12 +36,20 @@ Check whether it has content:
 ls ~/.claude/skills/rust-book/distilled/
 ```
 
-If it's empty or missing, run the distiller against a local clone of the Rust Book:
+To pre-warm everything straight from GitHub (no local clone needed):
+
+```bash
+python "${CLAUDE_PLUGIN_ROOT}/skills/rust-book/scripts/distill.py" \
+  --from-github \
+  --provider claude-cli   # or: gemini-cli, copilot-cli
+```
+
+Or distill from a local clone of the Rust Book if you have one:
 
 ```bash
 python "${CLAUDE_PLUGIN_ROOT}/skills/rust-book/scripts/distill.py" \
   --src-dir /path/to/rust-lang/book/src \
-  --provider claude-cli   # or: gemini-cli, copilot-cli
+  --provider claude-cli
 ```
 
 No API keys or pip installs required — uses whichever CLI tool you have set up.
@@ -72,8 +87,14 @@ This file lists all chapters with their IDs and one-sentence descriptions. Retur
 
 **How to execute:**
 1. For each chapter ID, locate the file in `~/.claude/skills/rust-book/distilled/` matching the pattern `<chapter_id>_*_distilled.md` (e.g., `ch09_error_handling_distilled.md`)
-2. Read each file
-3. Concatenate with this header:
+2. **On a cache miss** (no matching file), distill it on read — run, once per missing chapter:
+   ```bash
+   python "${CLAUDE_PLUGIN_ROOT}/skills/rust-book/scripts/distill.py" \
+     --from-github --chapter <chapter_id> --provider claude-cli
+   ```
+   This fetches the raw markdown from GitHub and writes the distilled file to the cache **without the raw chapter ever entering your context**. Then re-resolve the file from step 1. Never WebFetch/Read the raw chapter into context instead.
+3. Read each (now-present) file
+4. Concatenate with this header:
 
 ```
 ---
@@ -98,45 +119,16 @@ User: "Write an AGENTS.md for our Rust repo focusing on error handling and concu
    - Read ${CLAUDE_PLUGIN_ROOT}/skills/rust-book/references/toc.md
    - Identify relevant chapter IDs (e.g., ["ch09", "ch16"])
 
-2. FETCH CONTENT — two paths, try in order:
+2. FETCH CONTENT (cache-first, distill-on-miss):
+   - For each chapter ID, check ~/.claude/skills/rust-book/distilled/ for <chapter_id>_*_distilled.md
+   - HIT  → read it
+   - MISS → run `distill.py --from-github --chapter <chapter_id>` (compresses out-of-context), then read the file it wrote
+   - Concatenate the distilled files → use as source
 
-   PATH A (distilled cache):
-   - Check if ~/.claude/skills/rust-book/distilled/ has files matching <chapter_id>_*_distilled.md
-   - If yes: read and concatenate them → use as source
-
-   PATH B (live web fallback — use when distilled/ is empty or missing):
-   - For each chapter ID, map to the URL slug using the table below
-   - Fetch with WebFetch: https://doc.rust-lang.org/book/<slug>.html
-   - Use the fetched content as source (it will be less dense than distilled, but still authoritative)
-
-3. WRITE the final guide using the fetched content as the authoritative source.
+3. WRITE the final guide using the distilled content as the authoritative source.
 ```
 
-### Chapter ID → URL Slug Mapping (for PATH B)
-
-| Chapter ID | URL slug |
-|------------|----------|
-| ch01 | ch01-00-getting-started |
-| ch02 | ch02-00-guessing-game-tutorial |
-| ch03 | ch03-00-common-programming-concepts |
-| ch04 | ch04-00-understanding-ownership |
-| ch05 | ch05-00-structs |
-| ch06 | ch06-00-enums |
-| ch07 | ch07-00-managing-growing-projects |
-| ch08 | ch08-00-common-collections |
-| ch09 | ch09-00-error-handling |
-| ch10 | ch10-00-generics |
-| ch11 | ch11-00-testing |
-| ch12 | ch12-00-an-io-project |
-| ch13 | ch13-00-functional-features |
-| ch14 | ch14-00-more-about-cargo |
-| ch15 | ch15-00-smart-pointers |
-| ch16 | ch16-00-concurrency |
-| ch17 | ch17-00-async-await |
-| ch18 | ch18-00-oop |
-| ch19 | ch19-00-patterns |
-| ch20 | ch20-00-advanced-features |
-| ch21 | ch21-00-final-project-a-web-server |
+Either way, only distilled text reaches your context — the raw book never does.
 
 ---
 
@@ -179,4 +171,6 @@ Keep the output dense and actionable — no narrative, no "getting started" fluf
 
 **Chapter file not found:** The distiller names files based on the source markdown filename. Run `ls ~/.claude/skills/rust-book/distilled/` to see available chapters and adjust chapter IDs accordingly.
 
-**Want to re-distill a chapter:** Delete the specific file from `~/.claude/skills/rust-book/distilled/` and re-run the distiller with `--chapter ch09` to process only that chapter.
+**Want to re-distill a chapter:** Delete the specific file from `~/.claude/skills/rust-book/distilled/` and re-run the distiller with `--chapter ch09` (add `--from-github` if you have no local clone) to process only that chapter. Or pass `--overwrite`.
+
+**Distill-on-read fails (no network / GitHub unreachable):** The chapter can't be distilled on demand. Report this rather than reading the raw chapter into context — pre-warm the cache later via Phase 1 when connectivity returns.
