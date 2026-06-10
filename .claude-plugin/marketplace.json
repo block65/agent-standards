@@ -8,6 +8,14 @@
       "name": "block65-tools",
       "source": "./",
       "description": "Block65's coding standards, workflow conventions, and skills for AI-assisted development"
+    },
+    {
+      "name": "compend",
+      "source": {
+        "source": "github",
+        "repo": "block65/compend"
+      },
+      "description": "Local Body of Knowledge — version-pinned, distilled docs for AI agents via the compend CLI"
     }
   ]
 }
