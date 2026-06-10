@@ -1,0 +1,48 @@
+{
+  "skill_name": "moonrepo",
+  "evals": [
+    {
+      "id": 0,
+      "name": "astro-shared-clean",
+      "prompt": "We use moonrepo (moon v2) in this monorepo. Add a `clean` task to our Astro app (project id `web`, at apps/web/moon.yml). The app's package.json and config are in apps/web/ — read them. We have several other frontend apps in this monorepo and don't want cleanup logic copy-pasted across them. A single `moon run web:clean` should fully clean the app.",
+      "files": ["fixture/apps/web/package.json", "fixture/apps/web/astro.config.mjs"],
+      "assertions": [
+        "DISCOVERY: identifies (without being told) that the app uses Astro+Vite and that a full clean must remove Vite's cache (node_modules/.vite) in addition to dist/ and .astro/",
+        "Defines the reusable Vite cleanup as a GLOBAL task under .moon/tasks/ (e.g. .moon/tasks/all.yml or a tagged file), NOT duplicated into each project",
+        "The app's clean task uses deps to chain the shared task so one command runs both (e.g. deps includes a vite-clean target)",
+        "Uses a valid v2 target scope for the dependency (~:taskName, projectId:taskName, or bare taskName) — not invented syntax",
+        "Uses script: (not command:) for any compound/multi-command shell line, or otherwise avoids piping through command:",
+        "Sets options.cache: false (or equivalent) on the clean task since it produces no cacheable output",
+        "Does NOT emit a single-file .moon/tasks.yml (v1) — uses the .moon/tasks/ directory",
+        "Config is internally consistent (the project is tagged/conditioned so it actually inherits the shared task)"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "v1-to-v2-fix",
+      "prompt": "This moon.yml was written for an older version of moon and our CI on moon v2 is unhappy with it. Fix it so it's correct for moon v2. The file is at apps/api/moon.yml (provided). Explain what you changed and why.",
+      "files": ["fixture/moon.yml"],
+      "assertions": [
+        "Renames top-level `type:` to `layer:`",
+        "Replaces `platform:` with the v2 `toolchains:` model (top-level and/or per-task)",
+        "Converts compound/piped command strings (using && or |) from command: to script:",
+        "Does not introduce any field absent from the v2 project/tasks schema",
+        "Explanation correctly attributes each change to the v1->v2 migration",
+        "Resulting YAML is valid and complete (not a partial snippet)"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "shared-config-across-repos",
+      "prompt": "At Block65 we have ~15 separate repos that all use moon (v2). We want one common set of moon tasks (lint, format, typecheck) defined once and reused across every repo, and critically: a moon CLI upgrade or an upstream edit must NOT silently break a repo's CI. How should we set this up? Show the concrete config.",
+      "files": [],
+      "assertions": [
+        "Recommends the `extends` field as the sharing mechanism",
+        "Shows extends pointing at an HTTPS URL or relative path to a shared config document",
+        "Explicitly pins to a git tag / commit SHA / versioned filename (not a moving branch like master) for safety",
+        "Locates the shared tasks correctly (.moon/tasks/**/* and/or .moon/workspace) per the v2 layout",
+        "Config shown is v2-correct and would actually load"
+      ]
+    }
+  ]
+}
