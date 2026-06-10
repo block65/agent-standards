@@ -1,12 +1,30 @@
 ---
 name: rust-book
 description: >
-  Agentic pipeline for generating idiomatic Rust architectural guides (like AGENTS.md, best-practices docs, or onboarding docs) by extracting knowledge from the official Rust Programming Language Book. Use this skill whenever the user wants to create Rust-specific guidance documents, AGENTS.md files for Rust repos, idiomatic Rust style guides, or any doc that should be grounded in official Rust best practices. Also use it when they ask to "distill the Rust book", "extract Rust patterns", or when they need to set up the rust-book knowledge base for a project. Trigger even if the user just says "write an AGENTS.md for my Rust project" — they almost certainly want this grounded in official Rust guidance.
+  Agentic pipeline for generating idiomatic Rust architectural guides (like AGENTS.md, best-practices docs, or onboarding docs) by extracting knowledge from the official Rust Programming Language Book. Use this skill whenever the user wants to create Rust-specific guidance documents, AGENTS.md files for Rust repos, idiomatic Rust style guides, or any doc that should be grounded in official Rust best practices. Also use it when they ask to "distill the Rust book", "extract Rust patterns", or when they need to set up the rust-book knowledge base for a project. Trigger even if the user just says "write an AGENTS.md for my Rust project" — they almost certainly want this grounded in official Rust guidance. Sources chapters from compend (compend get rust-book) when available, falling back to its own distill pipeline otherwise.
 ---
 
 # Rust Book Agentic Pipeline
 
 This skill powers a two-phase system for producing high-quality, idiomatic Rust architectural guides. The knowledge base comes from the official [Rust Programming Language Book](https://doc.rust-lang.org/book/).
+
+## Content source: prefer compend when available
+
+Check FIRST whether the `compend` command is on PATH and serves the book:
+
+```bash
+compend list   # look for rust-book
+```
+
+If it does, **use `compend get rust-book <topic>` as the fetch operation for
+every chapter retrieval below** (topics are path-based and hyphenated:
+`error-handling`, `smart-pointers`, `ownership`) and skip everything involving
+`distill.py`. compend maintains a single version-pinned distilled cache shared
+by all tools; running `distill.py` alongside it creates a second cache of the
+same book that drifts from the first. The planner workflow is unchanged —
+`references/toc.md` still drives chapter selection; only the retrieval command
+differs. Fall back to the `distill.py` pipeline below only when compend is
+absent or does not serve rust-book.
 
 ## Architecture Overview
 
