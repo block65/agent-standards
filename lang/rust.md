@@ -8,11 +8,25 @@ Follow all modules below.
 - **[Project & CI](rust/project.md)**: Dependencies, workspace, and testing.
 - **[Observability](rust/observability.md)**: `tracing` and output discipline.
 
-## Canonical Idioms
+## Canonical idioms — the Rust Book via compend
 
-Before writing Rust, consult the distilled Rust Book for the topics the change
-touches — `compend get rust-book <topic>` (e.g. `error-handling`, `ownership`,
-`iterators`). Always pass a topic; the bare command dumps the entire book.
-Where these standards conflict with the book, these standards win. If `compend`
-is not on PATH, proceed on these standards alone — do not fetch the book from
-the web.
+These modules hold Block65 opinion only; general Rust correctness comes from
+the language's own canon. Before writing Rust, consult the distilled Rust Book
+for the topics the change touches:
+
+```sh
+compend get rust-book <topic>   # e.g. error-handling, ownership, iterators, traits
+```
+
+Always pass a topic — the bare command dumps the entire book. If `compend` is
+not on PATH, proceed on these standards alone; do not fetch the book from the
+web.
+
+The book covers naming conventions (`new` never fails; fallible constructors
+are `build`), ownership/borrowing patterns, which std type fits which job, and
+canonical idioms — none of which are duplicated here, deliberately: the book is
+maintained upstream; copies here would drift.
+
+Where these standards conflict with the book, these standards win (e.g. the
+book teaches `Result<Config, &'static str>` constructors; use `thiserror` /
+`anyhow` per [Error Handling](rust/errors.md)).
