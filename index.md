@@ -1,5 +1,14 @@
 # Agent Standards
 
+## Principles
+
+- **Standards here, facts from compend:** this repo is THE standard — the
+  rules Block65 code follows. Library and language facts come from the
+  `compend` CLI (`compend list` for coverage). Where coverage overlaps a
+  standards doc, the doc defers with a one-line pointer (see `lang/rust.md`) —
+  never a copied summary, which would drift from upstream. On conflict, these
+  standards win.
+
 ## Always load
 
 - **[Communication](workflow/communication.md)**: Concise, objective interaction rules.

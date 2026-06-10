@@ -10,7 +10,7 @@ Follow all modules below.
 
 ## Canonical idioms — the Rust Book via compend
 
-These modules hold Block65 opinion only; general Rust correctness comes from
+These modules are the Block65 standard; general Rust correctness comes from
 the language's own canon. Before writing Rust, consult the distilled Rust Book
 for the topics the change touches:
 
