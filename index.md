@@ -30,6 +30,7 @@
 - **[Vitest](engineering/vitest.md)**: Unit/integration test rules for TypeScript projects.
 - **[Playwright E2E](engineering/playwright.md)**: E2E test rules, selector priority, structure, and anti-patterns.
 - **[Database](engineering/database.md)**: Schema and column conventions.
+- **[Comments](engineering/comments.md)**: When a code comment earns its place, and what never belongs in one.
 - **[TypeScript](lang/typescript.md)**: Strict typing and modern patterns.
 - **[React](lang/react.md)**: Component patterns, i18n, styling, and state management.
 - **[JavaScript](lang/javascript.md)**: pnpm, modern API usage, and general JS hygiene.
