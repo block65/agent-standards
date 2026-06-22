@@ -23,6 +23,7 @@ Modular rules for writing. Use the base rules below for everything, then add a s
 - **Filler transitions:** Do not use "However,", "Furthermore,", "Moreover,", "Additionally,", "It's important to note that,", "In today's world,".
 - **Excessive em-dashes:** Do not use em-dashes as a crutch for sentence structure.
 - **Unnecessary lists:** Use prose when a list adds no structural value.
+- **Banned vocabulary:** Do not use "load bearing", "seam", "honest", or "fair" anywhere: prose, comments, commits, or chat.
 
 ## Modules
 
