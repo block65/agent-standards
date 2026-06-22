@@ -9,3 +9,8 @@
 ## Tables
 
 - **Audit columns:** Most tables should have `create_time` and `update_time`.
+
+## Migrations
+
+- **Never edit old migrations.** Applied migrations are history; you cannot change the past. Add a new migration instead.
+- **Never hand-author migration files.** Always generate them with the project's migration tooling.
