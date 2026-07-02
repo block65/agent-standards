@@ -20,6 +20,7 @@
 ## Load if applicable (workflow)
 
 - **[TRIPLE](workflow/triple.md)**: Three-role peer programming workflow with impl agent, review agent, and human.
+- **[GitHub Issues](workflow/github-issues.md)**: Authoring issues that read well — symptom-first, no fix-prescription, provenance-tagged repro. Automated by the `github-issue` skill.
 
 ## Load if applicable (content)
 
