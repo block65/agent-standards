@@ -1,6 +1,6 @@
 # GitHub Issue Authoring
 
-An issue states a **problem**; the **fix is decided in triage**, not in the issue. Write for the developer who picks it up. Keep it terse — these rules exist because AI-authored issues tend to sprawl.
+An issue states a **problem**; the **fix is decided in triage**, not in the issue. Write for the developer who picks it up. Keep it terse; AI-authored issues tend to sprawl.
 
 Project specifics (target repo, label vocabulary, attachment upload) are configured per project — see the consuming project's `## GitHub Issues` block. The `github-issue` skill automates create/update against this standard.
 
@@ -15,7 +15,7 @@ Agents usually create via `gh issue create --body`, which bypasses the web-UI te
 
 ## Open with the symptom
 
-First sentence = what a user/reader observes going wrong. If it contains a `camelCase` identifier or a filename, restate the symptom first. Mechanism, if genuinely known, is one provisional line prefixed `Likely:` at the end — never a section, never manufactured.
+First sentence = what a user/reader observes going wrong — the fuller symptom, not a verbatim echo of the symptom-first title. If it contains a `camelCase` identifier or a filename, restate the symptom first. Mechanism, if genuinely known, is one provisional line prefixed `Likely:` at the end — never a section, never manufactured.
 
 ## Never prescribe the fix
 
@@ -66,4 +66,4 @@ GitHub has no attachment API. Host the file in the project's public object store
 - **Videos** as a player: `<video controls src="url"></video>` (GitHub's markdown sanitizer allows `<video>`; image syntax does not work for video)
 - **Everything else** (PDF, logs, zips) as a link: `[name](url)`
 
-The upload is the project's responsibility, it should upload under an unguessable key (256-bit random; on a public readable (not public writable!) bucket the key is the only access control) and prints the public URL. The `github-issue` skill calls it and embeds the URL. GitHub proxies embedded images through its Camo cache; unique keys keep that cache from ever serving a stale image.
+The project uploads under an unguessable key (256-bit random — on a public-readable, not writable, bucket the key is the only access control) and prints the URL. The `github-issue` skill calls it and embeds the URL. Unique keys stop GitHub's Camo cache serving stale images.

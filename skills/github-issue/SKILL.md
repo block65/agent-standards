@@ -5,7 +5,7 @@ description: "Create and maintain GitHub issues from user reports and screenshot
 
 # Create & Maintain GitHub Issues
 
-Turn a user report (text and/or screenshot) into a well-formed GitHub issue, and keep it up to date afterwards — quickly, without burning tokens on a full code investigation. The fix is decided in triage, not here.
+Turn a user report (text/screenshot) into a well-formed GitHub issue and maintain it — fast, no full code investigation. The fix is decided in triage, not here.
 
 **Mode: act immediately.** Do not draft-and-confirm. For a new report: capture, badge, label, `gh issue create`, return the URL. For an update: make the change and report what changed.
 
@@ -21,7 +21,7 @@ If a project has no such block, ask the user for the repo, use plain `bug`/`enha
 
 ## The contract
 
-Follow **`workflow/github-issues.md`** (the GitHub issue authoring standard): symptom-first, template fields only, ≤120 words, name file/service but not line numbers, one audience per issue, **never prescribe the fix**, provenance-tagged repro, badge row on top.
+Follow **`workflow/github-issues.md`** (the GitHub issue authoring standard): symptom-first, template fields only, ≤120 words (150 hard max), name file/service but not line numbers, one audience per issue, **never prescribe the fix**, provenance-tagged repro, badge row on top.
 
 ## How much to investigate
 
@@ -52,7 +52,7 @@ The goal is a *reproducible, well-scoped* report — not a diagnosis.
 
    For a capability gap use the enhancement shape: **Problem / motivation**, **Desired outcome**, **Alternatives** (only if a real trade-off exists).
 
-4. **Pick labels** from project config: the AI-filed label + `bug`/`enhancement` + best-guess `area/*`. Don't investigate just to be sure of the area.
+4. **Pick labels** from project config: the AI-filed label + `bug`/`enhancement` + best-guess `area/*`. Don't investigate just to be sure of the area. If a configured label doesn't exist in the repo, create it (`gh label create`) or drop the unknown `area/*` and file anyway — never let a missing label block the create.
 
 5. **Create it** (substitute the configured repo and labels):
 
@@ -63,7 +63,7 @@ The goal is a *reproducible, well-scoped* report — not a diagnosis.
      --label "$AI_LABEL" --label bug --label area/<surface>
    ```
 
-   Title is symptom-first and specific. Never restate the title in the body's first line.
+   Title is symptom-first and specific. Never restate the title verbatim in the body's first line — the title is the terse label; the body opens with the fuller observed symptom.
 
 6. **Return the issue URL.** Any screenshot is already embedded, so nothing is left for the user to do.
 
@@ -103,7 +103,7 @@ Embed the URL by file type:
 - **video** → `<video controls src="<url>"></video>` (inline player — GitHub allows `<video>`; image syntax does not work for video)
 - **anything else** → `[<name>](<url>)` (download link)
 
-Paste the result into the Evidence field (or a comment). GitHub proxies embedded images through its Camo cache (`camo.githubusercontent.com`) — expected and harmless; the recipe's unique keys keep it from serving a stale image.
+Paste the result into the Evidence field (or a comment). (Camo caching and the unique-key rationale live in the standard's Attachments section — don't restate them here.)
 
 ## Output
 
