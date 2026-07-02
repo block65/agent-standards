@@ -15,7 +15,7 @@ This skill is project-agnostic. Read the consuming project's `## GitHub Issues` 
 
 - **Repo** — `<owner>/<repo>` to file against.
 - **Labels** — the AI-filed label (e.g. `genai`), the `bug`/`enhancement` classifiers, and the `area/*` vocabulary.
-- **Attachment uploads** (optional) — an upload recipe that takes a file and prints its public URL, by convention `just issue-asset <file>`. If the project has none, transcribe media instead (see "Attaching files").
+- **Attachment upload** (optional) — a command (named in the config block) that takes a file and prints its public URL. If the project names none, transcribe media instead (see "Attaching files").
 
 If a project has no such block, ask the user for the repo, use plain `bug`/`enhancement` labels, and transcribe rather than upload.
 
@@ -91,12 +91,10 @@ gh issue view <n> --repo "$REPO" --json number,title,body,labels,state
 
 ## Attaching files (screenshots, screen recordings, logs, PDFs)
 
-GitHub has no attachment API, so `gh` can't upload files. The upload is the **project's** responsibility — it owns the object store, credentials, and CLI. The skill only needs a public URL back, and turns it into GitHub markdown.
-
-**Contract:** the project exposes a recipe that takes a local file, uploads it under an unguessable key, and prints the resulting **public URL** — by convention `just issue-asset <file>`. No such recipe → transcribe what the media shows into Evidence instead of uploading.
+GitHub has no attachment API, so `gh` can't upload files. The upload is the **project's** responsibility — its config block names an upload command that takes a local file, uploads it under an unguessable key, and prints a public URL. The skill runs that command and turns the URL into markdown; if none is configured, transcribe the media into Evidence instead.
 
 ```sh
-url="$(just issue-asset "$path")"   # project recipe uploads, prints the public URL
+url="$(<the project's configured upload command> "$path")"   # prints the public URL
 ```
 
 Embed the URL by file type:
