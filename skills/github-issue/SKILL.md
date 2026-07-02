@@ -15,7 +15,7 @@ This skill is project-agnostic. Read the consuming project's `## GitHub Issues` 
 
 - **Repo** — `<owner>/<repo>` to file against.
 - **Labels** — the AI-filed label (e.g. `genai`), the `bug`/`enhancement` classifiers, and the `area/*` vocabulary.
-- **Issue-asset store** (optional) — public bucket name, public base URL, key prefix, and upload command. If the project declares none, skip uploads and transcribe media instead (see "Attaching files").
+- **Attachment uploads** (optional) — an upload recipe that takes a file and prints its public URL, by convention `just issue-asset <file>`. If the project has none, transcribe media instead (see "Attaching files").
 
 If a project has no such block, ask the user for the repo, use plain `bug`/`enhancement` labels, and transcribe rather than upload.
 
@@ -91,42 +91,21 @@ gh issue view <n> --repo "$REPO" --json number,title,body,labels,state
 
 ## Attaching files (screenshots, screen recordings, logs, PDFs)
 
-GitHub has no attachment API, so `gh` can't upload files. If the project configures an issue-asset store, upload there and embed the returned markdown — images inline, videos as a `<video>` player, other files as links. If no store is configured, transcribe what the media shows into Evidence instead.
+GitHub has no attachment API, so `gh` can't upload files. The upload is the **project's** responsibility — it owns the object store, credentials, and CLI. The skill only needs a public URL back, and turns it into GitHub markdown.
 
-The public URL is download-only; uploads go through the store's authenticated CLI. GitHub proxies embedded images through its Camo cache (`camo.githubusercontent.com`) — expected and harmless; unique keys keep it from serving a stale image.
-
-Set these from the project's `## GitHub Issues` config, then use the helper:
+**Contract:** the project exposes a recipe that takes a local file, uploads it under an unguessable key, and prints the resulting **public URL** — by convention `just issue-asset <file>`. No such recipe → transcribe what the media shows into Evidence instead of uploading.
 
 ```sh
-# From project config:
-ISSUE_BUCKET="<bucket-name>"                 # e.g. acme-issue-assets
-ISSUE_PUBLIC="<https://pub-xxxx.r2.dev>"     # public base URL of the bucket
-ISSUE_PREFIX="github/<owner>/<repo>/"        # key namespace
-ISSUE_PUT="<upload command>"                 # e.g. pnpm exec wrangler r2 object put
-
-upload_issue_asset() {
-  # $1 = path to any local file; prints ready-to-paste markdown.
-  # The object key is the only access control on a public bucket — 256 bits of
-  # randomness, never a filename/hash/sequential id.
-  f="$1"
-  base="$(basename "$f")"
-  ext=""
-  case "$base" in *.*) ext=".${base##*.}" ;; esac
-  key="${ISSUE_PREFIX}$(openssl rand -hex 32)${ext}"
-  ct="$(file -b --mime-type "$f" 2>/dev/null || echo application/octet-stream)"
-
-  $ISSUE_PUT "${ISSUE_BUCKET}/${key}" --file="$f" --content-type="$ct" --remote >/dev/null
-
-  url="${ISSUE_PUBLIC}/${key}"
-  case "$ct" in
-    image/*) printf '![%s](%s)\n' "$base" "$url" ;;                  # inline image
-    video/*) printf '<video controls src="%s"></video>\n' "$url" ;;  # inline player
-    *)       printf '[%s](%s)\n'  "$base" "$url" ;;                   # download link
-  esac
-}
+url="$(just issue-asset "$path")"   # project recipe uploads, prints the public URL
 ```
 
-Run `upload_issue_asset` per file, paste the printed markdown into the Evidence field (or a comment), then create/update the issue.
+Embed the URL by file type:
+
+- **image** → `![<name>](<url>)` (inline)
+- **video** → `<video controls src="<url>"></video>` (inline player — GitHub allows `<video>`; image syntax does not work for video)
+- **anything else** → `[<name>](<url>)` (download link)
+
+Paste the result into the Evidence field (or a comment). GitHub proxies embedded images through its Camo cache (`camo.githubusercontent.com`) — expected and harmless; the recipe's unique keys keep it from serving a stale image.
 
 ## Output
 
