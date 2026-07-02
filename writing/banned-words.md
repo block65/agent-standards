@@ -12,6 +12,7 @@ Banned from all output — prose, comments, commits, chat.
 - "seam"
 - "honest"
 - "fair"
+- "fork" — when it means a decision or branch point; say "decision" or "branch". Every developer reads "fork" as a git fork, so the figurative sense misleads. Literal uses (a git fork, `fork()`, forking a process/subagent) are fine.
 
 ### Flavour of the month (May 2026)
 
