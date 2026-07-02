@@ -1,12 +1,12 @@
 # Testing Philosophy
 
-Tests are diagnostic instruments. Their job is to _try to break the system_ and surface what's wrong — not to validate that today's code works. The win condition is a system robust enough that you cannot break it, not a green check.
+Tests are diagnostic instruments. Their job is to _try to break the system_, not validate today's code. Win condition: a system you can't break, not a green check.
 
 ## Mental model
 
 - **Tests are adversaries, not gates.** Structure them to expose problems, not to pass. A test that is hard to fail was written backwards.
-- **Green ≠ working. Red = signal.** A passing test only tells you the cases you wrote pass. A failing test tells you something specific about the system. Treat red as the more valuable outcome — that's where you learn.
-- **Fix the code under test by default.** When a test fails, the default response is to fix the code under test. Adjusting the test — narrowing assertions, seeding randomness, skipping cases, retrying — is hiding a defect. The only legitimate reason to change a test is that the **contract** genuinely changed (new spec, deprecated behaviour); document why in the diff.
+- **Green ≠ working. Red = signal.** A pass only confirms the cases you wrote; a failure tells you something specific about the system. Treat red as the more valuable outcome — that's where you learn.
+- **Fix the code under test by default.** When a test fails, fix the code under test. Adjusting the test — narrowing assertions, seeding randomness, skipping cases, retrying — hides a defect. The only legitimate reason to change a test is that the **contract** genuinely changed (new spec, deprecated behaviour); document why in the diff.
 - **Test the system, not a simulation of it.** Drive the production code path. Mocks belong at the network boundary, not inside the unit under test.
 - **Failures must be loud and observable.** Swallowing an error, returning `undefined`, or "recovering" silently is a bug, not robustness. Surface what happened — error type, status, UI feedback.
 
@@ -14,7 +14,7 @@ Tests are diagnostic instruments. Their job is to _try to break the system_ and 
 
 A test earns its place only if it can fail on a bug no other test catches. Before adding one, name the failure mode it surfaces that the rest of the suite would miss. If you can't, don't add it.
 
-- **When two tests cover the same failure, delete the lower-level one.** The test closest to the user contract owns the behavior. The same happy path asserted at unit, integration, and e2e is one signal carried by three failures — three things to maintain, zero extra bugs caught.
+- **When two tests cover the same failure, delete the lower-level one.** The test closest to the user contract owns the behavior. The same happy path at unit, integration, and e2e is one signal, three maintenance costs, zero extra bugs.
 - **Exception: the lower-level test reaches a branch the higher one can't** — a rare error path, a race, a numerical edge. The retained test must do something the higher-level test _cannot_, not the same thing faster.
 
 ```ts
@@ -49,12 +49,12 @@ If a test fails, the system has a bug. Fix the system.
 
 ## SLOW = FAIL
 
-A test that's flaky on a 5-second timeout but green on a 30-second timeout has not been fixed. The system has a real problem — a race condition, resource saturation, an unbounded retry — and you've buried it in latency. The next time it's slow it'll cross the new threshold too, and the suite that used to take 2 minutes now takes 15 and still fails.
+A test flaky at a 5-second timeout but green at 30 has not been fixed — a real problem (race condition, resource saturation, unbounded retry) buried in latency. Next time it's slow it crosses the new threshold too, and the suite balloons from 2 minutes to 15 and still fails.
 
 - **Treat latency as a failure mode.** If an operation that should be instant is taking seconds, the test has discovered something real. Investigate the system, not the timeout.
 - **Never raise a timeout to absorb a flake.** Find the actual completion signal (see "Observing vs. asserting") or fix the saturation in the product.
 - **Default budgets are signals.** Playwright's `actionTimeout`, vitest's per-test timeout, `expect.poll` timeouts — these are the slack the framework has already given you. If you need more, the framework is telling you something.
-- **Measure before tuning.** When parallel runs flake, the answer is rarely "more time per test" — it's "what resource is saturating at this concurrency?" Profile the run, find the bottleneck, fix it. Raising parallel timeouts to mask saturation makes the suite slower and still red.
+- **Measure before tuning.** When parallel runs flake, ask what resource is saturating at this concurrency, not for more time per test. Profile the run, find the bottleneck, fix it. Raising parallel timeouts to mask saturation makes the suite slower and still red.
 
 ## Observing vs. asserting
 

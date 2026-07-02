@@ -8,7 +8,7 @@ Vitest is the unit and integration test surface for TypeScript projects — pure
 
 1. **Never use `vi.useFakeTimers()` to dodge real async.** Fake timers are for testing time-dependent logic (debounce, retry backoff). They are not a tool for skipping `await`s. If a test passes only with fake timers, the production code probably has a race.
 
-2. **Never seed randomness.** Use `crypto.randomUUID()`, `Date.now()`, faker without a fixed seed. A test that works for one seed and breaks for another is telling you the system has a bug, not that the test is flaky.
+2. **Never seed randomness.** Use `crypto.randomUUID()`, `Date.now()`, faker without a fixed seed. A test that passes for one seed and breaks for another means a system bug, not a flaky test.
 
 3. **Never `--update` snapshots to fix a failure.** Snapshots regenerate when the spec genuinely changes. If you don't know why the snapshot differs, the system changed in a way you don't understand — investigate before regenerating.
 
@@ -91,7 +91,7 @@ If a fragment of the message carries information you actually care about, regex-
 
 ## Assertions and narrowing
 
-Don't reach for `!` (non-null assertion) in test code. It silences the type system without verifying anything at runtime; if the value is actually `undefined`, you get an unhelpful crash deep in the test instead of a clear failure at the line you wrote.
+Don't reach for `!` (non-null assertion) in test code. It silences the type system without a runtime check; if the value is `undefined` you get an unhelpful crash deep in the test, not a clear failure at your line.
 
 Use `assert` from vitest to verify and narrow in one step:
 

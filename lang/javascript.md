@@ -23,11 +23,11 @@
 
 ## Imports
 
-- **Imports stay contiguous:** Keep all `import` statements as one unbroken block at the top of the file. Never interleave declarations, types, constants, functions, or any other code between imports. Side-effect imports go in the same block. If you need a constant or helper in the import region, it goes _below_ the imports, not inside them.
+- **Imports stay contiguous:** Keep all `import` statements as one unbroken block at the top; never interleave any other code (declarations, types, constants, functions). Side-effect imports go in the same block. A constant or helper needed near the imports goes _below_ them, not inside.
 
 ## File Organization
 
-- **Module constants at the top:** True module-level constants — fixed values that never change at runtime, typically `UPPER_SNAKE_CASE` (`const MAX_RETRIES = 3`, `const API_VERSION = 'v2'`) — go directly below the imports, before any functions, classes, or executable logic. A reader should see the file's "knobs" up front. Do not scatter `const FOO = ...` declarations next to the function that happens to use them when the value is genuinely module-scoped configuration.
+- **Module constants at the top:** True module-level constants — fixed runtime values, typically `UPPER_SNAKE_CASE` (`const MAX_RETRIES = 3`, `const API_VERSION = 'v2'`) — go directly below the imports, before any functions, classes, or logic. Don't scatter module-scoped config next to the function that happens to use it.
 
 ## Exports
 
@@ -37,7 +37,7 @@
 
 ## Error Handling
 
-- **Default is bubble.** Most code should let rejections propagate. If the framework above already turns rejections into observable state — React Query exposes `query.error`, route loaders surface to error boundaries, Hono handlers route through the error pipeline, `withSentry`/equivalents capture unhandled rejections — adding `.catch(console.error)` or wrapping in `try/catch` does nothing the framework isn't already doing. Delete it; just `await`.
+- **Default is bubble.** Most code should let rejections propagate. If the framework above already surfaces them — React Query `query.error`, route loaders to error boundaries, Hono's error pipeline, `withSentry`/equivalents capturing unhandled rejections — then `.catch(console.error)` or `try/catch` is redundant. Delete it; just `await`.
 - **Catch only at boundaries where the rejection has nowhere else to go.** Fire-and-forget `waitUntil` / keepalive POSTs (response already sent), top-level entry points outside any handler, code that must continue past a non-essential failure. Everywhere else, bubble.
 - **Every catch must do one of:**
   1. Manually report — `captureException(err)` or equivalent.
@@ -60,8 +60,8 @@
 ## Structure
 
 - **No deep call stacks:** If following the execution path takes more than a few jumps, flatten the abstraction.
-- **Single-caller across packages is a smell.** A function exported from package `a` with exactly one caller in package `b` is in the wrong place. Either move it to the caller's package (it isn't really shared) or audit whether the caller is the wrong place for that logic. Cross-package indirection that serves no other consumer is friction without payoff.
-- **Promote generic helpers to the shared toolkit.** Generic utilities (string/array/date manipulation, type guards, small predicates) belong in the shared toolkit (`@block65/toolkit` or equivalent), not feature modules. The toolkit is tree-shaken, so unused helpers cost nothing. Domain-specific logic stays local. Grep the toolkit before writing a new helper to avoid duplicating what already exists.
+- **Single-caller across packages is a smell.** A function exported from package `a` with one caller in package `b` is misplaced: move it to `b` (it isn't really shared), or check whether `b` is the wrong home for that logic. Cross-package indirection with no other consumer is pure friction.
+- **Promote generic helpers to the shared toolkit.** Generic utilities (string/array/date, type guards, small predicates) belong in the shared toolkit (`@block65/toolkit` or equivalent), not feature modules — it's tree-shaken, so unused helpers cost nothing. Domain-specific logic stays local. Grep the toolkit before writing a new helper.
 
 ## Type Coercion
 

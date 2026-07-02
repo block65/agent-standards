@@ -4,10 +4,7 @@
 
 For each change set: **code → verify → commit**. Use `-q` (quiet) with cargo commands.
 
-Always auto-fix rather than manually checking then editing:
-
-- `cargo clippy --fix` over `cargo clippy` then hand-editing
-- `cargo fmt` over inspecting format violations and correcting them
+Always auto-fix, never hand-edit:
 
 ```sh
 cargo build -q

@@ -2,7 +2,7 @@
 
 **Prerequisite:** Also follow the rules in [Testing Philosophy](testing.md).
 
-E2E tests replace a human QA tester. Their job is to exercise real flows the way a real user does and fail loudly when the product is broken. Tests that exist only to be green are worse than no tests at all.
+E2E tests replace a human QA tester: exercise real flows as a user does, fail loudly when broken. Tests that exist only to be green are worse than none.
 
 ## Non-negotiables
 
@@ -16,7 +16,7 @@ E2E tests replace a human QA tester. Their job is to exercise real flows the way
 
 5. **Never adjust an assertion downward to make a red test green.** If a test is flaky, assume the product has a race condition and investigate. `retries` is not a fix.
 
-6. **ABSOLUTE: Never assert on URLs.** `toHaveURL`, `expect(page).toHaveURL(...)`, `page.url()`, `page.waitForURL`, and any regex match against the address bar are **banned without exception** for identity assertions. URLs are an implementation detail; they get restructured during routing refactors, they don't survive locale prefixes, and users don't read them. Assert on what rendered, not where the router thinks you are. There is no scenario in which a URL assertion is the right tool for "did the user end up on the right page". If this rule blocks your test, invoke rule 11.
+6. **ABSOLUTE: Never assert on URLs.** `toHaveURL`, `expect(page).toHaveURL(...)`, `page.url()`, `page.waitForURL`, and any regex match against the address bar are **banned without exception** for identity assertions. URLs are an implementation detail: restructured by routing refactors, broken by locale prefixes, unread by users. Assert on what rendered, not where the router thinks you are. No URL assertion is ever the right tool for "did the user end up on the right page". If this rule blocks your test, invoke rule 11.
 
 7. **Don't assert you arrived at a page. Do the next thing.** Navigation is verified implicitly by the auto-wait on the next action. If you clicked through to a listings page to publish a listing, the assertion is the publish button becoming actionable — that can't happen unless the page rendered. Explicit page-identity assertions (URL, heading, page-level testid) are ceremony, not signal, and double the brittle surface area. Terminal steps (the test's last action with nothing to click afterward) do need an assertion — see the assertions section.
 
@@ -24,7 +24,7 @@ E2E tests replace a human QA tester. Their job is to exercise real flows the way
 
 9. **Never fill only the required fields in a happy-path test.** A real user fills the form. Omission is a validation test, and gets its own test.
 
-10. **ABSOLUTE: `page.goto` is only permitted at points where a real user arrives at the app from outside it.** Two sanctioned forms: (a) `page.goto('/')` or the configured `baseURL`, to enter the app as a user opening it fresh; (b) navigating to an external-entry URL the test obtained from a simulated external system — password reset and email verification links read from a test mail server, magic-link tokens fetched from the API, OAuth callback URLs from the auth provider's test mode. Banned without exception: `page.goto('/dashboard')`, `page.goto('/settings/profile')`, `page.goto('/items/123')`, and any other mid-app route the test author constructed from a guessed route shape. The test for whether a goto is sanctioned: did the URL come from a system that simulates how a real user would have received it (an email, an SMS, an OAuth redirect), or did the test author type it in? If the latter, the goto is a deep-link shortcut and is banned. If this rule blocks your test, invoke rule 11.
+10. **ABSOLUTE: `page.goto` is only permitted at points where a real user arrives at the app from outside it.** Two sanctioned forms: (a) `page.goto('/')` or the configured `baseURL`, to enter the app as a user opening it fresh; (b) navigating to an external-entry URL the test obtained from a simulated external system — password reset and email verification links read from a test mail server, magic-link tokens fetched from the API, OAuth callback URLs from the auth provider's test mode. Banned without exception: `page.goto('/dashboard')`, `page.goto('/settings/profile')`, `page.goto('/items/123')`, and any other mid-app route the test author constructed from a guessed route shape. Sanctioned-goto test: did the URL come from a system simulating how a user would receive it (email, SMS, OAuth redirect), or did the author type it in? If typed, it's a banned deep-link shortcut. If this rule blocks your test, invoke rule 11.
 
 11. **If the rules give no workable path, stop and ask.** Do not substitute a worse selector to satisfy a ban. Surface the problem with: what you were trying to assert, which rule blocked the obvious path, alternatives you considered, your forced choice. Wait for a decision.
 
@@ -45,7 +45,7 @@ Use the first that works. Drop down only when the current tier genuinely fails t
 | —        | `getByText` as a primary find | **Banned.** Text matches product copy; copy churns.     |
 | —        | CSS / XPath                   | **Banned.** If you reach here, you've skipped a step.   |
 
-Role-first is not just stability. `getByRole('button', { name: /submit/i })` also confirms the element is an actual button with an accessible name, which a screen reader can find. `getByTestId('submit-btn')` doesn't, which is why testid on interactive elements is a downgrade when a role works.
+Role-first is not just stability: `getByRole('button', { name: /submit/i })` confirms a real, screen-reader-findable button; `getByTestId('submit-btn')` doesn't. Testid on interactive elements is a downgrade when a role works.
 
 ### Job 2: finding a specific item in a list, table, or grid
 
@@ -93,7 +93,7 @@ Even then, the testid is the assertion of _last resort_ for a terminal step, not
 
 Before adding a testid to a button-shaped div, a custom dropdown, an unnamed nav, or any other element with a clear semantic role it currently lacks: **fix the role first.** A `<div onClick>` should become a `<button>`. A custom combobox needs `role="combobox"` and the required ARIA properties. A page with multiple `<nav>` regions needs `aria-label` on each.
 
-Genuine double win: accessibility correctness _and_ testability, with the test improvement as a side effect of fixing the real problem. Testid is the right tool when role + accessible name genuinely can't pick out the element (one of several menu items, an icon button with no name, a state container that needs disambiguation); roles are the right tool for _what kind of thing_ (a button, a navigation region, a heading). Never invent ARIA roles for application-specific concepts — the role taxonomy is fixed, and roles that lie are worse than testids.
+Double win: accessibility correctness _and_ testability, the test improvement a side effect of the real fix. Testid is the right tool when role + accessible name genuinely can't pick out the element (one of several menu items, an icon button with no name, a state container that needs disambiguation); roles are the right tool for _what kind of thing_ (a button, a navigation region, a heading). Never invent ARIA roles for application-specific concepts — the role taxonomy is fixed, and roles that lie are worse than testids.
 
 ### Adding testids: convention
 
@@ -113,7 +113,7 @@ This is an explicit escape hatch, not a general permission. Outside the `frameLo
 
 ### File uploads and downloads
 
-The native OS file picker cannot be driven through the DOM, and clicking the visible "Upload" button will hang in headless CI. Use Playwright's dedicated APIs.
+The OS file picker can't be driven through the DOM; clicking the visible Upload button hangs in headless CI. Use Playwright's dedicated APIs.
 
 **Uploads:** find the underlying `<input type="file">` and call `setInputFiles`. Do not click the visible upload button and then try to interact with the OS dialog.
 
@@ -153,7 +153,7 @@ await page
   .click();
 ```
 
-A navigation event firing doesn't prove the right destination was reached — error pages, login redirects, and onboarding detours all fire `framenavigated` too. Explicit `waitForURL`, `waitForLoadState`, or `waitForEvent('framenavigated')` are only correct for the narrow case of multi-step redirect chains where you need to wait for the _final_ navigation before asserting. Even then, the actual verification is done by the next action you perform.
+A navigation event firing doesn't prove the right destination — error pages, login redirects, and onboarding detours all fire `framenavigated`. Explicit `waitForURL`, `waitForLoadState`, or `waitForEvent('framenavigated')` are only correct for the narrow case of multi-step redirect chains where you need to wait for the _final_ navigation before asserting. Even then, the actual verification is done by the next action you perform.
 
 `waitForLoadState('networkidle')` is banned outright on any app with websockets, long-polling, analytics beacons, or background refresh — which is most SaaS apps. It will either time out or pass meaninglessly. Wait on the specific thing you care about.
 
@@ -185,7 +185,7 @@ The test for whether a `goto` is sanctioned: trace the URL back one step. Did it
 
 ### A note on navigation cost
 
-Clicking through the app instead of deep-linking costs DOM render and network time per test. If a single page accumulates many E2E tests that all pay the same navigation tax, that is usually the rule surfacing a coverage smell: exhaustive variation on one page is component-test territory, not E2E. Push validation permutations, state-toggle combinations, and copy variations down to component tests. E2E covers user journeys; if you have ten genuinely distinct journeys ending at the same page, the navigation is real testing surface and worth the cost. The fix for slow E2E suites is fewer tests on better journeys, not deep-linking shortcuts.
+Clicking through instead of deep-linking costs render and network time per test. Many E2E tests paying the same navigation tax on one page is usually a coverage smell: exhaustive variation on one page is component-test territory, not E2E. Push validation permutations, state-toggle combinations, and copy variations down to component tests. E2E covers user journeys; if you have ten genuinely distinct journeys ending at the same page, the navigation is real testing surface and worth the cost. The fix for slow E2E suites is fewer tests on better journeys, not deep-linking shortcuts.
 
 ## Test structure
 
@@ -268,7 +268,7 @@ Validation tests cover omission, but:
 
 ### Bounded randomness
 
-Faker is correct for shape (a random email-looking string, a random number in range) but can produce values that hit real parsing edge cases (names with apostrophes, non-ASCII addresses, locale-specific phone formats). If a faker-generated value reveals a bug, the bug is real and the value should be captured as a regression fixture — but unconstrained faker in every test means flakes that vanish on re-run because the random input changed.
+Faker is correct for shape but can hit real parsing edge cases (names with apostrophes, non-ASCII addresses, locale-specific phone formats). If a faker value reveals a bug, it's real — capture it as a regression fixture. But unconstrained faker in every test means flakes that vanish on re-run when the input changes.
 
 For fields the product parses (names, emails, phone numbers, addresses), constrain faker to a known locale and character class. For fields that are opaque strings (passwords, titles, descriptions), unconstrained faker is fine. When in doubt, prefix random values with a recognisable marker (`qa-`, `test-`) so the data is queryable in the database and obvious in logs.
 
@@ -330,7 +330,7 @@ await page
   .click();
 ```
 
-If the state has no user-visible consequence, you're testing internal behaviour and the test belongs in a different layer (unit, component, or contract tests on the state machine). If the state _does_ have a UI consequence but you're tempted to skip checking it because "I just want to confirm the listing is active before continuing", that's not a test, it's hedging against your own setup — drop it. The next step will fail loudly if the setup was wrong.
+No user-visible consequence → the test belongs in another layer (unit, component, contract tests on the state machine). Has a UI consequence but you're checking it only to confirm setup before continuing → that's hedging, not a test; drop it. The next step fails loudly if setup was wrong.
 
 The exception is Playwright's built-in ARIA-state assertions: `toBeDisabled()`, `toBeChecked()`, `toBeFocused()`, `toBeExpanded()`. These check states that _are_ user-visible by definition (a disabled button looks disabled to a screen reader and to a user) and use ARIA, not custom data attributes.
 

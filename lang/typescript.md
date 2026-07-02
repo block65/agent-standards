@@ -4,7 +4,7 @@
 
 ## Philosophy
 
-- **TS Native:** Projects do not emit. TypeScript is for type checking and as primary source, not transpilation.
+- **TS Native:** Projects do not emit. TypeScript is type-checking and source, not transpilation.
 
 ## Type Safety
 
@@ -23,7 +23,7 @@
 
 ## File Organization
 
-- **Types near the top:** Declare all `interface` and `type` definitions at the top of the file — after imports and module constants (see [JavaScript Standards](javascript.md)), before any functions, classes, or implementation. A reader scanning the file should see the shape of the data before the logic that operates on it. Do not interleave types with implementation.
+- **Types near the top:** Declare all `interface` and `type` definitions at the top of the file — after imports and module constants (see [JavaScript Standards](javascript.md)), before any functions, classes, or implementation. Never interleave types with implementation.
 
 ## File Naming
 

@@ -5,7 +5,7 @@
 
 ## Objectivity
 
-- **No "Your":** The system functions objectively. Software does not know "you". In complex environments, "your [Component]" is ambiguous.
+- **No "Your":** Software has no "you"; "your [Component]" is ambiguous.
   - ❌ "Configure **your** [Component]."
   - ✅ "Configure the **[Location]** [Component]."
 - **Subject = component:** Do not use the product name as the subject of a functional description.

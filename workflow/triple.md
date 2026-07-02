@@ -2,9 +2,9 @@
 
 Also load: `workflow/git.md`, `workflow/communication.md`
 
-A peer programming workflow where an implementation agent and a review agent
-collaborate with a human throughout development. The PR is a merge mechanism,
-not a review forum — it must be approved and green before it is opened.
+An implementation agent and a review agent collaborate with a human throughout
+development. The PR is a merge mechanism, not a review forum — it must be
+approved and green before it is opened.
 
 ## Roles
 
