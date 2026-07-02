@@ -21,6 +21,8 @@ First sentence = what a user/reader observes going wrong — the fuller symptom,
 
 Banned: `Fix`/`Resolution`/`Approach` sections, "resolution is one of A/B/C" menus, naming a dependency/API to adopt, acceptance criteria or "tests first" deliverables, diffs, "in working tree pending commit". Allowed: the one-line `Likely:` root-cause lead, and naming the affected file/service/component/route. For enhancements, describe the desired outcome (behaviour), not the implementation.
 
+A statement of fact is not a fix suggestion. Saying what's absent — "the DLQ has no consumer", "there's no logging on the failing path", "the entrypoint is missing the SDK's receiver-side wrapper" — is evidence, even when it names the API or instrumentation that's absent; state it plainly. Missing instrumentation (no logs, metrics, or trace on the path that failed) is itself a diagnostic symptom worth recording. The line is crossed only when the issue tells the developer what to *do* about it. Never omit a real gap for fear it reads as a fix — understating the symptom is the worse error.
+
 ## Detail level
 
 Name the file/service — never line numbers (they rot). Internals (function names, constants) only inside the `Likely:` line, never in the opening symptom.

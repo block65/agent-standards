@@ -32,6 +32,7 @@ The goal is a *reproducible, well-scoped* report — not a diagnosis.
 - Work out **steps to reproduce** where possible — from the report, the screenshot, and obvious knowledge of the app's flows. A quick look at the relevant route/UI to confirm the repro path is fine.
 - Identify the affected **surface/area** to pick the `area/*` label.
 - If a root cause is genuinely obvious at a glance, note it as a single provisional `Likely:` line — never chase it.
+- Note any factual **gap** you can see — no logging on the failing path, a missing validation, an unconsumed queue. Absence is a symptom (evidence), not a fix; don't omit it for fear it reads as prescriptive.
 
 **Don't (the token waste to avoid):**
 - No deep code spelunking, no tracing across files, no investigation sub-agents.
