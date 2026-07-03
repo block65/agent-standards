@@ -14,10 +14,11 @@ Turn a user report (text/screenshot) into a well-formed GitHub issue and maintai
 This skill is project-agnostic. Read the consuming project's `## GitHub Issues` block (in its `AGENTS.md` / `CLAUDE.md`) for:
 
 - **Repo** — `<owner>/<repo>` to file against.
-- **Labels** — the AI-filed label (e.g. `genai`), the `bug`/`enhancement` classifiers, and the `area/*` vocabulary.
+- **Issue type** — the shape as a first-class GitHub field: `Bug`/`Enhancement` (plus any project types like `Task`), set with `--type`. **Not** a label.
+- **Labels** — the AI-filed label (e.g. `genai`) and the `area/*` vocabulary.
 - **Attachment upload** (optional) — a command (named in the config block) that takes a file and prints its public URL. If the project names none, transcribe media instead (see "Attaching files").
 
-If a project has no such block, ask the user for the repo, use plain `bug`/`enhancement` labels, and transcribe rather than upload.
+If a project has no such block, ask the user for the repo, set the issue type to `Bug`/`Enhancement`, and transcribe rather than upload.
 
 ## The contract
 
@@ -53,15 +54,15 @@ The goal is a *reproducible, well-scoped* report — not a diagnosis.
 
    For a capability gap use the enhancement shape: **Problem / motivation**, **Desired outcome**, **Alternatives** (only if a real trade-off exists).
 
-4. **Pick labels** from project config: the AI-filed label + `bug`/`enhancement` + best-guess `area/*`. Don't investigate just to be sure of the area. If a configured label doesn't exist in the repo, create it (`gh label create`) or drop the unknown `area/*` and file anyway — never let a missing label block the create.
+4. **Set type + labels** from project config: the issue type `Bug`/`Enhancement` (via `--type`), plus the AI-filed label + best-guess `area/*`. Don't investigate just to be sure of the area. If a configured label doesn't exist in the repo, create it (`gh label create`) or drop the unknown `area/*` and file anyway — never let a missing label or type block the create.
 
-5. **Create it** (substitute the configured repo and labels):
+5. **Create it** (substitute the configured repo, type, and labels):
 
    ```sh
    gh issue create --repo "$REPO" \
      --title "<area>: <symptom-first, specific>" \
      --body "<body from step 3>" \
-     --label "$AI_LABEL" --label bug --label area/<surface>
+     --type Bug --label "$AI_LABEL" --label area/<surface>
    ```
 
    Title is symptom-first and specific. Never restate the title verbatim in the body's first line — the title is the terse label; the body opens with the fuller observed symptom.
@@ -73,7 +74,7 @@ The goal is a *reproducible, well-scoped* report — not a diagnosis.
 Same contract applies. **Always fetch current state first:**
 
 ```sh
-gh issue view <n> --repo "$REPO" --json number,title,body,labels,state
+gh issue view <n> --repo "$REPO" --json number,title,body,labels,issueType,state
 ```
 
 **Comment vs edit:** add a **comment** for genuinely new information (a follow-up, extra evidence, a repro confirmation). **Edit the body** only to correct/upgrade what's there or to insert media. Editing must never delete a human's words.
@@ -87,7 +88,7 @@ gh issue view <n> --repo "$REPO" --json number,title,body,labels,state
   gh issue edit <n> --repo "$REPO" --body "<full modified body>"
   ```
 - **Upgrade provenance** — when an inferred repro is confirmed: edit the body to swap the orange `repro: inferred` badge for green `repro: user-reported`, and change the Steps tag to `Reported by user:`. The main reason to edit rather than comment.
-- **Relabel / triage** — `gh issue edit <n> --repo "$REPO" --add-label area/<x> --remove-label area/<y>`.
+- **Relabel / retype / triage** — `gh issue edit <n> --repo "$REPO" --add-label area/<x> --remove-label area/<y>`; change the type with `--type Enhancement`.
 - **Close / reopen** — `gh issue close <n> --repo "$REPO" --reason completed` (or `not planned`); `gh issue reopen <n> --repo "$REPO"`.
 
 ## Attaching files (screenshots, screen recordings, logs, PDFs)

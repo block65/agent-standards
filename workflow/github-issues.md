@@ -2,7 +2,7 @@
 
 An issue states a **problem**; the **fix is decided in triage**, not in the issue. Write for the developer who picks it up. Keep it terse; AI-authored issues tend to sprawl.
 
-Project specifics (target repo, label vocabulary, attachment upload) are configured per project — see the consuming project's `## GitHub Issues` block. The `github-issue` skill automates create/update against this standard.
+Project specifics (target repo, issue types, label vocabulary, attachment upload) are configured per project — see the consuming project's `## GitHub Issues` block. The `github-issue` skill automates create/update against this standard.
 
 ## Structure
 
@@ -10,6 +10,8 @@ Fill the project's issue-template fields — never invent sections (`## Mechanis
 
 - **bug** → *What happened* (symptom) · *Steps to reproduce* (tag provenance) · *Expected behaviour* · *Evidence*
 - **enhancement** → *Problem / motivation* · *Desired outcome* (behaviour, not implementation) · *Alternatives* (only if a real trade-off exists)
+
+The shape is the issue **Type** — a first-class GitHub field set with `gh issue create --type Bug` (or `--type Enhancement`), **not** a `bug`/`enhancement` label. It picks the field set above. A project may define other types (e.g. `Task`); follow its field set for those.
 
 Agents usually create via `gh issue create --body`, which bypasses the web-UI template — so reproduce these as the body headings.
 
