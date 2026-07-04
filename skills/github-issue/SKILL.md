@@ -89,7 +89,7 @@ gh issue view <n> --repo "$REPO" --json number,title,body,labels,issueType,state
   ```
 - **Upgrade provenance** — when an inferred repro is confirmed: edit the body to swap the orange `repro: inferred` badge for green `repro: user-reported`, and change the Steps tag to `Reported by user:`. The main reason to edit rather than comment.
 - **Relabel / retype / triage** — `gh issue edit <n> --repo "$REPO" --add-label area/<x> --remove-label area/<y>`; change the type with `--type Enhancement`.
-- **Close / reopen** — `gh issue close <n> --repo "$REPO" --reason completed` (or `not planned`); `gh issue reopen <n> --repo "$REPO"`.
+- **Close / reopen** — an issue a commit resolves should auto-close via `Closes #N` (see `workflow/git.md`); close by hand only when no such commit exists (duplicate, won't-fix, fixed elsewhere): `gh issue close <n> --repo "$REPO" --reason completed` (or `not planned`); `gh issue reopen <n> --repo "$REPO"`.
 
 ## Attaching files (screenshots, screen recordings, logs, PDFs)
 
