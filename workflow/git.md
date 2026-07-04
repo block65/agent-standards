@@ -40,6 +40,10 @@ fix(proxy): reject malformed Transfer-Encoding headers per RFC 9112
 - "add", "update", "change" as primary verb without stating purpose
 - Any message that doesn't require task context to write
 
+## Issue References
+
+A commit that **fully resolves** an issue closes it with a footer keyword — `Closes #N` (or `Fixes`/`Resolves`), one per line. A bare `#N` or `(#N)` only links; it never auto-closes, leaving a manual step that gets forgotten. Use the plain reference for partial work and passing mentions — close only the issue the commit actually resolves.
+
 ## Lint & Formatting
 
 **Lint/format changes are NEVER `fix:`.** `fix:` triggers a release; lint does not warrant one.
@@ -66,6 +70,7 @@ Manual fallback:
 1. **Type correct?** `fix:` = runtime behavior change. Otherwise `chore:`/`style:`/`refactor:`.
 2. **Subject explains why?** Not auto-generatable from diff.
 3. **All staged hunks related?** One logical unit per commit. Split if not.
+4. **Fully resolves an issue?** `Closes #N` in the footer, not a bare `(#N)`.
 
 ## Hygiene
 
