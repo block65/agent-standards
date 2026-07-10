@@ -185,7 +185,7 @@ The test for whether a `goto` is sanctioned: trace the URL back one step. Did it
 
 ### A note on navigation cost
 
-Clicking through instead of deep-linking costs render and network time per test. Many E2E tests paying the same navigation tax on one page is usually a coverage smell: exhaustive variation on one page is component-test territory, not E2E. Push validation permutations, state-toggle combinations, and copy variations down to component tests. E2E covers user journeys; if you have ten genuinely distinct journeys ending at the same page, the navigation is real testing surface and worth the cost. The fix for slow E2E suites is fewer tests on better journeys, not deep-linking shortcuts.
+Clicking through instead of deep-linking costs render and network time per test. Many E2E tests paying the same navigation cost on one page is usually a sign of over-testing: exhaustive variation on one page belongs in component tests, not E2E. Push validation permutations, state-toggle combinations, and copy variations down to component tests. E2E covers user journeys; if you have ten genuinely distinct journeys ending at the same page, the navigation is real testing surface and worth the cost. The fix for slow E2E suites is fewer tests on better journeys, not deep-linking shortcuts.
 
 ## Test structure
 
