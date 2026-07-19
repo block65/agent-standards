@@ -16,6 +16,7 @@
 - **[Git](workflow/git.md)**: Conventional commits and message philosophy.
 - **[Dependencies](engineering/dependencies.md)**: Source trust and version currency.
 - **[Code Review](engineering/code-review.md)**: Common bugs and review behaviours.
+- **[Tool Discipline](workflow/tools.md)**: Prefer native tools over the shell; Bash only for running programs.
 
 ## Load if applicable (workflow)
 
@@ -37,3 +38,4 @@
 - **[React](lang/react.md)**: Component patterns, i18n, styling, and state management.
 - **[JavaScript](lang/javascript.md)**: pnpm, modern API usage, and general JS hygiene.
 - **[Rust](lang/rust.md)**: Entry point for modular Rust standards.
+- **[Python](lang/python.md)**: Data-before-logic layout, strict typing, tamper-evident policy, and a ruff/mypy gate.
