@@ -24,3 +24,5 @@ For a rust crate, in your project's `AGENTS.md`:
 ## Assumptions
 
 These standards assume the `compend` CLI (from the `block65/compend` repo) is on PATH. Standards docs defer library and language *facts* to it rather than copying them (e.g. `lang/rust.md` → `compend get rust-book <topic>`). Where it is not installed, follow the standards alone — do not substitute web fetches for compend lookups.
+
+Code review runs through the `pear` CLI, which carries its own `pear-review` skill (`pear skill install`). The reviewer reads the diff in a browser; the agent attaches to the review and services comments as they arrive. See pear's own README for usage — it is a tool, not a standard, so nothing here restates it.
