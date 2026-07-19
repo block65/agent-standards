@@ -7,7 +7,7 @@
     {
       "name": "block65-tools",
       "source": "./",
-      "description": "Block65's coding standards, workflow conventions, and skills for AI-assisted development"
+      "description": "Shared standards and skills for AI assisted Block65 projects"
     },
     {
       "name": "compend",

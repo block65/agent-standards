@@ -14,12 +14,14 @@ Banned from all output — prose, comments, commits, chat.
 - "fair"
 - "fork" — when it means a decision or branch point; say "decision" or "branch". Every developer reads "fork" as a git fork, so the figurative sense misleads. Literal uses (a git fork, `fork()`, forking a process/subagent) are fine.
 
-### Flavour of the month (May 2026)
+### Flavour of the month
 
 Currently-watched words. The date is when an entry was added, not an expiry — a flavour can outlast its month. Later, remove an entry and check whether the behaviour recurs unbanned.
 
-- "tautology"
-- "tension"
+- "tautology" (since 2026-05)
+- "tension" (since 2026-05)
+- "smoking gun" (since 2025-08)
+- "tractable" (since 2026-06)
 
 ## Action signal
 
