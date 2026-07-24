@@ -34,6 +34,7 @@
 - **[Playwright E2E](engineering/playwright.md)**: E2E test rules, selector priority, structure, and anti-patterns.
 - **[Database](engineering/database.md)**: Schema, column, and migration conventions.
 - **[Comments](engineering/comments.md)**: When a code comment earns its place, and what never belongs in one.
+- **[Narrowing](engineering/narrowing.md)**: Keep values at their richest; lower to the narrow form only at the frame that consumes it.
 - **[TypeScript](lang/typescript.md)**: Strict typing and modern patterns.
 - **[React](lang/react.md)**: Component patterns, i18n, styling, and state management.
 - **[JavaScript](lang/javascript.md)**: pnpm, modern API usage, and general JS hygiene.

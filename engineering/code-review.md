@@ -4,6 +4,7 @@
 
 - Duplicated code chunks (copy-paste without abstraction).
 - Splitting or modifying data types only to reassemble them later in the code path.
+- A frame that narrows a value only to pass it on — stringify-to-pass, slice-to-pass, derive-to-pass — instead of passing it at its richest. See [Narrowing](narrowing.md).
 - Changing one function in a common set but not its counterparts.
 - Inappropriate log levels for messages.
 - Incomprehensible log messages.
