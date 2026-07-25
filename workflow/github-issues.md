@@ -45,7 +45,23 @@ Never present inferred steps as if the user gave them.
 
 ## Length
 
-~60–120 words, 150 hard max. Never include: CI/test results, bisect SHAs, self-referential meta-commentary, or a restatement of the title. Follow `writing/base.md`.
+~60–120 words of prose, 150 hard max — the body only. Badge markdown, field headings, code spans and URLs don't count; measure the sentences a developer reads. Never include: CI/test results, bisect SHAs, self-referential meta-commentary, or a restatement of the title. Follow `writing/base.md`.
+
+The budget constrains the body, not the issue. Overflow goes in a comment (below), never into a compressed body that drops verified evidence. If trimming means losing a finding, stop trimming.
+
+## Comments carry the depth
+
+The body is the triage-facing symptom report: what's broken, how to reproduce it, and the minimum evidence that makes the claim actionable. Everything else goes in a comment posted immediately after filing.
+
+Belongs in a comment:
+
+- **Full verification data** — the tables, byte counts, response headers, URL sweeps and command output behind the body's summary. Don't restate it in both; the body keeps the one number that makes the case, the comment holds the working.
+- **Line numbers**, which the body may not carry. Pin them to a commit SHA and name the function or symbol as the durable anchor, since the numbers rot and the symbol doesn't.
+- **Adjacent findings** turned up while investigating that aren't this bug. Say why each is out of scope and what it should become instead (a `Task`, its own bug, a product decision). Recording them beats losing them; merging them into the body is scope creep.
+
+A comment is not a loophole. More evidence for the same problem belongs in a comment; a second problem gets its own issue. If the body's *symptom* sentence has to cover two unrelated failures, splitting is the answer, not a longer comment.
+
+The rules that still apply in comments: never prescribe the fix, and follow `writing/base.md`.
 
 ## Badges (AI-authored issues)
 

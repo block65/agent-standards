@@ -22,7 +22,9 @@ If a project has no such block, ask the user for the repo, set the issue type to
 
 ## The contract
 
-Follow **`workflow/github-issues.md`** (the GitHub issue authoring standard): symptom-first, template fields only, ≤120 words (150 hard max), name file/service but not line numbers, one audience per issue, **never prescribe the fix**, provenance-tagged repro, badge row on top.
+Follow **`workflow/github-issues.md`** (the GitHub issue authoring standard): symptom-first, template fields only, ≤120 words of body prose (150 hard max), name file/service but not line numbers, one audience per issue, **never prescribe the fix**, provenance-tagged repro, badge row on top.
+
+The word budget is on the **body**, not the issue. When the evidence outgrows it, post a comment straight after filing — full verification data, line numbers pinned to a SHA, adjacent findings that aren't this bug. Compressing the body until a verified finding drops out is the wrong trade. A second unrelated problem is still a second issue.
 
 ## How much to investigate
 
@@ -67,7 +69,13 @@ The goal is a *reproducible, well-scoped* report — not a diagnosis.
 
    Title is symptom-first and specific. Never restate the title verbatim in the body's first line — the title is the terse label; the body opens with the fuller observed symptom.
 
-6. **Return the issue URL.** Any screenshot is already embedded, so nothing is left for the user to do.
+6. **Post the depth as a comment, if there is any.** Only when the investigation produced more than the body can hold — full verification data, line numbers (pinned to a SHA, with the symbol named), or adjacent findings that aren't this bug. Skip it for a routine report; most issues need no comment.
+
+   ```sh
+   gh issue comment <n> --repo "$REPO" --body "<comment>"   # <n>: the issue gh issue create printed
+   ```
+
+7. **Return the issue URL.** Any screenshot is already embedded, so nothing is left for the user to do.
 
 ## Updating an existing issue
 
