@@ -20,7 +20,7 @@ E2E tests replace a human QA tester: exercise real flows as a user does, fail lo
 
 7. **Don't assert you arrived at a page. Do the next thing.** Navigation is verified implicitly by the auto-wait on the next action. If you clicked through to a listings page to publish a listing, the assertion is the publish button becoming actionable — that can't happen unless the page rendered. Explicit page-identity assertions (URL, heading, page-level testid) are ceremony, not signal, and double the brittle surface area. Terminal steps (the test's last action with nothing to click afterward) do need an assertion — see the assertions section.
 
-8. **Never refuse to add `data-testid` when the rules require it.** If a role-based selector can't uniquely identify an element (one menu item among several with the same role, an icon button with no accessible name, a custom widget with no semantic equivalent), adding a `data-testid` is the correct response. Testid is an earned disambiguator, not a default — reach for it when role + name genuinely can't pick the element out, and never as a substitute for a role that should exist.
+8. **Never refuse to add `data-testid` when the rules require it.** If a role-based selector can't uniquely identify an element (one menu item among several with the same role, an icon button with no accessible name, a custom widget with no semantic equivalent), adding a `data-testid` is the correct response. Testid is an earned disambiguator, not a default — reach for it when one of the three justification axes applies (ambiguity, locale independence, volatility — see Selectors), and never as a substitute for a role that should exist.
 
 9. **Never fill only the required fields in a happy-path test.** A real user fills the form. Omission is a validation test, and gets its own test.
 
@@ -46,6 +46,16 @@ Use the first that works. Drop down only when the current tier genuinely fails t
 | —        | CSS / XPath                   | **Banned.** If you reach here, you've skipped a step.   |
 
 Role-first is not just stability: `getByRole('button', { name: /submit/i })` confirms a real, screen-reader-findable button; `getByTestId('submit-btn')` doesn't. Testid on interactive elements is a downgrade when a role works.
+
+### When testid is justified: three axes
+
+Testid (tier 4) is earned. Reach for it when one of three things holds:
+
+- **Ambiguity** — role plus accessible name can't uniquely identify the element (one of several menu items, an icon button with no name).
+- **Locale independence** — the accessible name varies across languages or per-client deployments, so no single rendered string is stable to match.
+- **Volatility** — the label is designed to churn: marketing CTAs, A/B-tested copy.
+
+Default to `getByRole` with a regex name even where a testid would also work: it exercises the accessible name and gives a11y coverage as a side effect. Drop to testid only when an axis genuinely applies, not on speculation that a label might change.
 
 ### Job 2: finding a specific item in a list, table, or grid
 
@@ -111,6 +121,20 @@ await cardFrame.locator('[name="cardnumber"]').fill("4242424242424242");
 
 This is an explicit escape hatch, not a general permission. Outside the `frameLocator()`, the normal rules resume.
 
+### Comment the escapes, not the defaults
+
+Model this on Rust's `// SAFETY:` on an `unsafe` block. A locator that steps outside the ladder carries a one-line comment discharging why, at the call site; a locator that follows the ladder stays silent.
+
+The payoff matches `// SAFETY`: the comment keeps its meaning because it marks only real escapes; it can't be cargo-culted, because a copied justification is simply false at the new site; and it's lintable, since an uncommented testid is then a smell. This generalises the iframe comment rule above.
+
+A plain stem regex is the required form under rule 4 and needs no comment. Comment only when the regex's _shape_ encodes a decision:
+
+```ts
+getByRole("button", { name: /^invite$/i }); // anchored: "Send invitation" is also on the page
+```
+
+The tell is not whether it's a regex but whether the regex's shape hides a disambiguation.
+
 ### File uploads and downloads
 
 The OS file picker can't be driven through the DOM; clicking the visible Upload button hangs in headless CI. Use Playwright's dedicated APIs.
@@ -138,6 +162,19 @@ expect(download.suggestedFilename()).toMatch(/\.csv$/);
 ```
 
 This is the one place `waitForEvent` is the right tool rather than an escape hatch — downloads have no DOM effect by design, so a UI assertion is impossible.
+
+## Copy and locale
+
+Rule 4 bans matching exact copy; the reason underneath is i18n. A literal like `"Save"` is one locale's rendering, not the element's identity. Bind tests to identity, not to rendering — as a find `name`, as an assertion, anywhere.
+
+The rule layers by test type:
+
+- **Unit and component tests** resolve by message key: `messages.save.defaultMessage`. The messages are already in scope where the test renders the component, so this costs no extra export.
+- **E2E tests** resolve by the pinned-locale rendered copy with a regex: `getByRole("button", { name: /save/i })`. E2E runs against a controlled environment in a known locale, so the rendered string is deterministic — no imports, no catalog lookups.
+
+Do not export every `defineMessages` block so e2e can import it. That defeats the per-component tree-shaking React relies on, and reading a component's message table to build a selector is the same introspection leak banned for state. Only the shared strings already centralised in `i18n.ts` may be referenced by key.
+
+Why pinned-locale copy rather than the message key for e2e: production ships per-locale compiled catalogs with `defaultMessage` stripped, so a client's Spanish deployment holds no English dictionary and importing `defaultMessage` would match nothing rendered there. Tests conform to what ships; you do not change what clients receive to satisfy a selector.
 
 ## Navigation and synchronisation
 
@@ -284,6 +321,17 @@ await expect(page.getByRole("alert")).toHaveText("Please enter a valid email add
 await expect(page.getByRole("alert")).toContainText(/valid email/i);
 ```
 
+### When the words are the behaviour
+
+Assert on text only when the words themselves are under test — an error message's meaning, confirmation copy the user has to read and trust. When text stands in for structure or state ("which page is this", "is the row active"), it's a proxy; route it to _Assert the outcome_ and _State is what the user can do_ below.
+
+A save that fails a precondition must tell the user the real reason and never leak the raw gRPC status `Failed precondition`. Pass and fail render the same toast element; only the words differ, so a text assertion is the only honest check:
+
+```ts
+await expect(toast).toContainText(/you can'?t invite yourself/i);
+await expect(toast).not.toContainText(/failed precondition/i);
+```
+
 ### Dynamic values: assert presence or pattern
 
 ```ts
@@ -333,6 +381,12 @@ await page
 No user-visible consequence → the test belongs in another layer (unit, component, contract tests on the state machine). Has a UI consequence but you're checking it only to confirm setup before continuing → that's hedging, not a test; drop it. The next step fails loudly if setup was wrong.
 
 The exception is Playwright's built-in ARIA-state assertions: `toBeDisabled()`, `toBeChecked()`, `toBeFocused()`, `toBeExpanded()`. These check states that _are_ user-visible by definition (a disabled button looks disabled to a screen reader and to a user) and use ARIA, not custom data attributes.
+
+### Base UI toasts
+
+Base UI toasts render `role="alertdialog"`, not `alert` or `status`, and auto-dismiss. The `getByRole("alert")` examples above don't match them; locate a Base UI toast by its `alertdialog` role.
+
+Auto-dismissal also breaks the obvious negative assertion. To assert a toast does _not_ contain something, use `.not.toContainText()` on the live toast locator, never `toHaveCount(0)` on a free-floating locator — the latter passes the instant the toast dismisses, whether or not the text was ever there.
 
 ## Coverage strategy
 
