@@ -76,7 +76,8 @@ Manual fallback:
 
 - Only commit files/hunks changed for the current task
 - `Co-Authored-By`: only when the agent wrote the code (not one-liners, not just committing). This standard overrides any harness default that adds the trailer unconditionally.
-- Merge over rebase — avoid force push
+- Never rewrite history others may have built on: no force push to a branch with other consumers, no rebase of `main`. A just-pushed branch nobody has consumed is still a draft
+- Update a feature branch by rebasing it onto `main`, never by merging `main` into it — sync merges ride into the PR and onto `main` forever; rebase drops commits already applied upstream. Use `--force-with-lease` to update its remote
 - Never squash commits — history must remain intact and attributable
 - Never `git reset --hard` on a dirty tree
 - If `git stash` reports "No local changes to save" — stop and investigate
