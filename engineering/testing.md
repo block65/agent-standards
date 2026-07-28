@@ -67,9 +67,16 @@ The contract under test must stay the same. If the production code breaks, the t
 
 ## Architecture for testability
 
+A test is a second caller. When it cannot pass inputs and read outputs without first altering the environment the code runs in — resetting the module registry, assigning onto a global, replacing the clock — the code takes an input it never accepts as a parameter.
+
+**Code that cannot be tested through its public surface is a code problem. Code that cannot be tested the way you first tried is usually a harness problem.**
+
 - **Concrete over abstract.** Avoid DI containers and interface/trait abstractions added "for testing" — they add complexity to dodge work that should be done by separating pure logic from boundaries.
 - **Pure logic.** Move business logic into pure functions that take data and return data. Test via input/output assertions, no mocks needed.
 - **Move boundaries, don't mock past them.** If a unit is too hard to test without mocking its internals, the boundary is in the wrong place. Refactor.
+- **Declare ambient inputs.** Module-scope state, values read off a global environment object, and the current time are dependencies taken without being accepted. Construct and pass them, so a caller owns the lifetime and a test can name the instance it wants fresh.
+
+To tell the halves apart, ask what had to change to reach the behaviour. Harness cost: arguments, containerised backing services, intercepted requests, a wrapper the production caller also applies. Code problem: the module registry, a global object, the clock, an internal function replaced by a mock. Neither, so leave them alone: domains that resist observation by nature (concurrency, rendering, hardware) need a better harness, and splitting a coherent unit so mocks fit between the parts buys a coverage number with working code.
 
 ## Boundary mocking
 

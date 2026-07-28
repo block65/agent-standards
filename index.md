@@ -29,7 +29,7 @@
 - **[Technical Docs](writing/technical.md)**: Objectivity and clarity (No "Your").
 - **[Marketing & Copy](writing/marketing.md)**: Persuasion and ownership (Yes "Your").
 - **[Decision Records (ADRs)](writing/adr.md)**: Record why, not how; living records kept in sync with the code.
-- **[Testing Philosophy](engineering/testing.md)**: Tests-as-adversaries framing, robustness hierarchy, mocking rules. (Referenced as a prerequisite by `vitest.md` and `playwright.md`).
+- **[Testing Philosophy](engineering/testing.md)**: Tests-as-adversaries framing, robustness hierarchy, mocking rules, testability. (Referenced as a prerequisite by `vitest.md` and `playwright.md`).
 - **[Vitest](engineering/vitest.md)**: Unit/integration test rules for TypeScript projects.
 - **[Playwright E2E](engineering/playwright.md)**: E2E test rules, selector priority, structure, and anti-patterns.
 - **[Database](engineering/database.md)**: Schema, column, and migration conventions.

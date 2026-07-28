@@ -210,6 +210,23 @@ See `engineering/testing.md` for the philosophy. In vitest specifically:
 - **Spies:** `vi.spyOn` for asserting calls without changing behaviour. Use spies to capture emitted side effects (queue messages, event payloads) and assert on their shape.
 - **Reset between tests:** set `restoreMocks: true` in vitest config (calls `mockRestore()` on every spy after each test). For factories from `vi.fn()` or `vi.mock()`, also set `mockReset: true` so implementations are reset, not just history. `vi.restoreAllMocks()` alone only restores `vi.spyOn` originals — it does not reset `vi.fn()` implementations or unmock modules.
 
+## Detecting undeclared dependencies
+
+Rule: "Architecture for testability" in `engineering/testing.md`. In vitest it reduces to one question — **does the setup change something no production caller changes?** Mutating an ambient object to inject a dependency, `vi.stubGlobal`, fake timers used to age stored state, a module-scope `Map` written to directly: each is a finding about the code, and the list does not close. Match the shape, not the API.
+
+One form is worth naming because its cost is not obvious. **`vi.resetModules()`, or a batch of dynamic imports.** Module-scope state has the module registry's lifetime, and that registry is process-global: no caller can name the instance, so a fresh one costs a graph rebuild, and every module holding a reference must re-import in the same batch or observe a different one.
+
+```ts
+// ❌ Memo in module scope, so the graph is rebuilt to reset it; global mutated to inject the client
+vi.resetModules();
+const { loadSettings } = await import("./settings.ts");
+Object.assign(env, { STORE: { fetchDoc } });
+
+// ✅ Cache is a value, so its owner picks the lifetime — built once at startup, as before
+const cache = createSettingsCache({ store: { fetchDoc }, now: clock.now });
+const settings = await loadSettings({ cache });
+```
+
 ## Anti-patterns
 
 ```ts
