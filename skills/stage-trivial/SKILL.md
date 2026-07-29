@@ -34,7 +34,7 @@ Reflexes to catch in yourself:
 - "Adds code → skip" without checking whether the code is a complete intentional unit or a design choice.
 - "Coupled → skip" without asking whether the coupling is *design + adapter* (skip) or *complete-unit wiring* (stage).
 - "When in doubt → skip" without trying to resolve the doubt first.
-- "File has substantive changes → skip the file" without enumerating hunks. Coupling is a hunk-level property; a substantive rewrite in one hunk doesn't poison a pure-observability hunk two screens down. Always classify at hunk granularity.
+- "File has substantive changes → skip the file" without enumerating hunks. Coupling is a hunk-level property; a substantive rewrite in one hunk doesn't disqualify a pure-observability hunk two screens down. Always classify at hunk granularity.
 
 ### Banned skip-reasons
 

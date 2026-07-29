@@ -30,7 +30,7 @@ test('POST /items creates an item', ...)
 ## Non-negotiable inputs
 
 - **Real randomness, every run.** UUIDs, timestamps, faker output without a fixed seed. No canonical "Test User" that papers over collisions. A test passing once with `id: 1` tells you nothing about the id a real user generates. **Print the seed/inputs on failure** so flakes are reproducible — randomness without traceability is just noise.
-- **Real user flows.** Drive the system through its public surface — API, UI, CLI. No backdoors that bypass the layers under test.
+- **Real user flows.** Drive the system through its public surface — API, UI, CLI. No test-only shortcuts that skip the layers under test.
 - **Real failure modes.** Empty inputs, oversized inputs, concurrent writes, dropped connections, malformed payloads. Don't test only the shapes that work.
 
 ## Hard rejects

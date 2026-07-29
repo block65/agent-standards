@@ -44,7 +44,7 @@ the *rules*. On conflict, these win.
 
 - **`mypy --strict` clean, always.** `from __future__ import annotations`; PEP 585 builtin generics
   (`list[str]`, not `typing.List`).
-- No `# type: ignore` without a specific code and a reason. Fix the type; never add a runtime hack to
+- No `# type: ignore` without a specific code and a reason. Fix the type; never add a runtime workaround to
   dodge a type error.
 
 ## Comments & docstrings
@@ -52,7 +52,7 @@ the *rules*. On conflict, these win.
 - **Comments explain WHY, never WHAT.** No narration of obvious code.
 - One orientation line per *cluster* of constants: what the group is + a pointer to the spec it
   implements.
-- Docstrings carry the rationale (for security code, the threat). PEP 257.
+- Docstrings carry the rationale (for security code, the failure it guards against). PEP 257.
 
 ## Verification & safety
 
@@ -78,7 +78,7 @@ the *rules*. On conflict, these win.
   blocks `UP` union rewrites); `select` = `E W F I N UP Q COM818 COM819 D FA PLR2004`;
   `ignore` = `D401 D100-D107 COM812`; `pydocstyle convention = pep257` (enforce docstring **shape**, not
   presence); `flake8-quotes` double + `avoid-escape`. **The comparison rules (E711/E712/E721) are a
-  correctness guard when parsing untrusted JSON** — `is True` rejects a malicious `1`/`[1]` that
+  correctness guard when parsing untrusted JSON** — `is True` rejects a non-boolean `1`/`[1]` that
   `== True` would accept.
 
 ## See also
