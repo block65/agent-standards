@@ -33,10 +33,13 @@
 
 - **No namespace objects:** Never build namespaces by property assignment (`Foo.Bar = Bar`). Use module re-exports (`export * as Foo from './parts.ts'`).
 - **No unused exports:** Never `export` a function, type, or value that is not imported elsewhere. `export` is a public contract, not a default.
-- **Separate files over inline exports:** Do not pile exports into one file for the sake of it. Split into focused files when it aids readability. Use a barrel (`main.ts`) only as a convenience re-export layer for consumers and tree-shaking — the barrel is not where logic lives. Never `index.ts`.
+- **Separate files over inline exports:** Do not pile exports into one file for the sake of it. Split into focused files when it aids readability. Use a barrel (`main.ts`) only as a convenience re-export layer for consumers and tree-shaking — the barrel is not where logic lives.
 
 ## Error Handling
 
+- **Never throw a plain `Error`.** Every error you construct is a `CustomError` from `@block65/custom-error`. A plain `Error` carries a string and nothing else — no status, no machine-readable code, no way for the top-level handler to decide what the user should see.
+- **Sensitive data goes in `debug`, never in the message.** `.debug({ ... })` is private and appears only in `toJSON()`, which is server-side. `details` is public and reaches the client via `toJSONSummary()`, so it holds only what a user may read. Never put a token, credential, or raw upstream payload in the message.
+- **The top-level handler owns what the user sees.** It filters the error and renders human-readable output from the `CustomError` augmentations. Nothing below it formats errors for display, and nothing below it decides what is safe to expose.
 - **Default is bubble.** Most code should let rejections propagate. If the framework above already surfaces them — React Query `query.error`, route loaders to error boundaries, Hono's error pipeline, `withSentry`/equivalents capturing unhandled rejections — then `.catch(console.error)` or `try/catch` is redundant. Delete it; just `await`.
 - **Catch only at boundaries where the rejection has nowhere else to go.** Fire-and-forget `waitUntil` / keepalive POSTs (response already sent), top-level entry points outside any handler, code that must continue past a non-essential failure. Everywhere else, bubble.
 - **Every catch must do one of:**
@@ -65,7 +68,7 @@
 
 ## Type Coercion
 
-- **`.toString()` over `String()`:** Use `value.toString()` for string conversion, not `String(value)`.
+- **`.toString()` over `String()`:** Use `value.toString()` for string conversion, not `String(value)`. Narrow away `null`/`undefined` first — `.toString()` throws on them, and that loudness is the point; `String()` silently prints `"undefined"`.
 - **`Number.parseInt` / `Number.parseFloat` over `Number()`:** Be explicit about radix and float vs int. `Number.parseInt(s, 10)` for integers; `Number.parseFloat(s)` for floats. `Number(s)` hides the parse mode and silently coerces booleans, `null`, and arrays.
 
 ## URLs and Paths
@@ -79,7 +82,8 @@
 
 ## APIs & Modernity
 
-- **Deprecated APIs:** Never use deprecated APIs (e.g., `btoa`). Use modern, standard alternatives.
+- **Deprecated APIs:** Never use deprecated APIs. Use modern, standard alternatives.
+- **Never `btoa`/`atob`:** binary-unsafe legacy shims. Use `Uint8Array.fromBase64`/`.toBase64()`, or `Buffer` conversions in Node.
 
 ## Project Verification
 

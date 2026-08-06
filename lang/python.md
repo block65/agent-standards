@@ -5,7 +5,7 @@ the *rules*. On conflict, these win.
 
 ## Philosophy
 
-- **Readability > verification > safety > all**, and a **machine-enforced rule beats manual discipline.**
+- **Readability first, then verification, then safety** — and a **machine-enforced rule beats manual discipline.**
 - **Trust by reading.** When a tool's value is auditability, prefer single-file, stdlib-only, zero
   runtime deps. Splitting into modules *enlarges* the trust surface (a reviewer must verify imports
   aren't shadowed or planted) — defer it until the data genuinely outgrows the engine.
@@ -42,8 +42,9 @@ the *rules*. On conflict, these win.
 
 ## Types
 
-- **`mypy --strict` clean, always.** `from __future__ import annotations`; PEP 585 builtin generics
-  (`list[str]`, not `typing.List`).
+- **`mypy --strict` clean, always.** `from __future__ import annotations` when targeting Python
+  <3.14 (3.14 defers annotation evaluation natively); PEP 585 builtin generics (`list[str]`, not
+  `typing.List`).
 - No `# type: ignore` without a specific code and a reason. Fix the type; never add a runtime workaround to
   dodge a type error.
 
@@ -57,7 +58,7 @@ the *rules*. On conflict, these win.
 ## Verification & safety
 
 - **Make security-critical data tamper-evident.** Add a test that asserts the EXACT contents of every
-  allow/denylist, so a stealth one-line edit (a host added to the safe list) fails CI as a screaming
+  allow/denylist, so a stealth one-line edit (a host added to the safe list) fails CI with an explicit
   diff. Consolidation alone does not earn trust; the failing test does.
 - **Ship a `--show-policy`-style dump** that prints the live config from the *same* constants the code
   uses (no second copy to drift) — a reviewer audits by running, not reading. Golden-snapshot it.
@@ -77,9 +78,9 @@ the *rules*. On conflict, these win.
   `target-version` to the idiom the code actually uses (don't leave an unexamined `py39` default that
   blocks `UP` union rewrites); `select` = `E W F I N UP Q COM818 COM819 D FA PLR2004`;
   `ignore` = `D401 D100-D107 COM812`; `pydocstyle convention = pep257` (enforce docstring **shape**, not
-  presence); `flake8-quotes` double + `avoid-escape`. **The comparison rules (E711/E712/E721) are a
-  correctness guard when parsing untrusted JSON** — `is True` rejects a non-boolean `1`/`[1]` that
-  `== True` would accept.
+  presence); `flake8-quotes` double + `avoid-escape`. **The comparison rules (E711/E712/E721) are
+  correctness guards when parsing untrusted JSON** — e.g. E712: `is True` rejects a non-boolean `1`
+  that `== True` would accept.
 
 ## See also
 

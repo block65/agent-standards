@@ -4,7 +4,7 @@
 
 For each change set: **code → verify → commit**. Use `-q` (quiet) with cargo commands.
 
-Always auto-fix, never hand-edit:
+Auto-fix first; hand-edit only what clippy cannot fix itself (many lints have no machine-applicable fix):
 
 ```sh
 cargo build -q
@@ -18,7 +18,7 @@ cargo fmt
 - **Zero-warning policy:** Fix root causes, use `// REASON:` for `#[allow]`.
 - **Modules:** Use 2018+ style (avoid `mod.rs`). Treat module roots as strict barrels — re-exports only; move all logic, traits, and types into dedicated sibling files.
 - **Derives:** `Debug`, `Clone`, `Default`, `PartialEq` where appropriate.
-- **`#[must_use]`:** Apply to `Result`, builders, and lock guards.
+- **`#[must_use]`:** Apply to builders, lock guards, and pure-return methods. (`Result` already carries it in std.)
 - **Docs:** `///` for all public items.
 - **Variable names:** Use descriptive names in `let` bindings, function parameters, and struct fields. No single-character names (except loop indices `i`/`j`/`k` and coordinates `x`/`y`/`z` in geometry/math) and no opaque abbreviations (`pa`, `ns`, `r`, `ru`, `lhs`). Shadow the original name when cloning or reborrowing: `let metrics = Arc::clone(&metrics)` not `let m = Arc::clone(&metrics)`.
 
