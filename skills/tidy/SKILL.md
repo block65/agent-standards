@@ -59,13 +59,14 @@ Fix ONLY errors where the resolution is unambiguous — one possible action, no 
 
 **Safe to fix:**
 
-| Error | Fix |
-|-------|-----|
-| **TS6133** — unused import | Remove the import specifier (or entire statement if it's the only one). Never remove side-effect imports (`import "./foo.css"`, `import "reflect-metadata"`) — those exist for their side effects. |
-| **TS1484** — type-only import needed | Add `type` to the import: `import { type Foo }` |
-| **TS6198** — unused destructured variable | Prefix with `_` only if the destructuring itself is needed (e.g. rest pattern). Otherwise remove the binding. |
+| Error                                     | Fix                                                                                                                                                                                                |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **TS6133** — unused import                | Remove the import specifier (or entire statement if it's the only one). Never remove side-effect imports (`import "./foo.css"`, `import "reflect-metadata"`) — those exist for their side effects. |
+| **TS1484** — type-only import needed      | Add `type` to the import: `import { type Foo }`                                                                                                                                                    |
+| **TS6198** — unused destructured variable | Prefix with `_` only if the destructuring itself is needed (e.g. rest pattern). Otherwise remove the binding.                                                                                      |
 
 **Never do any of these to silence an error:**
+
 - `as` or `as unknown as` (cast)
 - `!` (non-null assertion)
 - `@ts-ignore` or `@ts-expect-error`
@@ -75,6 +76,7 @@ Fix ONLY errors where the resolution is unambiguous — one possible action, no 
 These are all banned by the codebase standards. If the fix requires one of them, it's not a trivial fix.
 
 **Report these — do not fix:**
+
 - Type mismatches (TS2322, TS2345)
 - Missing properties (TS2339)
 - Module not found (TS2307)
@@ -98,6 +100,7 @@ Compare the error count against step 3. If it went up, your fixes introduced new
 ## Output
 
 Keep it brief:
+
 1. What was fixed (e.g. "formatted 12 files, removed 3 unused imports, added `type` to 2 imports")
 2. Error count before and after, and the breakdown by error code if there are still errors
 3. Remaining errors that need human judgment — file, line, error message
@@ -109,6 +112,7 @@ Don't explain what the tools do. The user knows.
 Default: workspace-wide, matching the project's justfile targets if one exists.
 
 If the user names a specific package or path, scope to it:
+
 - `pnpm exec oxfmt <path>`
 - `pnpm exec oxlint <path> --fix`
 - `pnpm --filter=<package> run typecheck`

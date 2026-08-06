@@ -45,33 +45,41 @@ You are taking over an in-progress task from a previous agent session. That sess
 context is gone; this brief is everything. Do not assume knowledge beyond what is here.
 
 # Task
+
 <One short paragraph: what the user wants and why. Their acceptance criteria, in their terms.>
 
 # Where things stand
+
 - Working directory: <absolute path>
 - Branch: <branch> (branched from <base>)
 - Uncommitted changes: <one-line summary, or "none">
 
 ## Done (verified)
+
 - <fact — with its evidence: commit hash, test that passed, file that exists>
 
 ## In progress
+
 - <the half-finished thing: file, current state, exactly what remains>
 
 ## Next steps (in order)
+
 1. <step>
 2. <step>
 
 # Hints and gotchas
+
 - Build/test/run: <the exact commands that work in this project>
 - <user decisions and constraints stated during the session>
 - <dead ends already tried, and why they failed>
 - <environment quirks>
 
 # Key files
+
 - <absolute path> — <why it matters>
 
 # Start here
+
 1. <a command to verify the state described above, e.g. run the tests>
 2. <then continue with next step 1>
 ```

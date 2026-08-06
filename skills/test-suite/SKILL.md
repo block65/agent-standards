@@ -106,12 +106,15 @@ If the env's auth setup is interactive (magic-link capture from service logs, OA
 After both phases complete, present a summary.
 
 ### What was fixed
+
 List each fix: file, what changed, why.
 
 ### Design issues found
+
 List issues needing human decision-making. Include the test name, the failure, and your assessment of what the underlying problem is.
 
 ### Final status
+
 - Unit/integration: X passed, Y failed (Z design issues) — or "skipped" if `--e2e-only`
 - E2E (env=<name>): X passed, Y failed (Z design issues) — or "skipped" if `--unit-only`
 

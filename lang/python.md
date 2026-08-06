@@ -1,13 +1,13 @@
 # Python Standards
 
-Block65 Python. Language/library *facts* come from `compend` (`compend list` for coverage); these are
-the *rules*. On conflict, these win.
+Block65 Python. Language/library _facts_ come from `compend` (`compend list` for coverage); these are
+the _rules_. On conflict, these win.
 
 ## Philosophy
 
 - **Readability first, then verification, then safety** — and a **machine-enforced rule beats manual discipline.**
 - **Trust by reading.** When a tool's value is auditability, prefer single-file, stdlib-only, zero
-  runtime deps. Splitting into modules *enlarges* the trust surface (a reviewer must verify imports
+  runtime deps. Splitting into modules _enlarges_ the trust surface (a reviewer must verify imports
   aren't shadowed or planted) — defer it until the data genuinely outgrows the engine.
 
 ## File organization (data before logic)
@@ -20,9 +20,9 @@ the *rules*. On conflict, these win.
   you flag) and an allowlist (what you trust), and open the allowlist with an explicit default-deny
   header.
 - **Wiring at the bottom.** Constants that reference functions (registries, dispatch tables) go in one
-  labelled section *after* their referents, just above the CLI.
+  labelled section _after_ their referents, just above the CLI.
 - **`main()` / entry point LAST**, directly above `if __name__ == "__main__"`.
-- **Caller above helper.** Order by data flow so ctrl-click *descends*; a private helper never sits
+- **Caller above helper.** Order by data flow so ctrl-click _descends_; a private helper never sits
   above its sole caller.
 - **No banner / divider / horizontal-rule comments.** Structure comes from naming and small functions,
   plus at most a couple of functional section headers.
@@ -51,7 +51,7 @@ the *rules*. On conflict, these win.
 ## Comments & docstrings
 
 - **Comments explain WHY, never WHAT.** No narration of obvious code.
-- One orientation line per *cluster* of constants: what the group is + a pointer to the spec it
+- One orientation line per _cluster_ of constants: what the group is + a pointer to the spec it
   implements.
 - Docstrings carry the rationale (for security code, the failure it guards against). PEP 257.
 
@@ -60,7 +60,7 @@ the *rules*. On conflict, these win.
 - **Make security-critical data tamper-evident.** Add a test that asserts the EXACT contents of every
   allow/denylist, so a stealth one-line edit (a host added to the safe list) fails CI with an explicit
   diff. Consolidation alone does not earn trust; the failing test does.
-- **Ship a `--show-policy`-style dump** that prints the live config from the *same* constants the code
+- **Ship a `--show-policy`-style dump** that prints the live config from the _same_ constants the code
   uses (no second copy to drift) — a reviewer audits by running, not reading. Golden-snapshot it.
 - **Behaviour-preserving refactors must prove it** — byte-identical output before and after.
 - **Read-only by construction** where you inspect someone else's state (open DBs `?mode=ro&immutable=1`)
@@ -72,7 +72,7 @@ the *rules*. On conflict, these win.
   compiler; this is what catches silent drift as the file (and an agent) is edited.
 - **Dev tooling is NOT a runtime dependency** — never let a "zero-dep" tool drag a tree just to lint
   itself.
-- `mypy` proves the code does what it *says*, never that it says the right thing — so it ranks *below*
+- `mypy` proves the code does what it _says_, never that it says the right thing — so it ranks _below_
   the audit surface and the pinning tests.
 - **Recommended ruff baseline** (rule-prefix shorthand, not literal TOML): `line-length = 110`; set
   `target-version` to the idiom the code actually uses (don't leave an unexamined `py39` default that

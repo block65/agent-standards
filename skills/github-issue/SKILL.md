@@ -28,9 +28,10 @@ The word budget is on the **body**, not the issue. When the evidence outgrows it
 
 ## How much to investigate
 
-The goal is a *reproducible, well-scoped* report — not a diagnosis.
+The goal is a _reproducible, well-scoped_ report — not a diagnosis.
 
 **Do (light triage):**
+
 - Read the screenshot to ground the symptom in what's on screen.
 - Work out **steps to reproduce** where possible — from the report, the screenshot, and obvious knowledge of the app's flows. A quick look at the relevant route/UI to confirm the repro path is fine.
 - Identify the affected **surface/area** to pick the `area/*` label.
@@ -38,6 +39,7 @@ The goal is a *reproducible, well-scoped* report — not a diagnosis.
 - Note any factual **gap** you can see — no logging on the failing path, a missing validation, an unconsumed queue. Absence is a symptom (evidence), not a fix; don't omit it for fear it reads as prescriptive.
 
 **Don't (the token waste to avoid):**
+
 - No deep code spelunking, no tracing across files, no investigation sub-agents.
 - No root-cause hunt, no diffs, no fix, no resolution menu, no acceptance criteria.
 - Don't block on reproducing it. If steps can't be derived, say so in one line and file anyway.

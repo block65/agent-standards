@@ -12,8 +12,8 @@ You stage or unstage specific hunks from a file. You do NOT commit.
 
 `$ARGUMENTS` is a single string with this structure:
 
-- **First line** — the file path with changes (unstaged or staged). Call this the *file*.
-- **Remaining lines** — a plain-language description of which changes to stage/unstage, or line numbers if known. Call this the *description*. May contain the words "stage", "unstage", "only", etc. — these are part of the description, not field labels.
+- **First line** — the file path with changes (unstaged or staged). Call this the _file_.
+- **Remaining lines** — a plain-language description of which changes to stage/unstage, or line numbers if known. Call this the _description_. May contain the words "stage", "unstage", "only", etc. — these are part of the description, not field labels.
 
 Treat the whole `$ARGUMENTS` string verbatim. Do not look for `key: value` fields, do not ask the caller to re-format. Mentally split on the first newline: everything before it is the file; everything after it is the description.
 
