@@ -32,7 +32,7 @@ Before writing anything, gather the ground truth. Do not rely on memory of the c
 - What is **done** — only things you verified (tests passed, command ran, commit exists). If you believe something works but never checked, say so plainly in the brief.
 - What is **in progress** — the exact half-finished state: which file, what's written so far, what remains. This is the most valuable and most perishable information; be precise.
 - What is **next** — the remaining steps, in order, as concretely as you can state them.
-- **Hints and gotchas** — everything the next agent would otherwise have to rediscover: the exact build/test/run commands that work here, environment quirks, decisions the user made ("no new dependencies", "use X not Y"), and dead ends already tried with why they failed. Dead ends are pure gold: they save the next agent from burning time repeating them.
+- **Hints and gotchas** — everything the next agent would otherwise have to rediscover: the exact build/test/run commands that work here, environment quirks, decisions the user made ("no new dependencies", "use X not Y"), and dead ends already tried with why they failed.
 
 ## Step 2 — Write the handover file
 

@@ -3,7 +3,7 @@ name: stage-hunk
 description: "Stage or unstage specific hunks from a changed file in a git repo without interactive prompts. Use this skill whenever you need to partially stage or unstage hunks — for example, committing only the bug fix hunk but not the refactor, or unstaging something that was staged by mistake. Common phrases: 'commit only the X changes', 'stage that hunk', 'don't include the Y part', 'unstage the refactor'. Pass args as: first line = file path, remaining lines = plain-language description of which changes to (un)stage. Example args: \"src/foo.ts\\nstage only the import changes, leave the function rename\"."
 model: haiku
 context: fork
-allowed-tools: Bash(git diff *), Bash(*/stage_hunk.py *), Bash(*/stage_hunk.py --unstage *), Bash(*/stage_hunk.py --list-hunks *)
+allowed-tools: Bash(git diff *), Bash(*/stage_hunk.py *)
 ---
 
 You stage or unstage specific hunks from a file. You do NOT commit.

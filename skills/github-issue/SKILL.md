@@ -110,7 +110,7 @@ url="$(<the project's configured upload command> "$path")"   # prints the public
 Embed the URL by file type:
 
 - **image** → `![<name>](<url>)` (inline)
-- **video** → `<video controls src="<url>"></video>` (inline player — GitHub allows `<video>`; image syntax does not work for video)
+- **video** → `<video controls src="<url>"></video>` only when the URL is a GitHub upload (`user-attachments`); GitHub strips `<video>` with an external src, so embed object-store video as a plain `[name](url)` link
 - **anything else** → `[<name>](<url>)` (download link)
 
 Paste the result into the Evidence field (or a comment). (Camo caching and the unique-key rationale live in the standard's Attachments section — don't restate them here.)

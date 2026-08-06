@@ -57,7 +57,7 @@ For each failure:
 
 After fixing, re-run via another subagent. Repeat until green or until only design-level issues remain.
 
-Cap at 5 iterations. If still failing after 5 rounds, stop and present the remaining failures.
+Cap at 5 iterations. If still failing after 5 rounds — or only design-level issues remain — stop and present the remaining failures; never proceed to Phase 2 on a red unit suite.
 
 ### Rules for fixing
 
@@ -93,7 +93,7 @@ Same assessment approach as Phase 1:
 
 Cap at 5 iterations.
 
-If `block65-tools:playwright-debug` is available and the project uses Playwright, invoke it before attempting any selector- or timing-related fix — it reads the harness summaries and gives a real diagnosis on the first try.
+If `playwright-harness:debug` is available and the project uses Playwright, invoke it before attempting any selector- or timing-related fix — it reads the harness summaries instead of raw logs.
 
 ### Environment prerequisites
 
