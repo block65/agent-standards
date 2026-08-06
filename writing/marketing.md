@@ -7,7 +7,7 @@
 
 - **Yes "Your":** Use "Your" to help the reader visualize the benefit.
   - ✅ "Secure **your** [Asset]."
-  - ✅ "Deploy **your** first [Component] in minutes."
+  - ✅ "Deploy **your** first [Component]."
 
 ## Benefit-First Framing
 

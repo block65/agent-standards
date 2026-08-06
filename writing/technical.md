@@ -8,9 +8,9 @@
 - **No "Your":** Software has no "you"; "your [Component]" is ambiguous.
   - ❌ "Configure **your** [Component]."
   - ✅ "Configure the **[Location]** [Component]."
-- **Subject = component:** Do not use the product name as the subject of a functional description.
+- **Subject = component:** In docs for a product, the component acts — never the product's own name.
   - ❌ "[Product] [Action]s the [Component]."
-  - ✅ "A [Component] is [Action]ed."
+  - ✅ "The [Component] [Action]s."
 
 ## Instruction Hierarchy
 

@@ -12,12 +12,12 @@ Modular rules for writing. Use the base rules below for everything, then add a s
 - **Structure:** Avoid robotic or legalistic tones. Vary sentence structure.
 - **Cohesion:** Combine fragmented thoughts into cohesive paragraphs.
 - **No metaphors:** Do not use metaphors, analogies, or figurative language.
-  - **Established idioms are fine:** Settled technical terms such as "code smell", "escape hatch", "source of truth", and "user journey" are vocabulary, not figurative language. Novel metaphors coined for the sentence (for example "navigation tax") are not.
+  - **Established idioms are fine:** Settled idioms and technical terms such as "code smell", "escape hatch", "source of truth", and "user journey" are vocabulary, not figurative language. Novel metaphors coined for the sentence (for example "navigation tax") are not.
 
 ## Clarity & Formatting
 
 - **Headings:** Must predict content.
-- **Antecedents:** Ensure clear antecedents for "it", "this", "that". Do not use "the [noun]" to reference a specific instance that has not been introduced.
+- **Antecedents:** Ensure clear antecedents for "it", "this", "that". Do not use "the [noun]" for an entity the document never establishes.
 
 ## Prohibited Patterns
 

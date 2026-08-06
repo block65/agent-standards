@@ -18,7 +18,7 @@ need to accumulate superseded records in the tree.
   it.
 - **Status is meaningful, not decorative.** `Proposed` is not decided;
   `Deprecated` is no longer in force.
-- **On drift, the code wins.** The fix is to update the ADR, not the code.
+- **On drift, decide what drifted.** Deliberate change: update the ADR. Regression or unreviewed change: flag the code — never rewrite the record to match a bug.
 
 ## Writing an ADR
 
@@ -28,12 +28,13 @@ need to accumulate superseded records in the tree.
 - **Nothing about mechanism.** No parameters, config, topology, diagrams, or
   rollout steps. Those are not decisions; they live in the code.
 - **On change, edit in place.** Revise the ADR to state the current decision
-  and mark it `Updated`. Do not leave a stale record beside a new one.
+  and set its status to `Accepted (updated YYYY-MM)`. Do not leave a stale
+  record beside a new one.
 
 ## Status vocabulary
 
 - **`Proposed`** — under consideration, not yet decided.
 - **`Accepted`** — the decision in force.
 - **`Deprecated`** — the decision no longer applies.
-- **`Updated`** — a marker on an `Accepted` record whose decision has since
-  changed and been revised in place.
+- **`Accepted (updated YYYY-MM)`** — the decision in force, revised in place
+  since first acceptance.
