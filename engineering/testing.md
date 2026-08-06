@@ -6,7 +6,7 @@ Tests are diagnostic instruments. Their job is to _try to break the system_, not
 
 - **Tests are adversaries, not gates.** Structure them to expose problems, not to pass. A test that is hard to fail was written backwards.
 - **Green ≠ working. Red = signal.** A pass only confirms the cases you wrote; a failure tells you something specific about the system. Treat red as the more valuable outcome — that's where you learn.
-- **Fix the code under test by default.** When a test fails, fix the code under test. Adjusting the test — narrowing assertions, seeding randomness, skipping cases, retrying — hides a defect. The only legitimate reason to change a test is that the **contract** genuinely changed (new spec, deprecated behaviour); document why in the diff.
+- **Fix the code under test by default.** When a test fails, fix the code under test. Adjusting the test — narrowing assertions, seeding randomness, skipping cases, retrying — hides a defect. The only legitimate reason to change what a test asserts is that the **contract** genuinely changed (new spec, deprecated behaviour); document why in the diff.
 - **Test the system, not a simulation of it.** Drive the production code path. Mocks belong at the network boundary, not inside the unit under test.
 - **Failures must be loud and observable.** Swallowing an error, returning `undefined`, or "recovering" silently is a bug, not robustness. Surface what happened — error type, status, UI feedback.
 
@@ -15,7 +15,7 @@ Tests are diagnostic instruments. Their job is to _try to break the system_, not
 A test earns its place only if it can fail on a bug no other test catches. Before adding one, name the failure mode it surfaces that the rest of the suite would miss. If you can't, don't add it.
 
 - **When two tests cover the same failure, delete the lower-level one.** The test closest to the user contract owns the behavior. The same happy path at unit, integration, and e2e is one signal, three maintenance costs, zero extra bugs.
-- **Exception: the lower-level test reaches a branch the higher one can't** — a rare error path, a race, a numerical edge. The retained test must do something the higher-level test _cannot_, not the same thing faster.
+- **Exception: the lower-level test reaches a branch the higher one can't** — a rare error path, a race, a numerical edge. The retained test must do something the higher-level test _cannot_, not the same thing faster. Input permutations (validation shapes, copy variants) are this exception: e2e keeps one representative shape, the permutations live at unit/component level.
 
 ```ts
 // ❌ Same happy path, three layers, one bug surface
@@ -38,7 +38,7 @@ test('POST /items creates an item', ...)
 These are responses to a failing test, not fixes:
 
 - Loosening an assertion so it passes
-- Seeding randomness to "stabilise" a test
+- Fixing a seed to "stabilise" a test
 - `test.skip` / `it.todo` / `.only` left in committed code
 - Adding retries to mask a race
 - **Raising a timeout to absorb a flake** (see "SLOW = FAIL" below)
@@ -88,7 +88,7 @@ To tell the halves apart, ask what had to change to reach the behaviour. Harness
 
 ### TypeScript (Node.js / Cloudflare)
 
-- Use `msw` (Mock Service Worker). Intercepts at the request layer so the same handlers cover Node, browsers, and Workers. Don't reach for `undici`'s `MockAgent` or `fetchMock` — they intercept below the app's `fetch` and miss serialization bugs `msw` catches.
+- Use `msw` (Mock Service Worker). Intercepts at the request layer so the same handlers cover Node, browsers, and Workers. Don't reach for `undici`'s `MockAgent` or `fetchMock` — they are Node-only, so their handlers can't be shared across runtimes.
 
 ### Rust
 

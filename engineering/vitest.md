@@ -8,7 +8,7 @@ Vitest is the unit and integration test surface for TypeScript projects — pure
 
 1. **Never use `vi.useFakeTimers()` to dodge real async.** Fake timers are for testing time-dependent logic (debounce, retry backoff). They are not a tool for skipping `await`s. If a test passes only with fake timers, the production code probably has a race.
 
-2. **Never seed randomness.** Use `crypto.randomUUID()`, `Date.now()`, faker without a fixed seed. A test that passes for one seed and breaks for another means a system bug, not a flaky test.
+2. **Never fix a seed.** Use `crypto.randomUUID()`, `Date.now()`, faker without a fixed seed — seed with a random value and log it, so a failure is reproducible. A test that passes for one seed and breaks for another means a system bug, not a flaky test.
 
 3. **Never `--update` snapshots to fix a failure.** Snapshots regenerate when the spec genuinely changes. If you don't know why the snapshot differs, the system changed in a way you don't understand — investigate before regenerating.
 
@@ -187,7 +187,7 @@ Regenerate a snapshot only when the spec genuinely changed and the new output is
 
 For every operation that changes state, cover:
 
-1. **Happy path** — expected return shape via `toMatchObject`.
+1. **Happy path** — expected return shape via snapshot with property matchers (see Snapshots), or `toMatchObject` when only a few fields are contractual.
 2. **Permission denial** — call as a principal who shouldn't be allowed; assert the error type (`PermissionDeniedError` or equivalent).
 3. **Not found** — nonexistent ID; the contract-defined response (`undefined` or a typed error).
 4. **Edge cases** — duplicates, expiry, partial updates, idempotent deletes.
@@ -208,7 +208,7 @@ See `engineering/testing.md` for the philosophy. In vitest specifically:
 - **Network:** `msw` at the request layer. The same handlers work in Node, browser, and Workers.
 - **Module replacement:** `vi.mock('./module')` replaces an entire module — sparingly, and only for modules that own a real boundary (file system, network, time). Never to swap out internal logic.
 - **Spies:** `vi.spyOn` for asserting calls without changing behaviour. Use spies to capture emitted side effects (queue messages, event payloads) and assert on their shape.
-- **Reset between tests:** set `restoreMocks: true` in vitest config (calls `mockRestore()` on every spy after each test). For factories from `vi.fn()` or `vi.mock()`, also set `mockReset: true` so implementations are reset, not just history. `vi.restoreAllMocks()` alone only restores `vi.spyOn` originals — it does not reset `vi.fn()` implementations or unmock modules.
+- **Reset between tests:** set `restoreMocks: true` in vitest config (calls `mockRestore()` on every spy before each test). For factories from `vi.fn()` or `vi.mock()`, also set `mockReset: true` so implementations are reset, not just history. `vi.restoreAllMocks()` alone only restores `vi.spyOn` originals — it does not reset `vi.fn()` implementations or unmock modules.
 
 ## Detecting undeclared dependencies
 

@@ -16,9 +16,9 @@ E2E tests replace a human QA tester: exercise real flows as a user does, fail lo
 
 5. **Never adjust an assertion downward to make a red test green.** If a test is flaky, assume the product has a race condition and investigate. `retries` is not a fix.
 
-6. **ABSOLUTE: Never assert on URLs.** `toHaveURL`, `expect(page).toHaveURL(...)`, `page.url()`, `page.waitForURL`, and any regex match against the address bar are **banned without exception** for identity assertions. URLs are an implementation detail: restructured by routing refactors, broken by locale prefixes, unread by users. Assert on what rendered, not where the router thinks you are. No URL assertion is ever the right tool for "did the user end up on the right page". If this rule blocks your test, invoke rule 11.
+6. **Never assert on URLs.** `toHaveURL`, `expect(page).toHaveURL(...)`, `page.url()`, and any regex match against the address bar are banned as identity assertions. URLs are an implementation detail: restructured by routing refactors, broken by locale prefixes, unread by users. Assert on what rendered, not where the router thinks you are. `page.waitForURL` is a wait, not an assertion — sanctioned only to sequence a multi-step redirect chain before the real assertion. If this rule blocks your test, invoke rule 11.
 
-7. **Don't assert you arrived at a page. Do the next thing.** Navigation is verified implicitly by the auto-wait on the next action. If you clicked through to a listings page to publish a listing, the assertion is the publish button becoming actionable — that can't happen unless the page rendered. Explicit page-identity assertions (URL, heading, page-level testid) are ceremony, not signal, and double the brittle surface area. Terminal steps (the test's last action with nothing to click afterward) do need an assertion — see the assertions section.
+7. **Don't assert you arrived at a page. Do the next thing.** The next action's auto-wait verifies navigation — see Navigation and synchronisation. Explicit page-identity assertions (URL, heading, page-level testid) are ceremony, not signal, and double the brittle surface area. Terminal steps (the test's last action with nothing to click afterward) do need an assertion — see the assertions section.
 
 8. **Never refuse to add `data-testid` when the rules require it.** If a role-based selector can't uniquely identify an element (one menu item among several with the same role, an icon button with no accessible name, a custom widget with no semantic equivalent), adding a `data-testid` is the correct response. Testid is an earned disambiguator, not a default — reach for it when one of the three justification axes applies (ambiguity, locale independence, volatility — see Selectors), and never as a substitute for a role that should exist.
 
@@ -71,7 +71,7 @@ await page
 
 Filtering by data the test created is consistent with the no-text-matching rule: the string is yours, not the product's. Do not invent dynamic testids like `data-testid={`row-${user.id}`}` to avoid this pattern — that's testid sprawl, and role-based collection selection is the correct tool.
 
-This is also how navigation is _implicitly_ verified in most tests. After clicking "Listings" in the nav, the test's next action is typically to find a specific listing — `page.getByRole("row").filter({ hasText: listingTitle })`. The row can't be found unless the listings page mounted and the data loaded. The find _is_ the navigation check; no separate page-identity assertion is needed.
+A find like this also doubles as the implicit navigation check after clicking a nav link — see Navigation and synchronisation.
 
 ### Job 3: terminal-step assertions (the test's last action)
 
@@ -137,9 +137,9 @@ The tell is not whether it's a regex but whether the regex's shape hides a disam
 
 ### File uploads and downloads
 
-The OS file picker can't be driven through the DOM; clicking the visible Upload button hangs in headless CI. Use Playwright's dedicated APIs.
+The OS file picker and the browser's download UI live outside the DOM. Use Playwright's dedicated APIs for both.
 
-**Uploads:** find the underlying `<input type="file">` and call `setInputFiles`. Do not click the visible upload button and then try to interact with the OS dialog.
+**Uploads:** prefer finding the underlying `<input type="file">` and calling `setInputFiles` — no dialog is involved.
 
 ```ts
 // ✅ Drive the file input directly
@@ -147,7 +147,7 @@ await page.getByLabel("Upload avatar").setInputFiles("./fixtures/avatar.png");
 await expect(page.getByTestId("avatar-preview")).toBeVisible();
 ```
 
-If the file input is visually hidden behind a styled button, the label association still works; `getByLabel` finds the input. If there is no label, add one (and an `aria-label` on the button), or as a last resort use a testid on the input itself.
+If the file input is visually hidden behind a styled button, the label association still works; `getByLabel` finds the input. If there is no label, add one (and an `aria-label` on the button), or as a last resort use a testid on the input itself. When only the button is clickable (the input is created on demand or unreachable), fall back to the file chooser event: register `page.waitForEvent("filechooser")` before the click, then call `setFiles` on the chooser it resolves to. Playwright intercepts the dialog, so the click completes normally in headless CI.
 
 **Downloads:** use the `download` event. The user-visible action (click) and the assertion (file received) are two separate things, and Playwright gives you a promise for the latter.
 
@@ -161,7 +161,7 @@ expect(download.suggestedFilename()).toMatch(/\.csv$/);
 // If the test needs to inspect contents, save and read; otherwise the event firing is the signal.
 ```
 
-This is the one place `waitForEvent` is the right tool rather than an escape hatch — downloads have no DOM effect by design, so a UI assertion is impossible.
+`waitForEvent` is the right tool for browser-level events with no DOM effect to assert on — downloads, file choosers, and `waitForEvent("popup")` when an action opens a new tab. For outcomes the UI does reflect, it remains an escape hatch.
 
 ## Copy and locale
 
@@ -172,7 +172,7 @@ The rule layers by test type:
 - **Unit and component tests** resolve by message key: `messages.save.defaultMessage`. The messages are already in scope where the test renders the component, so this costs no extra export.
 - **E2E tests** resolve by the pinned-locale rendered copy with a regex: `getByRole("button", { name: /save/i })`. E2E runs against a controlled environment in a known locale, so the rendered string is deterministic — no imports, no catalog lookups.
 
-Do not export every `defineMessages` block so e2e can import it. That defeats the per-component tree-shaking React relies on, and reading a component's message table to build a selector is the same introspection leak banned for state. Only the shared strings already centralised in `i18n.ts` may be referenced by key.
+Do not export every `defineMessages` block so e2e can import it. Reading a component's message table to build a selector is the same introspection leak banned for state. Only the shared strings already centralised in `i18n.ts` may be referenced by key.
 
 Why pinned-locale copy rather than the message key for e2e: production ships per-locale compiled catalogs with `defaultMessage` stripped, so a client's Spanish deployment holds no English dictionary and importing `defaultMessage` would match nothing rendered there. Tests conform to what ships; you do not change what clients receive to satisfy a selector.
 
@@ -190,7 +190,7 @@ await page
   .click();
 ```
 
-A navigation event firing doesn't prove the right destination — error pages, login redirects, and onboarding detours all fire `framenavigated`. Explicit `waitForURL`, `waitForLoadState`, or `waitForEvent('framenavigated')` are only correct for the narrow case of multi-step redirect chains where you need to wait for the _final_ navigation before asserting. Even then, the actual verification is done by the next action you perform.
+A navigation event firing doesn't prove the right destination — error pages, login redirects, and onboarding detours all fire `framenavigated`. Explicit `waitForURL`, `waitForLoadState`, or `waitForEvent('framenavigated')` are only correct for the narrow case of multi-step redirect chains where you need to wait for the _final_ navigation before asserting. Even then, the next action does the verification.
 
 `waitForLoadState('networkidle')` is banned outright on any app with websockets, long-polling, analytics beacons, or background refresh — which is most SaaS apps. It will either time out or pass meaninglessly. Wait on the specific thing you care about.
 
@@ -325,7 +325,7 @@ await expect(page.getByRole("alert")).toContainText(/valid email/i);
 
 Assert on text only when the words themselves are under test — an error message's meaning, confirmation copy the user has to read and trust. When text stands in for structure or state ("which page is this", "is the row active"), it's a proxy; route it to _Assert the outcome_ and _State is what the user can do_ below.
 
-A save that fails a precondition must tell the user the real reason and never leak the raw gRPC status `Failed precondition`. Pass and fail render the same toast element; only the words differ, so a text assertion is the only honest check:
+A save that fails a precondition must tell the user the real reason and never leak the raw gRPC status `Failed precondition`. Pass and fail render the same toast element; only the words differ, so a text assertion is the only check that distinguishes them:
 
 ```ts
 await expect(toast).toContainText(/you can'?t invite yourself/i);
@@ -394,7 +394,7 @@ Test everything a real user can do. Within every flow, also cover:
 
 - **Validation** — submit invalid data and assert the error appears. Not every permutation, but a representative shape.
 - **Toasts and feedback** — assert success/error notifications appear after actions and contain the right shape of message.
-- **Navigation** — verified implicitly by the next action's auto-wait. Don't add explicit page-identity assertions for intermediate steps. For terminal steps (the last action of the test), assert on what the user came to see — usually a role-based structural element containing the user's data. Back-navigation and protected-route redirects work the same: the next action verifies arrival.
+- **Navigation** — implicit via the next action's auto-wait, including back-navigation and protected-route redirects; terminal steps assert on what the user came to see. See Navigation and synchronisation.
 - **Disabled and loading states** — assert that buttons are disabled while a request is in flight and re-enable after. A form that can be double-submitted has a bug.
 - **Idiot-proofing** — confirm dialogs before destructive actions, unsaved-changes warnings, recovery from errors.
 
@@ -449,12 +449,6 @@ Flaky tests erode trust faster than missing tests.
 ## Anti-patterns
 
 ```ts
-// ❌ Skip to hide a failure
-test.skip(Math.random() > 0.5, "sometimes flaky");
-// ✅ Fix the cause or delete the test
-```
-
-```ts
 // ❌ Branch inside test
 if (await page.getByText("Promo banner").isVisible()) {
   await page.getByRole("button", { name: "Apply" }).click();
@@ -463,52 +457,11 @@ if (await page.getByText("Promo banner").isVisible()) {
 ```
 
 ```ts
-// ❌ URL assertion to verify navigation
-await page.getByRole("link", { name: "Dashboard" }).click();
-await expect(page).toHaveURL(/\/dashboard/);
-// ✅ The next action verifies arrival
-await page.getByRole("link", { name: "Dashboard" }).click();
-await page.getByRole("row").filter({ hasText: itemTitle }).click();
-```
-
-```ts
-// ❌ Heading as page identity (copy and locale fragile)
-await page.getByRole("button", { name: "Save" }).click();
-await expect(page.getByRole("heading", { name: /welcome/i })).toBeVisible();
-// ✅ Terminal step — assert what the user came to see, by role + their data
-await page.getByRole("button", { name: "Save" }).click();
-await expect(page.getByRole("status")).toContainText(/saved/i);
-```
-
-```ts
 // ❌ Defence-in-depth identity
 await expect(page).toHaveURL(/\/dashboard/);
 await expect(page.getByRole("heading", { name: /dashboard/i })).toBeVisible();
 await expect(page.getByTestId("dashboard")).toBeVisible();
-// ✅ No identity assertion — do the next thing
-await page
-  .getByRole("row")
-  .filter({ hasText: itemTitle })
-  .getByRole("button", { name: "Edit" })
-  .click();
-```
-
-```ts
-// ❌ Ceremonial page-identity testid before doing the next thing
-await page.getByRole("link", { name: "Listings" }).click();
-await expect(page.getByTestId("ListingsPage")).toBeVisible();
-await page
-  .getByRole("row")
-  .filter({ hasText: title })
-  .getByRole("button", { name: "Edit" })
-  .click();
-// ✅ Drop the assertion — the row filter's auto-wait verifies the listings page rendered
-await page.getByRole("link", { name: "Listings" }).click();
-await page
-  .getByRole("row")
-  .filter({ hasText: title })
-  .getByRole("button", { name: "Edit" })
-  .click();
+// ✅ No identity assertion — do the next thing (see Navigation and synchronisation)
 ```
 
 ```ts
@@ -537,60 +490,11 @@ await page
 ```
 
 ```ts
-// ❌ Dynamic testid per row
-<tr data-testid={`row-${item.id}`}>
-await page.getByTestId(`row-${item.id}`).click();
-// ✅ Role-based collection + filter by data
-await page.getByRole("row").filter({ hasText: item.title }).click();
-```
-
-```ts
-// ❌ Reading internal state through a data attribute
-await expect(page.getByRole("article").filter({ hasText: title })).toHaveAttribute(
-  "data-status",
-  "active",
-);
-await page.getByRole("button", { name: "Edit" }).click();
-// ✅ The state's UI consequence is the assertion — and the next step
-await page
-  .getByRole("article")
-  .filter({ hasText: title })
-  .getByRole("button", { name: "Pause" }) // "Pause" only exists when active
-  .click();
-```
-
-```ts
 // ❌ "Continue-checking" — hedging against your own setup
 await expect(page.getByRole("heading", { name: title })).toBeVisible();
 await page.getByRole("button", { name: "Publish" }).click();
 // ✅ Just do the next thing — it'll fail loudly if setup was wrong
 await page.getByRole("button", { name: "Publish" }).click();
-```
-
-```ts
-// ❌ Minimum-viable form fill
-await page.getByLabel("Email").fill("a@b.c");
-await page.getByLabel("Password").fill("x");
-// ✅ Realistic user input
-await page.getByLabel("Email").fill(`qa-${crypto.randomUUID()}@example.test`);
-await page.getByLabel("Password").fill(faker.internet.password({ length: 20 }));
-```
-
-```ts
-// ❌ Sleep-based wait
-await page.getByRole("button", { name: "Save" }).click();
-await page.waitForTimeout(2000);
-await expect(page.locator(".toast")).toBeVisible();
-// ✅ Effect-based
-await page.getByRole("button", { name: "Save" }).click();
-await expect(page.getByRole("status")).toContainText(/saved/i);
-```
-
-```ts
-// ❌ networkidle on a SaaS app with long-poll or websockets
-await page.waitForLoadState("networkidle");
-// ✅ Wait on the specific thing you care about
-await expect(page.getByRole("row").filter({ hasText: itemTitle })).toBeVisible();
 ```
 
 ```ts
@@ -604,15 +508,6 @@ await page.getByRole("menuitem", { name: "Settings" }).click();
 await page.getByRole("link", { name: "Profile" }).click();
 await page.getByRole("link", { name: "Security" }).click();
 await page.getByRole("button", { name: "Change password" }).click();
-```
-
-```ts
-// ❌ Explicit navigation wait as verification
-await page.getByRole("button", { name: "Create" }).click();
-await page.waitForURL(/\/items\//);
-// ✅ The next action auto-waits through the navigation
-await page.getByRole("button", { name: "Create" }).click();
-await page.getByRole("button", { name: "Publish" }).click();
 ```
 
 ## Config baseline
@@ -650,7 +545,5 @@ A user:
 - Fills realistic values, not minimum placeholders.
 - Reads error messages and corrects them.
 - Expects feedback within a reasonable latency, not a fixed sleep.
-
-A test recording that user's session doesn't need to pause and ask "am I on the right page?" between every step. The user knows they're on the right page because they can see the button they came to click. So does the test: clicking the button is the proof.
 
 A test is a recording of what that user did, written so that future-you can read it in 30 seconds and know exactly what broke when it fails. If you can't tell from the name and the trace what the user was trying to do — the test is wrong, regardless of whether it is passing today.
