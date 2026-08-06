@@ -3,14 +3,14 @@
 Also load: `workflow/git.md`, `workflow/communication.md`
 
 An implementation agent and a review agent collaborate with a human throughout
-development. The PR is a merge mechanism, not a review forum — it must be
-approved and green before it is opened.
+development. The PR is a merge mechanism, not a review forum — all review happens
+before it is opened; CI and merge approval happen on the PR.
 
 ## Roles
 
 - **Human** — selects tasks, approves plans, triggers reviews, approves merges
 - **Lead agent** — helps Human define TASK.md (Phase 1); after review passes, creates PR and merges (Phase 4); follows repo-specific commands from AGENTS.md
-- **Impl agent** — implements, runs quality checks, requests review, then revises, commits, pushes
+- **Impl agent** — implements, runs quality checks, requests review from the Human (who invokes the review agent), then revises, commits, pushes
 - **Review agent** — reads files and git only; outputs a numbered list of findings, each with a file/line reference and a concise explanation; ends with exactly one of: `LGTM` or `Needs fixes`; does not run tests, build, or modify code
 
 ## Phases
@@ -53,7 +53,7 @@ Repeat as many times as needed:
 2. Run all quality checks and fix all failures
 3. Human invokes the review agent — it reviews the working tree diff against `main`
 4. Address all findings, loop back to 2
-5. Once the review agent has no findings, human reviews
+5. Once the review agent returns `LGTM`, human reviews
 6. Human satisfied → commit and push
 
 The impl agent must not commit autonomously. Never commit unreviewed code. Never commit a broken or partial state.

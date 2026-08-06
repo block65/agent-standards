@@ -83,7 +83,7 @@ Both badges on one line, then a blank line before the first field. When an infer
 GitHub has no attachment API. Host the file in the project's public object store and embed the URL in the body:
 
 - **Images** inline: `![alt](url)`
-- **Videos** as a player: `<video controls src="url"></video>` (GitHub's markdown sanitizer allows `<video>`; image syntax does not work for video)
+- **Videos**: `<video controls src="url"></video>` renders a player only when the src is a GitHub upload (`user-attachments`, added via the web UI); the sanitizer strips `<video>` with any other host, so link externally hosted video like any other file
 - **Everything else** (PDF, logs, zips) as a link: `[name](url)`
 
 The project uploads under an unguessable key (256-bit random — on a public-readable, not writable, bucket the key is the only access control) and prints the URL. The `github-issue` skill calls it and embeds the URL. Unique keys stop GitHub's Camo cache serving stale images.

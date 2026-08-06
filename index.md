@@ -2,18 +2,16 @@
 
 ## Principles
 
-- **Standards here, facts from compend:** this repo is THE standard — the
-  rules Block65 code follows. Library and language facts come from the
-  `compend` CLI (`compend list` for coverage). On overlap, the doc defers with a one-line
-  pointer (see `lang/rust.md`), not a copied summary (which drifts from
-  upstream). On conflict, these
-  standards win.
+- **Standards here, facts from compend:** this repo is THE standard — the rules Block65 code
+  follows. Library and language facts come from the `compend` CLI (`compend list` for coverage).
+  On overlap, the doc defers with a one-line pointer (see `lang/rust.md`), not a copied summary
+  (which drifts from upstream). On conflict, these standards win.
 
 ## Always load
 
 - **[Communication](workflow/communication.md)**: Concise, objective interaction rules.
 - **[Banned Words](writing/banned-words.md)**: Words we don't use — word-choice bans, plus action-signal words that mean "pause and confirm".
-- **[Git](workflow/git.md)**: Conventional commits and message philosophy.
+- **[Git](workflow/git.md)**: Conventional commits, branch and history rules, issue references.
 - **[Dependencies](engineering/dependencies.md)**: Source trust and version currency.
 - **[Code Review](engineering/code-review.md)**: Common bugs and review behaviours.
 - **[Tool Discipline](workflow/tools.md)**: Prefer native tools over the shell; Bash only for running programs.

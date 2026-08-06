@@ -2,7 +2,7 @@
 
 Prefer the agent's native tools over the shell. Bash is for running programs (builds, tests, git, app binaries) — not for work a dedicated tool already does.
 
-- **Read files** with the Read tool — never `cat`, `sed`, `head`, `tail`, or `less`.
+- **Read files** with the Read tool — never `cat`, `sed`, `head`, `tail`, or `less` as the way to read a file. As filters on command output (`build 2>&1 | tail -50`, `tail -f app.log`) they are fine.
 - **Search** with the Grep and Glob tools — not `grep`, `rg`, or `find` in Bash.
 - **Edit files** with the Edit/Write tools — not `sed -i`, `echo >`, or here-docs.
 - **Invoke skills** with the Skill tool — never run their underlying scripts via Bash.

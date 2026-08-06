@@ -19,7 +19,7 @@ For a rust crate, in your project's `AGENTS.md`:
 **Before writing or modifying Rust code:** STOP. Read `standards/lang/rust.md` and follow it.
 ```
 
-`index.md` is the barrel — new "Always load" entries propagate automatically without updating consuming repos. Only hardcode task-specific standards.
+`index.md` is the barrel — a new "Always load" entry needs no AGENTS.md edit in consuming repos. Consumers track latest, not a pin: set the submodule branch to `main` and sync with `git submodule update --remote standards`, wired into the repo's bootstrap/sync task so it runs on every pull. Pin a SHA only when a repo explicitly opts out of latest. Only hardcode task-specific standards.
 
 ## Assumptions
 
