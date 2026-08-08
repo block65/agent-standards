@@ -109,9 +109,12 @@
 
 ## Nullability
 
-- **`undefined` over `null`:** Prefer `undefined` for absent values. Use `null` only when an external API demands it.
-- **No empty defaults for missing data:** Never default to `{}` or `[]` to mean "not loaded" or "not applicable". Use `undefined`.
-- **Intentional `??`:** Only use `??` when the fallback is semantically meaningful. Do not use it to paper over a value that should not be nullable in the first place.
+Modelled on Rust's `Option<T>`: absence is one state, and it is resolved by the code that knows what missing means. Background: `compend get rust-book option`.
+
+- **`undefined` is the only absence value.** It means "not specified". `null` means "specified as empty" and lives at boundaries only: DB drivers, wire payloads, third-party responses. The parse layer maps it to `undefined` inbound and back outbound. Above that layer `null` never appears in a signature, and `|| null` or `?? undefined` in domain logic means the boundary sits in the wrong place.
+- **Never a sentinel.** `?? ""`, `?? 0`, `?? {}`, `?? []` on a value the code requires turns "missing" into "present and wrong", so the failure surfaces somewhere unrelated with nothing pointing back to the cause. `??` supplies a value that is valid in the domain, or it does not appear.
+- **A required parameter is a promise.** Anything not `Option<T>` is present. Widening a parameter to `| undefined` so one caller can skip deciding breaks that promise for every other caller, and the signature ends up describing the caller's uncertainty instead of the function's job. A parameter is optional only when the function has defined behaviour for the absent case.
+- **Resolve absence where missing has a meaning.** Rust's `let ... else` extracts or diverges. Here that is a top-level guard: return early, or throw a `CustomError` naming what was missing.
 
 ## Validation
 
