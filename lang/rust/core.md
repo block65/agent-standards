@@ -20,6 +20,7 @@ cargo fmt
 - **Derives:** `Debug`, `Clone`, `Default`, `PartialEq` where appropriate.
 - **`#[must_use]`:** Apply to builders, lock guards, and pure-return methods. (`Result` already carries it in std.)
 - **Docs:** `///` for all public items.
+- **Vertical grouping:** `rustfmt` never inserts blank lines, so grouping is on you. Separate guards, setup, the work, and the result — see Readability in [JavaScript Standards](../javascript.md), which applies to every language here.
 - **Variable names:** Use descriptive names in `let` bindings, function parameters, and struct fields. No single-character names (except loop indices `i`/`j`/`k` and coordinates `x`/`y`/`z` in geometry/math) and no opaque abbreviations (`pa`, `ns`, `r`, `ru`, `lhs`). Shadow the original name when cloning or reborrowing: `let metrics = Arc::clone(&metrics)` not `let m = Arc::clone(&metrics)`.
 
 ## Safety & Panics

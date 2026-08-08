@@ -26,6 +26,9 @@ the _rules_. On conflict, these win.
   above its sole caller.
 - **No banner / divider / horizontal-rule comments.** Structure comes from naming and small functions,
   plus at most a couple of functional section headers.
+- **Vertical grouping.** `ruff format` never inserts blank lines inside a body, so grouping is on you.
+  Separate guards, setup, the work, and the result — see Readability in
+  [JavaScript](javascript.md), which applies to every language here.
 
 ## Naming
 

@@ -140,7 +140,27 @@ Modelled on Rust's `Option<T>`: absence is one state, and it is resolved by the 
 
 ## Readability
 
-- Generously use whitespace between lines of code to make code easier to read and to group related lines together.
+- **A function body is paragraphs, not a block.** Separate each phase — guards, inputs, the work, the result — with a blank line, and break any run of more than about five lines that changes subject. An unbroken twenty-line body hides where one step ends and the next begins, and it is the first thing to fix in generated code.
+- **Blank line before the closing `return`** of any function longer than two statements.
+- **Blank lines are not extraction.** More than about four groups means the function does more than one job. Split it.
+- **No decorative blank lines:** none directly after `{` or before `}`, never two in a row, and none between a comment and the line it describes.
+
+```ts
+export async function publish(id: Id, body: Body) {
+  const record = await store.get(id);
+  if (!record) {
+    throw new CustomError("record not found").debug({ id });
+  }
+
+  const payload = serialise(body);
+  const headers = signHeaders(payload);
+
+  const response = await transport.send(record.endpoint, payload, headers);
+
+  return parseReceipt(response);
+}
+```
+
 - **Destructuring:** Always destructure arrays and objects rather than accessing by index or property chain. `const [first] = arr` not `arr[0]`. `const { id, name } = user` not `user.id` / `user.name` repeated. Destructure at the top of the scope so narrowing and defaults are declared once — not scattered through the function as repeated property guard clauses.
 
 ## Testing
