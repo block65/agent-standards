@@ -60,6 +60,23 @@
 - **Never `void somePromise()`:** Always `await`, `return`, or route through an established pattern. Add a comment when the intent is non-obvious.
 - **Route through the established error path:** Do not bypass the project's error handler.
 
+## Promises
+
+- **`Promise.withResolvers()` when `resolve`/`reject` escape the executor.** Capturing them in an outer `let`, storing them on an object, or handing them to a caller is the deferred pattern, and typing it takes a `let` plus a definite-assignment or non-null assertion — all banned. One call replaces the lot.
+- **`new Promise` only wraps a callback or event API,** and only when the work starts inside the executor. Never wrap something that already returns a promise: `async`/`await` composes it, the constructor drops rejections between the two layers.
+- **Never hand-roll a sleep.** `new Promise((r) => setTimeout(r, ms))` cannot be cancelled. Use `setTimeout` from `node:timers/promises` with a `signal` in Node, or a cancellable helper from the shared toolkit elsewhere.
+
+```ts
+// ❌ resolve escapes the executor
+let resolve: (value: Result) => void;
+const ready = new Promise<Result>((res) => {
+  resolve = res;
+});
+
+// ✅
+const { promise: ready, resolve } = Promise.withResolvers<Result>();
+```
+
 ## Structure
 
 - **No deep call stacks:** If following the execution path takes more than a few jumps, flatten the abstraction.
