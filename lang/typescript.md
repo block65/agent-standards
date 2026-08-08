@@ -19,7 +19,7 @@
 
 ## Compiler Configuration
 
-- **Extend the shared config.** `tsconfig.json` extends the `@block65/tsconfig` variant matching the target (`nodejs24`, `vite-react`, `cloudflare-worker`, `nextjs`, `vanilla`; `-projref` variants for project references). Strictness is decided there, once.
+- **Extend the shared config.** `tsconfig.json` extends the `@block65/tsconfig` variant matching the target: `nodejs<major>` for a Node runtime, otherwise `vite-react`, `cloudflare-worker`, `nextjs`, or `vanilla` (`-projref` variants for project references). Check the package for the majors it publishes rather than assuming one. Strictness is decided there, once.
 - **Never loosen a flag locally.** Turning off a check the shared config enabled is a runtime hack in config form — fix the type. A target the shared config does not cover is a change to that package, not a local override.
 - **`exactOptionalPropertyTypes` is always on.** Assume it when reading and writing optional properties (see Optional Properties).
 
@@ -52,4 +52,4 @@ With `exactOptionalPropertyTypes`, the two spellings mean different things, so t
 
 ## Modern Node
 
-- DO NOT USE `tsx` or `ts-node` or any other transpiler. Node 24 supports TypeScript natively without flags.
+- DO NOT USE `tsx` or `ts-node` or any other transpiler. Current Node runs TypeScript natively without flags.
