@@ -7,7 +7,13 @@ Shared coding standards for AI agents.
 Add as a git submodule:
 
 ```sh
-git submodule add git@github.com:block65/agent-standards.git standards
+git submodule add git@github.com:block65/agent-standards.git agent-standards
+```
+
+Instructions live in `AGENTS.md`, which is tool-neutral and read by every agent that follows the convention. `CLAUDE.md` holds one import line and nothing else, so Claude Code reads the same document as everything else and there is only one file to maintain:
+
+```md
+@AGENTS.md
 ```
 
 ## Example
@@ -15,11 +21,13 @@ git submodule add git@github.com:block65/agent-standards.git standards
 For a rust crate, in your project's `AGENTS.md`:
 
 ```md
-**Always:** Read `standards/index.md` — follow all "Always load" standards listed there.
-**Before writing or modifying Rust code:** STOP. Read `standards/lang/rust.md` and follow it.
+**Always:** Read `agent-standards/index.md` — follow all "Always load" standards listed there.
+**Before writing or modifying Rust code:** STOP. Read `agent-standards/lang/rust.md` and follow it.
 ```
 
-`index.md` is the barrel — a new "Always load" entry needs no AGENTS.md edit in consuming repos. Consumers track latest, not a pin: set the submodule branch to `main` and sync with `git submodule update --remote standards`, wired into the repo's bootstrap/sync task so it runs on every pull. Pin a SHA only when a repo explicitly opts out of latest. Only hardcode task-specific standards.
+See `examples/` for both files.
+
+`index.md` is the barrel — a new "Always load" entry needs no AGENTS.md edit in consuming repos. Consumers track latest, not a pin: set the submodule branch to `main` and sync with `git submodule update --remote agent-standards`, wired into the repo's bootstrap/sync task so it runs on every pull. Pin a SHA only when a repo explicitly opts out of latest. Only hardcode task-specific standards.
 
 ## Assumptions
 
