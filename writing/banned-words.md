@@ -14,6 +14,8 @@ Banned from all output — prose, comments, commits, chat.
 - "fair"
 - "seed" — when it means an origin, trigger, or starting point; name the thing itself. Literal uses (a random seed, a seed number, seeding a database, seed data) are fine.
 - "fork" — when it means a decision or branch point; say "decision" or "branch". Developers read "fork" as a git fork, so the figurative sense misleads. Literal uses (a git fork, `fork()`, forking a process/subagent) are fine.
+- "floor" — say "minimum", and give the value. Literal uses (`Math.floor`, the floor of a room) are fine.
+- "ladder" — say "order" or "sequence", and list the steps in it. Literal uses (a physical ladder, a ladder diagram) are fine.
 
 ### Flavour of the month
 

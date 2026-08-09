@@ -111,7 +111,7 @@ Kebab-case, describes the thing not the location: `data-testid="listing-action-e
 
 ### Third-party iframes (Stripe, Auth0, reCAPTCHA, OAuth providers, embedded checkouts)
 
-Inside `frameLocator()`, the rules above are suspended. You don't control the markup, so the ladder doesn't apply. Use whatever selector works, keep the scope as narrow as possible, and add a comment naming the third-party origin so the relaxation is explicit.
+Inside `frameLocator()`, the rules above are suspended. You don't control the markup, so the priority order doesn't apply. Use whatever selector works, keep the scope as narrow as possible, and add a comment naming the third-party origin so the relaxation is explicit.
 
 ```ts
 // Stripe Elements iframe — selectors below match Stripe's DOM, which we don't control
@@ -123,7 +123,7 @@ This is an explicit escape hatch, not a general permission. Outside the `frameLo
 
 ### Comment the escapes, not the defaults
 
-Model this on Rust's `// SAFETY:` on an `unsafe` block. A locator that steps outside the ladder carries a one-line comment discharging why, at the call site; a locator that follows the ladder stays silent.
+Model this on Rust's `// SAFETY:` on an `unsafe` block. A locator that steps outside the priority order carries a one-line comment discharging why, at the call site; a locator that follows it stays silent.
 
 The payoff matches `// SAFETY`: the comment keeps its meaning because it marks only real escapes; it can't be cargo-culted, because a copied justification is simply false at the new site; and it's lintable, since an uncommented testid is then a smell. This generalises the iframe comment rule above.
 
