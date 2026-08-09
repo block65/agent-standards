@@ -313,6 +313,88 @@ eval22() {
 }
 run_test "cross-hunk header coords land on right block (dup)" eval22
 
+# --- Line mode ------------------------------------------------------------
+# pets.md hunk 2 is one contiguous 4-line addition (lines 3-6), so hunk mode
+# can only take all of it or none. These evals address its parts.
+
+# Eval 23: one line out of a multi-line addition block.
+eval23() {
+  "$STAGE" --lines src/pets.md 5
+  local staged
+  staged=$(git diff --cached src/pets.md | change_lines)
+  [[ "$staged" == *"eats the mosquitoes"* ]] || return 1
+  [[ "$staged" != *"Tokay Gecko"* ]] || return 1
+  [[ "$staged" != *"canal"* ]] || return 1
+  # The rest of the block stays in the working tree.
+  git diff src/pets.md | grep -q '^+## Tokay Gecko'
+}
+
+# Eval 24: a range inside that same block — heading and its blank line, not
+# the description below.
+eval24() {
+  "$STAGE" --lines src/pets.md 3-4
+  local staged
+  staged=$(git diff --cached src/pets.md | change_lines)
+  [[ "$staged" == *"Tokay Gecko"* ]] || return 1
+  [[ "$staged" != *"eats the mosquitoes"* ]] || return 1
+}
+
+# Eval 25: several ranges at once, spanning hunks — a whole rewrite pair
+# (1-2) plus one line from the addition block (5).
+eval25() {
+  "$STAGE" --lines src/snacks.md 1-2 5
+  local staged
+  staged=$(git diff --cached src/snacks.md | change_lines)
+  [[ "$staged" == *"Ya Kun"* ]] || return 1
+  [[ "$staged" == *"Flaky flatbread"* ]] || return 1
+  [[ "$staged" != *"Roti Canai"* ]] || return 1
+  [[ "$staged" != *"Nam Dok Mai"* ]] || return 1
+  # Both sides of the rewrite went in, so the old line is gone from the index.
+  echo "$staged" | grep -q '^-Sweet coconut jam on crispy bread\.$'
+}
+
+# Eval 26: half a rewrite — take the "+" without its "-". Legal and warned
+# about; the index must end up holding both lines.
+eval26() {
+  "$STAGE" --lines src/potions.md 2
+  local staged
+  staged=$(git diff --cached src/potions.md | change_lines)
+  [[ "$staged" == *"12 hours"* ]] || return 1
+  # Under strict_sides the paired deletion must not be dragged in.
+  [[ "$staged" != *"8 hours"* ]] || return 1
+}
+
+# Eval 27: pure deletions selected by line, skipping the rewrite between them.
+eval27() {
+  "$STAGE" --lines src/taiwan.md 1 4
+  local staged
+  staged=$(git diff --cached src/taiwan.md | change_lines)
+  [[ "$staged" == *"Beef Noodle Soup"* ]] || return 1
+  [[ "$staged" == *"Stinky Tofu"* ]] || return 1
+  [[ "$staged" != *"Bubble Tea"* ]] || return 1
+  [[ "$staged" != *"Milkfish"* ]] || return 1
+}
+
+# Eval 28: unstage mirror — stage the file, then take one line of the
+# addition block back out.
+eval28() {
+  git add src/pets.md
+  "$STAGE" --unstage --lines src/pets.md 5
+  local staged
+  staged=$(git diff --cached src/pets.md | change_lines)
+  [[ "$staged" != *"eats the mosquitoes"* ]] || return 1
+  [[ "$staged" == *"Tokay Gecko"* ]] || return 1
+  [[ "$staged" == *"canal"* ]] || return 1
+  git diff src/pets.md | grep -q 'eats the mosquitoes'
+}
+
+run_test "single line from an addition block (pets)" eval23
+run_test "line range inside one hunk (pets)" eval24
+run_test "multiple ranges across hunks (snacks)" eval25
+run_test "half a rewrite keeps both lines (potions)" eval26
+run_test "pure deletions by line (taiwan)" eval27
+run_test "--unstage one line of a block (pets)" eval28
+
 echo ""
-echo "$PASS passed, $FAIL failed out of 22"
+echo "$PASS passed, $FAIL failed out of 28"
 [[ $FAIL -eq 0 ]]

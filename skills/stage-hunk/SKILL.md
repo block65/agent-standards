@@ -1,6 +1,6 @@
 ---
 name: stage-hunk
-description: "Stage or unstage specific hunks from a changed file in a git repo without interactive prompts. Use this skill whenever you need to partially stage or unstage hunks — for example, committing only the bug fix hunk but not the refactor, or unstaging something that was staged by mistake. Common phrases: 'commit only the X changes', 'stage that hunk', 'don't include the Y part', 'unstage the refactor'. Pass args as: first line = file path, remaining lines = plain-language description of which changes to (un)stage. Example args: \"src/foo.ts\\nstage only the import changes, leave the function rename\"."
+description: "Stage or unstage specific hunks — or individual lines within a hunk — from a changed file in a git repo without interactive prompts. Use this skill whenever you need to partially stage or unstage changes: committing only the bug fix hunk but not the refactor, taking one line out of a block of added lines, or unstaging something that was staged by mistake. Common phrases: 'commit only the X changes', 'stage that hunk', 'stage just that line', 'only the second of those lines', 'don't include the Y part', 'unstage the refactor'. Pass args as: first line = file path, remaining lines = plain-language description of which changes to (un)stage. Example args: \"src/foo.ts\\nstage only the import changes, leave the function rename\"."
 model: haiku
 context: fork
 allowed-tools: Bash(git diff *), Bash(*/stage_hunk.py *)
@@ -35,13 +35,24 @@ The file may be absolute or relative to your cwd; the script resolves it to abso
    ${CLAUDE_PLUGIN_ROOT}/skills/stage-hunk/scripts/stage_hunk.py --list-hunks <file>
    ```
    For unstaging, add `--staged`. Prints each hunk with index, line range, and preview.
-3. Match the description to the listed hunks. The script accepts plain integer hunk indices only — convert the description into the indices shown by `--list-hunks`.
+3. Match the description to the listed hunks. The script accepts indices and ranges only (`3`, `3-5`) — convert the description into the indices shown by `--list-hunks`.
 4. Stage (or unstage) all matched hunks in **one** Bash call — pass every index in a single invocation:
    ```
-   ${CLAUDE_PLUGIN_ROOT}/skills/stage-hunk/scripts/stage_hunk.py <file> 1 3 5
+   ${CLAUDE_PLUGIN_ROOT}/skills/stage-hunk/scripts/stage_hunk.py <file> 1 3-5
    ${CLAUDE_PLUGIN_ROOT}/skills/stage-hunk/scripts/stage_hunk.py --unstage <file> 2
    ```
    Do not run one command per hunk.
 5. Report what was staged/unstaged.
 
-The whole flow should be 2 Bash calls: list, then stage. If `--list-hunks` output is insufficient to match the description, you may add one `git diff -U10 -- <file>` call for more context. If you still can't match, report back with a summary so the caller can clarify — do not guess indices.
+The whole flow should be 2 Bash calls: list, then stage.
+
+**When the description names part of a hunk**, a hunk index is too coarse — a hunk is a contiguous run of changed lines, and the caller may want only some of them. Swap both calls for the line-addressed pair, same shape and same 2-call budget:
+
+```
+${CLAUDE_PLUGIN_ROOT}/skills/stage-hunk/scripts/stage_hunk.py --list-lines <file>
+${CLAUDE_PLUGIN_ROOT}/skills/stage-hunk/scripts/stage_hunk.py --lines <file> 2 5-7
+```
+
+`--list-lines` numbers every changed line and shows which hunk it belongs to; `--staged` and `--unstage` work as they do for hunks. A rewritten line is a `-`/`+` pair — select both indices to rewrite it, or one alone to leave the old and new line both in the index (the script warns when a selection does this).
+
+If the listing is insufficient to match the description, you may add one `git diff -U10 -- <file>` call for more context. If you still can't match, report back with a summary so the caller can clarify — do not guess indices.
