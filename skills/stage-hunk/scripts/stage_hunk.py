@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
-"""Stage or unstage specific hunks from a git diff without interactive prompts.
+"""Stage or unstage specific hunks or lines from a git diff without interactive prompts.
 
 Usage:
-    stage_hunk.py <file> <N> [N ...]
-    stage_hunk.py --unstage <file> <N> [N ...]
+    stage_hunk.py <file> <N|N-M> [...]
+    stage_hunk.py --lines <file> <N|N-M> [...]
+    stage_hunk.py --unstage [--lines] <file> <N|N-M> [...]
     stage_hunk.py --list-hunks [--staged] <file>
+    stage_hunk.py --list-lines [--staged] <file>
 
-Hunk indices are 1-based and match the order printed by --list-hunks, which
-uses `git diff -U0` (the finest-grained split). Does not commit.
+Indices are 1-based and match the order printed by the corresponding --list-*
+mode, which uses `git diff -U0`. A hunk is a contiguous run of changed lines;
+--lines addresses the individual lines inside one. Does not commit.
 """
 
 from __future__ import annotations
@@ -43,9 +46,11 @@ def die(msg: str) -> NoReturn:
 
 def usage() -> NoReturn:
     prog = "stage_hunk.py"
-    print(f"Usage: {prog} <file> <N> [N ...]", file=sys.stderr)
-    print(f"       {prog} --unstage <file> <N> [N ...]", file=sys.stderr)
+    print(f"Usage: {prog} <file> <N|N-M> [...]", file=sys.stderr)
+    print(f"       {prog} --lines <file> <N|N-M> [...]", file=sys.stderr)
+    print(f"       {prog} --unstage [--lines] <file> <N|N-M> [...]", file=sys.stderr)
     print(f"       {prog} --list-hunks [--staged] <file>", file=sys.stderr)
+    print(f"       {prog} --list-lines [--staged] <file>", file=sys.stderr)
     sys.exit(1)
 
 
@@ -125,12 +130,110 @@ def resolve_selection(
     return new_ranges, old_ranges, len(hunks)
 
 
+@dataclass
+class ChangedLine:
+    hunk: int  # 1-based index of the U0 hunk this line sits in
+    side: str  # "+" or "-"
+    lineno: int  # new-side number for "+", old-side number for "-"
+    text: str
+
+
+def collect_changed_lines(diff_u0: str) -> list[ChangedLine]:
+    """Every changed line in the file, numbered in diff order.
+
+    A U0 diff has no context lines, so this is exactly the set of lines a
+    caller can select. Each line is addressed on the side it exists: an
+    addition by its new-side number, a deletion by its old-side number.
+    """
+    _, hunks = parse_diff(diff_u0)
+    changed: list[ChangedLine] = []
+    for hunk_idx, h in enumerate(hunks, start=1):
+        new_line, old_line = h.new_start, h.old_start
+        for raw in h.lines:
+            tag = raw[:1]
+            if tag == "+":
+                changed.append(ChangedLine(hunk_idx, "+", new_line, raw[1:]))
+                new_line += 1
+            elif tag == "-":
+                changed.append(ChangedLine(hunk_idx, "-", old_line, raw[1:]))
+                old_line += 1
+    return changed
+
+
+def resolve_line_selection(
+    diff_u0: str, wanted: set[int]
+) -> tuple[list[tuple[int, int]], list[tuple[int, int]], int]:
+    """Map wanted 1-based line indices to single-line ranges on their own side.
+
+    Unlike hunk selection, a deletion never reaches new_ranges — see the
+    strict_sides note in build_patch.
+    """
+    changed = collect_changed_lines(diff_u0)
+    new_ranges: list[tuple[int, int]] = []
+    old_ranges: list[tuple[int, int]] = []
+    for idx, cl in enumerate(changed, start=1):
+        if idx not in wanted:
+            continue
+        if cl.side == "+":
+            new_ranges.append((cl.lineno, cl.lineno))
+        else:
+            old_ranges.append((cl.lineno, cl.lineno))
+    return new_ranges, old_ranges, len(changed)
+
+
+def warn_split_modifications(diff_u0: str, wanted: set[int]) -> None:
+    """Flag a selection that takes part of a modification.
+
+    A changed line is a "-"/"+" pair. Staging one side alone is legal and
+    occasionally wanted, but it leaves both the old and the new line in the
+    index, so say so rather than let it pass silently.
+    """
+    changed = collect_changed_lines(diff_u0)
+    by_hunk: dict[int, list[int]] = {}
+    for idx, cl in enumerate(changed, start=1):
+        by_hunk.setdefault(cl.hunk, []).append(idx)
+    for hunk_idx, indices in by_hunk.items():
+        sides = {changed[i - 1].side for i in indices}
+        selected = [i for i in indices if i in wanted]
+        if len(sides) == 2 and selected and len(selected) != len(indices):
+            picked = " ".join(str(i) for i in selected)
+            print(
+                f"note: hunk {hunk_idx} rewrites lines (both - and +) and you selected"
+                f" only {picked} of it — the index will hold both the old and the new line",
+                file=sys.stderr,
+            )
+
+
+def parse_index_args(args: list[str], *, unit: str) -> set[int]:
+    """Expand "3" and "3-5" arguments into a set of 1-based indices."""
+    wanted: set[int] = set()
+    for arg in args:
+        m = re.fullmatch(r"(\d+)(?:-(\d+))?", arg)
+        if not m:
+            print(
+                f"error: expected {unit} index or range (e.g. 3 or 3-5), got: {arg}",
+                file=sys.stderr,
+            )
+            usage()
+        lo = int(m.group(1))
+        hi = int(m.group(2)) if m.group(2) is not None else lo
+        if lo < 1:
+            print(f"error: {unit} indices start at 1, got: {arg}", file=sys.stderr)
+            usage()
+        if hi < lo:
+            print(f"error: reversed range: {arg}", file=sys.stderr)
+            usage()
+        wanted.update(range(lo, hi + 1))
+    return wanted
+
+
 def build_patch(
     diff: str,
     new_ranges: list[tuple[int, int]],
     old_ranges: list[tuple[int, int]],
     *,
     unstage: bool,
+    strict_sides: bool = False,
 ) -> str | None:
     """Rebuild a patch containing only the selected changes.
 
@@ -138,6 +241,12 @@ def build_patch(
     hunk state leaks. new_start differs by mode: when staging we apply selected
     hunks onto the index, so positions accumulate only emitted deltas; when
     unstaging the index frame is fixed, so each hunk keeps its original new_start.
+
+    strict_sides governs how a deletion is matched. Hunk selection puts a whole
+    rewrite hunk in new_ranges, so a deletion has to be reachable by the new-side
+    position it would have occupied. Line selection addresses each side
+    separately, and that same fallback would drag in the deletion paired with a
+    selected addition — so under strict_sides a deletion matches old_ranges only.
     """
     header, hunks = parse_diff(diff)
     out: list[str] = []
@@ -171,7 +280,10 @@ def build_patch(
                     prev_kept = False
                 new_line += 1
             elif tag == "-":
-                if in_ranges(new_line, new_ranges) or in_ranges(old_line, old_ranges):
+                matched = in_ranges(old_line, old_ranges) or (
+                    not strict_sides and in_ranges(new_line, new_ranges)
+                )
+                if matched:
                     filtered.append(raw)
                     has_selected = True
                     prev_kept = True
@@ -241,26 +353,42 @@ def list_hunks(file: str, *, staged: bool) -> None:
         print(f'hunk {idx}: lines {rng:<8} ({dels} del, {adds} add, {dels + adds} lines) "{preview}"')
 
 
-def stage(file: str, indices: list[str], *, unstage: bool) -> None:
+def list_lines(file: str, *, staged: bool) -> None:
+    diff = read_diff(file, staged=staged, context=0)
+    if not diff:
+        die(f"no {'staged' if staged else 'unstaged'} changes in {file}")
+    changed = collect_changed_lines(diff)
+    for idx, cl in enumerate(changed, start=1):
+        text = cl.text if len(cl.text) <= 80 else cl.text[:77] + "..."
+        verb = "add" if cl.side == "+" else "del"
+        addr = f"{cl.side}{cl.lineno}"
+        print(f'line {idx}: {addr:<8} {verb}  hunk {cl.hunk}  "{text}"')
+
+
+def stage(file: str, indices: list[str], *, unstage: bool, by_line: bool) -> None:
     diff = read_diff(file, staged=unstage, context=None)
     if not diff:
         die(f"no {'staged' if unstage else 'unstaged'} changes in {file}")
 
-    wanted = set()
-    for arg in indices:
-        if not re.fullmatch(r"\d+", arg):
-            print(f"error: expected hunk index (integer), got: {arg}", file=sys.stderr)
-            usage()
-        wanted.add(int(arg))
+    unit = "line" if by_line else "hunk"
+    wanted = parse_index_args(indices, unit=unit)
 
     diff_u0 = read_diff(file, staged=unstage, context=0)
-    new_ranges, old_ranges, total = resolve_selection(diff_u0, wanted)
+    if by_line:
+        new_ranges, old_ranges, total = resolve_line_selection(diff_u0, wanted)
+    else:
+        new_ranges, old_ranges, total = resolve_selection(diff_u0, wanted)
     if not new_ranges and not old_ranges:
-        die(f"no hunks matched indices {' '.join(indices)} (file has {total} hunks)")
+        die(f"no {unit}s matched {' '.join(indices)} (file has {total} {unit}s)")
+    if max(wanted) > total:
+        beyond = " ".join(str(i) for i in sorted(wanted) if i > total)
+        print(f"note: ignoring {unit}s past the end of the file: {beyond}", file=sys.stderr)
+    if by_line:
+        warn_split_modifications(diff_u0, wanted)
 
-    patch = build_patch(diff, new_ranges, old_ranges, unstage=unstage)
+    patch = build_patch(diff, new_ranges, old_ranges, unstage=unstage, strict_sides=by_line)
     if patch is None:
-        die(f"no hunks matched indices {' '.join(indices)} in {file}")
+        die(f"no {unit}s matched {' '.join(indices)} in {file}")
 
     if not apply_patch(patch, unstage=unstage):
         print("error: generated patch failed to apply", file=sys.stderr)
@@ -269,12 +397,13 @@ def stage(file: str, indices: list[str], *, unstage: bool) -> None:
         sys.exit(1)
 
     verb = "unstaged" if unstage else "staged"
-    print(f"{verb} hunks {' '.join(indices)} from {file}")
+    print(f"{verb} {unit}s {' '.join(indices)} from {file}")
     print(git("diff", "--cached", "--stat", "--", file).stdout, end="")
 
 
 def main(argv: list[str]) -> None:
-    if argv and argv[0] == "--list-hunks":
+    if argv and argv[0] in ("--list-hunks", "--list-lines"):
+        mode = argv[0]
         rest = argv[1:]
         staged = False
         if rest and rest[0] == "--staged":
@@ -282,16 +411,20 @@ def main(argv: list[str]) -> None:
             rest = rest[1:]
         if len(rest) != 1:
             usage()
-        list_hunks(chdir_to_repo_for(rest[0]), staged=staged)
+        lister = list_hunks if mode == "--list-hunks" else list_lines
+        lister(chdir_to_repo_for(rest[0]), staged=staged)
         return
 
-    unstage = False
-    if argv and argv[0] == "--unstage":
-        unstage = True
+    unstage = by_line = False
+    while argv and argv[0] in ("--unstage", "--lines"):
+        if argv[0] == "--unstage":
+            unstage = True
+        else:
+            by_line = True
         argv = argv[1:]
     if len(argv) < 2:
         usage()
-    stage(chdir_to_repo_for(argv[0]), argv[1:], unstage=unstage)
+    stage(chdir_to_repo_for(argv[0]), argv[1:], unstage=unstage, by_line=by_line)
 
 
 if __name__ == "__main__":
