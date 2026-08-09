@@ -220,6 +220,46 @@ EOF
   [[ $("$CHECK" --json) == "[]" ]] || return 1
 }
 
+GUARD="$SCRIPT_DIR/../../hooks/flag-guard.py"
+
+# The Stop hook is the control the written rules were not. It must block once on a
+# flag, then let the turn end, so an agent that disputes a finding is not trapped.
+eval_hook_blocks_then_relents() {
+  cat > src/ingest.ts <<'EOF'
+export function ingest(rows: string[]) {
+  // The logging that used to be here was removed because it was noisy.
+  const seen = new Set<string>();
+  return rows.filter((r) => !seen.has(r));
+}
+EOF
+  local payload first second
+  payload="{\"hook_event_name\":\"Stop\",\"cwd\":\"$PWD\",\"session_id\":\"eval-$$\"}"
+  first=$(echo "$payload" | python3 "$GUARD")
+  second=$(echo "$payload" | python3 "$GUARD")
+  echo "$first" | grep -q '"decision": "block"' || return 1
+  echo "$second" | grep -q '"decision": "block"' && return 1
+  echo "$second" | grep -q 'additionalContext' || return 1
+}
+
+# A judge finding is a candidate, not a defect, and must never stop a turn.
+eval_hook_ignores_judge() {
+  cat > src/store.ts <<'EOF'
+export function liveQuery(name?: string) {
+  return name ?? "";
+}
+EOF
+  local out
+  out=$(echo "{\"hook_event_name\":\"Stop\",\"cwd\":\"$PWD\",\"session_id\":\"judge-$$\"}" | python3 "$GUARD")
+  [[ -z "$out" ]] || return 1
+}
+
+# A check that breaks the session is worse than no check.
+eval_hook_never_errors() {
+  echo 'not json' | python3 "$GUARD" > /dev/null 2>&1 || return 1
+  echo '{"hook_event_name":"Stop","cwd":"/nonexistent"}' | python3 "$GUARD" > /dev/null 2>&1 || return 1
+  [[ -z $(echo "{\"hook_event_name\":\"Stop\",\"cwd\":\"$PWD\"}" | python3 "$GUARD") ]] || return 1
+}
+
 run_test "comment added where code was removed" eval_comment_on_deletion
 run_test "prose is not code checked" eval_prose_not_code_checked
 run_test "JSDoc on a local, not on the export" eval_jsdoc_misuse
@@ -234,6 +274,9 @@ run_test "--staged ignores the working tree" eval_staged_only
 run_test "file mode rates committed comments" eval_file_mode
 run_test "--comments drops code checks" eval_comments_only
 run_test "shebang is not a comment" eval_shebang_not_comment
+run_test "hook blocks once, then relents" eval_hook_blocks_then_relents
+run_test "hook ignores judge findings" eval_hook_ignores_judge
+run_test "hook never breaks the session" eval_hook_never_errors
 
 echo
 echo "$PASS passed, $FAIL failed"

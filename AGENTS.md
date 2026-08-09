@@ -25,7 +25,9 @@ Those two scripts are the only tested code here. There is no build, no lint, and
 Two artefacts ship from the same tree:
 
 1. **The standards** — markdown consumed as a git submodule at `agent-standards/`. Consumers track `main` (not a pinned SHA), so every commit reaches them on their next sync. Keep `main` releasable.
-2. **The `block65-tools` plugin** — `.claude-plugin/plugin.json` plus `skills/*/SKILL.md`, listed in `.claude-plugin/marketplace.json` alongside the sibling `compend` and `playwright-harness` plugins. Bump the plugin version when skills change.
+2. **The `block65-tools` plugin** — `.claude-plugin/plugin.json`, `skills/*/SKILL.md` and `hooks/hooks.json`, listed in `.claude-plugin/marketplace.json` alongside the sibling `compend` and `playwright-harness` plugins. Bump the plugin version when skills or hooks change.
+
+Hooks are the part that binds. A standard an agent can decline to read is advice; `hooks/hooks.json` runs whether or not the agent chooses to. Ship a check there only when the rule it enforces is decidable from the text alone, and let it block once rather than repeatedly, so a disputed finding cannot trap a turn.
 
 ## Structure that matters
 
