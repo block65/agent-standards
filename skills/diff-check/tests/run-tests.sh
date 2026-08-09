@@ -355,8 +355,137 @@ run_test "shebang is not a comment" eval_shebang_not_comment
 run_test "hook blocks once, then relents" eval_hook_blocks_then_relents
 run_test "hook respects stop_hook_active" eval_hook_respects_stop_hook_active
 run_test "hook ignores files nobody edited" eval_hook_ignores_untouched_files
+# The block that prompted these two checks: correctly placed on an export, so
+# placement says nothing, while the ranked list is the branches below it in
+# English and drifts silently when one is reordered.
+eval_comment_list() {
+  cat > src/format.ts <<'EOF'
+/**
+ * The one place a caught value becomes a sentence. Precedence:
+ *
+ * 1. this surface's copy for the error's `reason`
+ * 2. a `LocalisedMessage` the server authored
+ * 3. field/quota violations
+ * 4. the bare `reason` slug, which names the condition
+ * 5. generic
+ */
+export function useErrorFormatter(reasons?: string) {
+  return reasons ?? "generic";
+}
+EOF
+  local out
+  out=$("$CHECK" --json)
+  echo "$out" | grep -q '"kind": "comment-list"' || return 1
+  echo "$out" | grep -q '"disposition": "flag"' || return 1
+}
+
+# Prose, no list, but several times the one-or-two sentences the standard allows.
+eval_comment_essay() {
+  cat > src/format.ts <<'EOF'
+/**
+ * Formats a caught value for display. The precedence was chosen after a long
+ * discussion about which source reads best when several are present at once.
+ * Copy defined on the surface itself wins, because it is the most specific.
+ * A server-authored message comes next, since it has already been localised.
+ * Violations follow, then the raw slug, then a generic fallback string.
+ * None of this is visible from the signature, which is why it is written here.
+ * The reader should know all of it before changing anything below.
+ */
+export function formatError(reason?: string) {
+  return reason ?? "generic";
+}
+EOF
+  "$CHECK" --json | grep -q '"kind": "comment-essay"' || return 1
+}
+
+# The checks must not fire on a comment that obeys the standard, or they become
+# the noise they exist to prevent.
+eval_short_jsdoc_is_fine() {
+  cat > src/format.ts <<'EOF'
+/** The server sends a slug, never a sentence. */
+export function formatError(reason?: string) {
+  return reason ?? "generic";
+}
+EOF
+  "$CHECK" --json | grep -q '"disposition": "flag"' && return 1
+  return 0
+}
+
+# A licence banner is long by nature and says nothing about the code below it.
+eval_banner_not_essay() {
+  cat > src/vendor.ts <<'EOF'
+/*!
+ * Copyright (c) 2019 Example Corp
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met.
+ * Neither the name of the copyright holder nor the names of contributors may
+ * be used to endorse products derived from this software.
+ */
+export const VERSION = "1.0.0";
+EOF
+  "$CHECK" --json | grep -q '"disposition": "flag"' && return 1
+  return 0
+}
+
+# In a shell-like file an enumerated comment is usually a commented-out setting,
+# not the ranked restatement this check is about.
+eval_shell_list_not_flagged() {
+  cat > deploy.sh <<'EOF'
+#!/usr/bin/env bash
+# Optional overrides:
+# - REGION sets the target
+# - TIER sets the plan
+echo "deploying"
+EOF
+  "$CHECK" --json | grep -q '"kind": "comment-list"' && return 1
+  return 0
+}
+
+# Blocking and mentioning are different powers. A multi-line judge finding on the
+# file just written is reported, and still does not block the turn.
+eval_hook_reports_judge_on_write() {
+  cat > src/store.ts <<'EOF'
+export function liveQuery(name: string) {
+  // The upstream feed repeats an item across page boundaries whenever a write
+  // lands mid-scan, so a caller that pages through this has to dedupe by id
+  // rather than trusting the cursor to be stable.
+  return name.trim();
+}
+EOF
+  local sid="report-$$" out
+  out=$(echo "{\"hook_event_name\":\"PostToolUse\",\"cwd\":\"$PWD\",\"session_id\":\"$sid\",\"tool_input\":{\"file_path\":\"$PWD/src/store.ts\"}}" | python3 "$GUARD")
+  echo "$out" | grep -q 'to rate, not blocking' || return 1
+  echo "$out" | grep -q '"decision": "block"' && return 1
+  # Stop is the blocking event and must stay flags-only.
+  out=$(echo "{\"hook_event_name\":\"Stop\",\"cwd\":\"$PWD\",\"session_id\":\"$sid\"}" | python3 "$GUARD")
+  [[ -z "$out" ]] || return 1
+}
+
+# A one-line comment is cheap to read; raising every one of them is the noise
+# that gets a check muted.
+eval_hook_skips_short_judge() {
+  cat > src/store.ts <<'EOF'
+export function liveQuery(name: string) {
+  // The upstream feed repeats items across pages.
+  return name.trim();
+}
+EOF
+  local out
+  out=$(echo "{\"hook_event_name\":\"PostToolUse\",\"cwd\":\"$PWD\",\"session_id\":\"short-$$\",\"tool_input\":{\"file_path\":\"$PWD/src/store.ts\"}}" | python3 "$GUARD")
+  [[ -z "$out" ]] || return 1
+}
+
 run_test "hook ignores judge findings" eval_hook_ignores_judge
 run_test "hook never breaks the session" eval_hook_never_errors
+run_test "ranked list in a well-placed JSDoc" eval_comment_list
+run_test "block far past one or two sentences" eval_comment_essay
+run_test "short JSDoc on an export is fine" eval_short_jsdoc_is_fine
+run_test "licence banner is not an essay" eval_banner_not_essay
+run_test "shell commented-out settings are not a list" eval_shell_list_not_flagged
+run_test "hook reports a judge finding on write" eval_hook_reports_judge_on_write
+run_test "hook skips a one-line judge finding" eval_hook_skips_short_judge
 
 echo
 echo "$PASS passed, $FAIL failed"
