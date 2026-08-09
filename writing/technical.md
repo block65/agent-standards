@@ -6,11 +6,11 @@
 ## Objectivity
 
 - **No "Your":** Software has no "you"; "your [Component]" is ambiguous.
-  - ❌ "Configure **your** [Component]."
-  - ✅ "Configure the **[Location]** [Component]."
-- **Subject = component:** In docs for a product, the component acts — never the product's own name.
-  - ❌ "[Product] [Action]s the [Component]."
-  - ✅ "The [Component] [Action]s."
+  - BAD: "Configure **your** [Component]."
+  - GOOD: "Configure the **[Location]** [Component]."
+- **Subject = component:** In docs for a product, the component acts, never the product's own name.
+  - BAD: "[Product] [Action]s the [Component]."
+  - GOOD: "The [Component] [Action]s."
 
 ## Instruction Hierarchy
 
@@ -20,8 +20,8 @@ Follow this order for guides:
 2. **Establish:** Define the object or its default state.
 3. **Action:** The imperative instruction.
 
-- ❌ "To [Result], click [Action]."
-- ✅ "[Component] performs [Function] at the [Layer]. To [Action] it, run the [Command]."
+- BAD: "To [Result], click [Action]."
+- GOOD: "[Component] performs [Function] at the [Layer]. To [Action] it, run the [Command]."
 
 ## Language
 

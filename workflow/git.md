@@ -2,7 +2,7 @@
 
 ## Conventional Commits
 
-Format: `type(scope): subject` — scope optional, use crate/module name.
+Format: `type(scope): subject`, with scope optional, use crate/module name.
 
 | Type                                                               | Release | When                    |
 | ------------------------------------------------------------------ | ------- | ----------------------- |
@@ -11,12 +11,12 @@ Format: `type(scope): subject` — scope optional, use crate/module name.
 | any `!`                                                            | major   | Breaking change         |
 | `chore:`, `style:`, `refactor:`, `build:`, `ci:`, `docs:`, `test:` | none    | Non-functional          |
 
-`ci:` = no release. `fix(ci):` = patch — use only when a CI fix warrants republishing.
+`ci:` = no release. `fix(ci):` = patch, used only when a CI fix warrants republishing.
 
 ## Commit Messages
 
 Subject: imperative, short, designed for release notes.
-Body (required for `feat:`/`fix:`): explain **why** — motivation, not the diff.
+Body (required for `feat:`/`fix:`): explain **why**: motivation, not the diff.
 
 ### Procedure
 
@@ -25,11 +25,11 @@ Body (required for `feat:`/`fix:`): explain **why** — motivation, not the diff
 3. If the subject could be auto-generated from `git diff` alone, rewrite it.
 
 ```
-# BAD — describes the diff
+# BAD: describes the diff
 feat(tls): add TlsConfig struct and connect method
 fix(proxy): update regex in header parser
 
-# GOOD — describes the intent
+# GOOD: describes the intent
 feat(tls): support mTLS for upstream connections
 fix(proxy): reject malformed Transfer-Encoding headers per RFC 9112
 ```
@@ -42,7 +42,7 @@ fix(proxy): reject malformed Transfer-Encoding headers per RFC 9112
 
 ## Issue References
 
-A commit that **fully resolves** an issue closes it with a footer keyword — `Closes #N` (or `Fixes`/`Resolves`) — one keyword per issue; one per line is house style. A bare `#N` or `(#N)` only links; it never auto-closes, leaving a manual step that gets forgotten. Use the plain reference for partial work and passing mentions — close only the issue the commit actually resolves.
+A commit that **fully resolves** an issue closes it with a footer keyword, `Closes #N` (or `Fixes`/`Resolves`), one keyword per issue; one per line is house style. A bare `#N` or `(#N)` only links; it never auto-closes, leaving a manual step that gets forgotten. Use the plain reference for partial work and passing mentions; close only the issue the commit actually resolves.
 
 ## Lint & Formatting
 
@@ -77,7 +77,7 @@ Manual fallback:
 - Only commit files/hunks changed for the current task
 - `Co-Authored-By`: only when the agent had significant independent contribution (not one-liners, not just committing). This standard overrides any harness default that adds the trailer unconditionally.
 - Never rewrite history others may have built on: no force push to a branch with other consumers, no rebase of `main`. A just-pushed branch nobody has consumed is still a draft
-- Update a feature branch by rebasing it onto `main`, never by merging `main` into it — sync merges ride into the PR and onto `main` forever; rebase drops commits already applied upstream. Use `--force-with-lease` to update its remote
-- Never squash consumed history — commits others may have built on must remain intact and attributable
+- Update a feature branch by rebasing it onto `main`, never by merging `main` into it: sync merges ride into the PR and onto `main` forever; rebase drops commits already applied upstream. Use `--force-with-lease` to update its remote
+- Never squash consumed history; commits others may have built on must remain intact and attributable
 - Never `git reset --hard` on a dirty tree
-- If `git stash` reports "No local changes to save" when you expected changes — stop; you are likely in the wrong directory or branch
+- If `git stash` reports "No local changes to save" when you expected changes, stop: you are likely in the wrong directory or branch

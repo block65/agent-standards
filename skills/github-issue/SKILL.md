@@ -1,11 +1,11 @@
 ---
 name: github-issue
-description: "Create and maintain GitHub issues from user reports and screenshots, fast and without over-investigating. CREATE: use when the user says 'log a GitHub issue', 'file a bug', 'raise an issue', 'open an issue', 'log this on GitHub', or pastes/attaches a screenshot of something broken and asks to report it — captures the symptom, works out steps to reproduce where possible, uploads any screenshot/video and embeds it, applies the GitHub issue authoring standard, and files immediately. UPDATE: use when the user says 'update the issue', 'add a comment to #N', 'attach this to the issue', 'edit the issue body', 'relabel', 'close/reopen the issue' — adds comments with media, edits the body, upgrades the repro provenance badge, relabels, and closes/reopens. It does NOT root-cause the code or prescribe a fix — that's for triage."
+description: "Create and maintain GitHub issues from user reports and screenshots, fast and without over-investigating. CREATE: use when the user says 'log a GitHub issue', 'file a bug', 'raise an issue', 'open an issue', 'log this on GitHub', or pastes/attaches a screenshot of something broken and asks to report it: captures the symptom, works out steps to reproduce where possible, uploads any screenshot/video and embeds it, applies the GitHub issue authoring standard, and files immediately. UPDATE: use when the user says 'update the issue', 'add a comment to #N', 'attach this to the issue', 'edit the issue body', 'relabel', 'close/reopen the issue': adds comments with media, edits the body, upgrades the repro provenance badge, relabels, and closes/reopens. It does NOT root-cause the code or prescribe a fix; that's for triage."
 ---
 
 # Create & Maintain GitHub Issues
 
-Turn a user report (text/screenshot) into a well-formed GitHub issue and maintain it — fast, no full code investigation. The fix is decided in triage, not here.
+Turn a user report (text/screenshot) into a well-formed GitHub issue and maintain it, fast, with no full code investigation. The fix is decided in triage, not here.
 
 **Mode: act immediately.** Do not draft-and-confirm. For a new report: capture, badge, label, `gh issue create`, return the URL. For an update: make the change and report what changed.
 
@@ -13,10 +13,10 @@ Turn a user report (text/screenshot) into a well-formed GitHub issue and maintai
 
 This skill is project-agnostic. Read the consuming project's `## GitHub Issues` block (in its `AGENTS.md` / `CLAUDE.md`) for:
 
-- **Repo** — `<owner>/<repo>` to file against.
-- **Issue type** — the shape as a first-class GitHub field: `Bug`/`Enhancement` (plus any project types like `Task`), set with `--type`. **Not** a label.
-- **Labels** — the AI-filed label (e.g. `genai`) and the `area/*` vocabulary.
-- **Attachment upload** (optional) — a command (named in the config block) that takes a file and prints its public URL. If the project names none, transcribe media instead (see "Attaching files").
+- **Repo**: `<owner>/<repo>` to file against.
+- **Issue type**: the shape as a first-class GitHub field: `Bug`/`Enhancement` (plus any project types like `Task`), set with `--type`. **Not** a label.
+- **Labels**: the AI-filed label (e.g. `genai`) and the `area/*` vocabulary.
+- **Attachment upload** (optional): a command (named in the config block) that takes a file and prints its public URL. If the project names none, transcribe media instead (see "Attaching files").
 
 If a project has no such block, ask the user for the repo, set the issue type to `Bug`/`Enhancement`, and transcribe rather than upload.
 
@@ -24,19 +24,19 @@ If a project has no such block, ask the user for the repo, set the issue type to
 
 Follow **`workflow/github-issues.md`** (the GitHub issue authoring standard): symptom-first, template fields only, ≤120 words of body prose (150 hard max), name file/service but not line numbers, one audience per issue, **never prescribe the fix**, provenance-tagged repro, badge row on top.
 
-The word budget is on the **body**, not the issue. When the evidence outgrows it, post a comment straight after filing — full verification data, line numbers pinned to a SHA, adjacent findings that aren't this bug. Compressing the body until a verified finding drops out is the wrong trade. A second unrelated problem is still a second issue.
+The word budget is on the **body**, not the issue. When the evidence outgrows it, post a comment straight after filing: full verification data, line numbers pinned to a SHA, adjacent findings that aren't this bug. Compressing the body until a verified finding drops out is the wrong trade. A second unrelated problem is still a second issue.
 
 ## How much to investigate
 
-The goal is a _reproducible, well-scoped_ report — not a diagnosis.
+The goal is a _reproducible, well-scoped_ report, not a diagnosis.
 
 **Do (light triage):**
 
 - Read the screenshot to ground the symptom in what's on screen.
-- Work out **steps to reproduce** where possible — from the report, the screenshot, and obvious knowledge of the app's flows. A quick look at the relevant route/UI to confirm the repro path is fine.
+- Work out **steps to reproduce** where possible: from the report, the screenshot, and obvious knowledge of the app's flows. A quick look at the relevant route/UI to confirm the repro path is fine.
 - Identify the affected **surface/area** to pick the `area/*` label.
-- If a root cause is genuinely obvious at a glance, note it as a single provisional `Likely:` line — never chase it.
-- Note any factual **gap** you can see — no logging on the failing path, a missing validation, an unconsumed queue. Absence is a symptom (evidence), not a fix; don't omit it for fear it reads as prescriptive.
+- If a root cause is genuinely obvious at a glance, note it as a single provisional `Likely:` line, and never chase it.
+- Note any factual **gap** you can see: no logging on the failing path, a missing validation, an unconsumed queue. Absence is a symptom (evidence), not a fix; don't omit it for fear it reads as prescriptive.
 
 **Don't (the token waste to avoid):**
 
@@ -46,19 +46,19 @@ The goal is a _reproducible, well-scoped_ report — not a diagnosis.
 
 ## Steps
 
-1. **Read the inputs.** The user's words + any screenshot (use Read on the image — it renders). Establish the single user-visible symptom.
+1. **Read the inputs.** The user's words + any screenshot (use Read on the image; it renders). Establish the single user-visible symptom.
 
-2. **Steps to reproduce — tag provenance (required).** Start the field with one of `Reported by user:` / `Inferred (unconfirmed):` / `Not reproduced: <what's missing>`. Number the steps, minimal path (≤6). Never present inferred steps as reported.
+2. **Steps to reproduce, tagging provenance (required).** Start the field with one of `Reported by user:` / `Inferred (unconfirmed):` / `Not reproduced: <what's missing>`. Number the steps, minimal path (≤6). Never present inferred steps as reported.
 
-3. **Write the body.** Start with the **badge row** (see the standard's Badges section), a blank line, then the template fields (bug shape — most reports are bugs):
-   - **What happened** — the symptom. ≤40 words. No function/file name in the first sentence.
-   - **Steps to reproduce** — from step 2, provenance tag first.
-   - **Expected behaviour** — one sentence.
-   - **Evidence** — embed any screenshot/file (see "Attaching files"), plus a one-line description and the affected file/service if known. Optional trailing `Likely: …` line only if the cause is obvious.
+3. **Write the body.** Start with the **badge row** (see the standard's Badges section), a blank line, then the template fields (bug shape, since most reports are bugs):
+   - **What happened**: the symptom. ≤40 words. No function/file name in the first sentence.
+   - **Steps to reproduce**: from step 2, provenance tag first.
+   - **Expected behaviour**: one sentence.
+   - **Evidence**: embed any screenshot/file (see "Attaching files"), plus a one-line description and the affected file/service if known. Optional trailing `Likely: …` line only if the cause is obvious.
 
    For a capability gap use the enhancement shape: **Problem / motivation**, **Desired outcome**, **Alternatives** (only if a real trade-off exists).
 
-4. **Set type + labels** from project config: the issue type `Bug`/`Enhancement` (via `--type`), plus the AI-filed label + best-guess `area/*`. Don't investigate just to be sure of the area. If a configured label doesn't exist in the repo, create it (`gh label create`) or drop the unknown `area/*` and file anyway — never let a missing label or type block the create.
+4. **Set type + labels** from project config: the issue type `Bug`/`Enhancement` (via `--type`), plus the AI-filed label + best-guess `area/*`. Don't investigate just to be sure of the area. If a configured label doesn't exist in the repo, create it (`gh label create`) or drop the unknown `area/*` and file anyway; never let a missing label or type block the create.
 
 5. **Create it** (substitute the configured repo, type, and labels):
 
@@ -69,9 +69,9 @@ The goal is a _reproducible, well-scoped_ report — not a diagnosis.
      --type Bug --label "$AI_LABEL" --label area/<surface>
    ```
 
-   Title is symptom-first and specific. Never restate the title verbatim in the body's first line — the title is the terse label; the body opens with the fuller observed symptom.
+   Title is symptom-first and specific. Never restate the title verbatim in the body's first line: the title is the terse label; the body opens with the fuller observed symptom.
 
-6. **Post the depth as a comment, if there is any.** Only when the investigation produced more than the body can hold — full verification data, line numbers (pinned to a SHA, with the symbol named), or adjacent findings that aren't this bug. Skip it for a routine report; most issues need no comment.
+6. **Post the depth as a comment, if there is any.** Only when the investigation produced more than the body can hold: full verification data, line numbers (pinned to a SHA, with the symbol named), or adjacent findings that aren't this bug. Skip it for a routine report; most issues need no comment.
 
    ```sh
    gh issue comment <n> --repo "$REPO" --body "<comment>"   # <n>: the issue gh issue create printed
@@ -89,21 +89,21 @@ gh issue view <n> --repo "$REPO" --json number,title,body,labels,issueType,state
 
 **Comment vs edit:** add a **comment** for genuinely new information (a follow-up, extra evidence, a repro confirmation). **Edit the body** only to correct/upgrade what's there or to insert media. Editing must never delete a human's words.
 
-- **Add a comment (+ media)** — upload any new screenshot/video and embed it.
+- **Add a comment (+ media)**: upload any new screenshot/video and embed it.
   ```sh
   gh issue comment <n> --repo "$REPO" --body "<comment + embedded media>"
   ```
-- **Edit the body (+ media)** — `gh issue edit --body` **replaces the entire body**, so fetch it first, modify in place, and pass the full new text.
+- **Edit the body (+ media)**: `gh issue edit --body` **replaces the entire body**, so fetch it first, modify in place, and pass the full new text.
   ```sh
   gh issue edit <n> --repo "$REPO" --body "<full modified body>"
   ```
-- **Upgrade provenance** — when an inferred repro is confirmed: edit the body to swap the orange `repro: inferred` badge for green `repro: user-reported`, and change the Steps tag to `Reported by user:`. The main reason to edit rather than comment.
-- **Relabel / retype / triage** — `gh issue edit <n> --repo "$REPO" --add-label area/<x> --remove-label area/<y>`; change the type with `--type Enhancement`.
-- **Close / reopen** — an issue a commit resolves should auto-close via `Closes #N` (see `workflow/git.md`); close by hand only when no such commit exists (duplicate, won't-fix, fixed elsewhere): `gh issue close <n> --repo "$REPO" --reason completed` (or `not planned`); `gh issue reopen <n> --repo "$REPO"`.
+- **Upgrade provenance**: when an inferred repro is confirmed: edit the body to swap the orange `repro: inferred` badge for green `repro: user-reported`, and change the Steps tag to `Reported by user:`. The main reason to edit rather than comment.
+- **Relabel / retype / triage**: `gh issue edit <n> --repo "$REPO" --add-label area/<x> --remove-label area/<y>`; change the type with `--type Enhancement`.
+- **Close / reopen**: an issue a commit resolves should auto-close via `Closes #N` (see `workflow/git.md`); close by hand only when no such commit exists (duplicate, won't-fix, fixed elsewhere): `gh issue close <n> --repo "$REPO" --reason completed` (or `not planned`); `gh issue reopen <n> --repo "$REPO"`.
 
 ## Attaching files (screenshots, screen recordings, logs, PDFs)
 
-GitHub has no attachment API, so `gh` can't upload files. The upload is the **project's** responsibility — its config block names an upload command that takes a local file, uploads it under an unguessable key, and prints a public URL. The skill runs that command and turns the URL into markdown; if none is configured, transcribe the media into Evidence instead.
+GitHub has no attachment API, so `gh` can't upload files. The upload is the **project's** responsibility: its config block names an upload command that takes a local file, uploads it under an unguessable key, and prints a public URL. The skill runs that command and turns the URL into markdown; if none is configured, transcribe the media into Evidence instead.
 
 ```sh
 url="$(<the project's configured upload command> "$path")"   # prints the public URL
@@ -115,7 +115,7 @@ Embed the URL by file type:
 - **video** → `<video controls src="<url>"></video>` only when the URL is a GitHub upload (`user-attachments`); GitHub strips `<video>` with an external src, so embed object-store video as a plain `[name](url)` link
 - **anything else** → `[<name>](<url>)` (download link)
 
-Paste the result into the Evidence field (or a comment). (Camo caching and the unique-key rationale live in the standard's Attachments section — don't restate them here.)
+Paste the result into the Evidence field (or a comment). (Camo caching and the unique-key rationale live in the standard's Attachments section; don't restate them here.)
 
 ## Output
 
