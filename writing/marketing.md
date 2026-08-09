@@ -6,17 +6,17 @@
 ## Psychological Ownership
 
 - **Yes "Your":** Use "Your" to help the reader visualize the benefit.
-  - ✅ "Secure **your** [Asset]."
-  - ✅ "Deploy **your** first [Component]."
+  - GOOD: "Secure **your** [Asset]."
+  - GOOD: "Deploy **your** first [Component]."
 
 ## Benefit-First Framing
 
 - **Benefit before feature:** Never describe a feature without the benefit attached.
-  - ❌ "We use [Feature]."
-  - ✅ "[Benefit] with standard [Feature]."
+  - BAD: "We use [Feature]."
+  - GOOD: "[Benefit] with standard [Feature]."
 
 ## Call to Action
 
 - **Active verbs:** Start CTAs with a verb implying immediate value.
-  - ✅ "[Action] the [Asset]" / "[Build] the [Result]"
-  - ❌ "Learn More" / "Submit"
+  - GOOD: "[Action] the [Asset]" / "[Build] the [Result]"
+  - BAD: "Learn More" / "Submit"

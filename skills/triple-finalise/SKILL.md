@@ -1,6 +1,6 @@
 ---
 name: triple-finalise
-description: Finalises a reviewed task — creates PR and merges using the TRIPLE protocol, as the lead agent. Invoked explicitly via /triple-finalise after the review agent has approved.
+description: Finalises a reviewed task: creates PR and merges using the TRIPLE protocol, as the lead agent. Invoked explicitly via /triple-finalise after the review agent has approved.
 allowed-tools: Read, Grep, Glob, Bash
 disable-model-invocation: true
 argument-hint: Extra instructions for the lead agent. Optional.

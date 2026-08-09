@@ -17,6 +17,8 @@ Modular rules for writing. Use the base rules below for everything, then add a s
 ## Clarity & Formatting
 
 - **Headings:** Must predict content.
+- **Examples show form, not scenarios:** Use bracketed placeholders (`[Component]`, `[Reason]`) rather than inventing a product, API, or incident to make an example concrete. Whatever the example contains gets copied along with the form it teaches, invented specifics and register included.
+- **Label the two sides in words:** `BAD:` and `GOOD:`, never `❌`/`✅`. An example comment is a template for a real one, and emoji in it become emoji in code.
 - **Antecedents:** Ensure clear antecedents for "it", "this", "that". Do not use "the [noun]" for an entity the document never establishes.
 
 ## Prohibited Patterns
@@ -24,7 +26,7 @@ Modular rules for writing. Use the base rules below for everything, then add a s
 - **Filler transitions:** Do not use "However,", "Furthermore,", "Moreover,", "Additionally,", "It's important to note that,", "In today's world,".
 - **Excessive em-dashes:** Do not overuse em-dashes to hold a sentence together where a comma, colon, or full stop would serve.
 - **Unnecessary lists:** Use prose when a list adds no structural value.
-- **Banned vocabulary:** See [Banned Words](banned-words.md) — words banned from all output (prose, comments, commits, chat).
+- **Banned vocabulary:** See [Banned Words](banned-words.md): words banned from all output (prose, comments, commits, chat).
 
 ## Modules
 

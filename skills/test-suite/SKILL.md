@@ -7,7 +7,7 @@ description: "Run the full unit/integration test suite (typically vitest) and en
 
 Run unit/integration tests then end-to-end tests sequentially across the repo, using subagents for execution. Fix straightforward failures automatically; report design-level issues back to the user without attempting a fix.
 
-The skill is project-agnostic — it provides the orchestration shape (phased run, fix-then-retry loop, failure classification). The actual commands come from the consuming repo's `AGENTS.md`. The default Block65 toolchain is vitest for unit/integration and Playwright for e2e, but the skill never invokes those tools directly — it runs whatever `AGENTS.md` says to run.
+The skill is project-agnostic: it provides the orchestration shape (phased run, fix-then-retry loop, failure classification). The actual commands come from the consuming repo's `AGENTS.md`. The default Block65 toolchain is vitest for unit/integration and Playwright for e2e, but the skill never invokes those tools directly; it runs whatever `AGENTS.md` says to run.
 
 ## Project setup the skill expects
 
@@ -27,10 +27,10 @@ If the section is missing or incomplete, stop and ask the user what commands to 
 
 ## Arguments
 
-- `--env dev` (default) — run e2e against the project's "dev" environment
-- `--env staging` — run e2e against the project's "staging" environment
-- `--unit-only` — skip e2e, just run unit/integration
-- `--e2e-only` — skip unit/integration, just run e2e
+- `--env dev` (default): run e2e against the project's "dev" environment
+- `--env staging`: run e2e against the project's "staging" environment
+- `--unit-only`: skip e2e, just run unit/integration
+- `--e2e-only`: skip unit/integration, just run e2e
 
 ## Argument handling
 
@@ -53,19 +53,19 @@ Spawn a subagent to run the unit/integration command from `AGENTS.md`'s `## Test
 For each failure:
 
 - **Straightforward fixes** (typos, wrong imports, missing mocks, assertion drift from a recent code change, type errors in test code): fix directly and re-run.
-- **Design flaws** (architectural problems, missing features, broken abstractions, test infrastructure issues): collect into a report for the user — do NOT attempt to fix.
+- **Design flaws** (architectural problems, missing features, broken abstractions, test infrastructure issues): collect into a report for the user; do NOT attempt to fix.
 
 After fixing, re-run via another subagent. Repeat until green or until only design-level issues remain.
 
-Cap at 5 iterations. If still failing after 5 rounds — or only design-level issues remain — stop and present the remaining failures; never proceed to Phase 2 on a red unit suite.
+Cap at 5 iterations. If still failing after 5 rounds, or only design-level issues remain, stop and present the remaining failures; never proceed to Phase 2 on a red unit suite.
 
 ### Rules for fixing
 
-- Read `AGENTS.md` and follow all standards it references — including any module-specific rules like `engineering/vitest.md`, `engineering/testing.md`, `lang/typescript.md`.
-- Never use `as` type casts to paper over failures — fix the underlying type.
+- Read `AGENTS.md` and follow all standards it references, including any module-specific rules like `engineering/vitest.md`, `engineering/testing.md`, `lang/typescript.md`.
+- Never use `as` type casts to paper over failures; fix the underlying type.
 - Never skip or `.todo()` a test to make it pass.
 - Never weaken assertions (e.g. replacing `.toBe(x)` with `.toBeTruthy()`).
-- Use the project's package manager exclusively (pnpm if `catalog:` entries are present, otherwise whatever `AGENTS.md` mandates) — never reach for `npx`.
+- Use the project's package manager exclusively (pnpm if `catalog:` entries are present, otherwise whatever `AGENTS.md` mandates), never `npx`.
 - Run the project's formatter on every file edited (whichever `AGENTS.md` specifies).
 - If a test needs infrastructure that isn't running (database, queue, cache, container), report to the user rather than trying to set it up.
 
@@ -87,17 +87,17 @@ Spawn a subagent to run the appropriate e2e command. It should:
 
 Same assessment approach as Phase 1:
 
-- **Straightforward fixes** (wrong selectors per the project's selector rules, locator mismatches from a recent UI change, stale test data expectations, missing UI waits that suggest a synchronisation bug — not a timeout bump): fix and re-run.
+- **Straightforward fixes** (wrong selectors per the project's selector rules, locator mismatches from a recent UI change, stale test data expectations, missing UI waits that suggest a synchronisation bug, but not a timeout bump): fix and re-run.
 - **Environment issues** (services not running, auth not configured, network blocked): report.
 - **Design flaws** (broken user flows, missing pages, fundamentally wrong UI behaviour): report.
 
 Cap at 5 iterations.
 
-If `playwright-harness:debug` is available and the project uses Playwright, invoke it before attempting any selector- or timing-related fix — it reads the harness summaries instead of raw logs.
+If `playwright-harness:debug` is available and the project uses Playwright, invoke it before attempting any selector- or timing-related fix; it reads the harness summaries instead of raw logs.
 
 ### Environment prerequisites
 
-Read the `Prerequisites` lines for the selected env from `AGENTS.md`. If services must be running and aren't, or required env vars are missing, report to the user — do not try to spin up infrastructure.
+Read the `Prerequisites` lines for the selected env from `AGENTS.md`. If services must be running and aren't, or required env vars are missing, report to the user; do not try to spin up infrastructure.
 
 If the env's auth setup is interactive (magic-link capture from service logs, OAuth in a real browser, CAPTCHA), and the subagent can't drive it headlessly, report and suggest running those tests manually.
 
@@ -115,8 +115,8 @@ List issues needing human decision-making. Include the test name, the failure, a
 
 ### Final status
 
-- Unit/integration: X passed, Y failed (Z design issues) — or "skipped" if `--e2e-only`
-- E2E (env=<name>): X passed, Y failed (Z design issues) — or "skipped" if `--unit-only`
+- Unit/integration: X passed, Y failed (Z design issues), or "skipped" if `--e2e-only`
+- E2E (env=<name>): X passed, Y failed (Z design issues), or "skipped" if `--unit-only`
 
 ## Subagent prompts
 

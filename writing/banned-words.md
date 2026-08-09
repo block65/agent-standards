@@ -4,7 +4,7 @@ Words we don't use, grouped by why.
 
 ## Word choice
 
-Banned from all output — prose, comments, commits, chat.
+Banned from all output: prose, comments, commits, chat.
 
 ### Permanent
 
@@ -12,13 +12,14 @@ Banned from all output — prose, comments, commits, chat.
 - "seam"
 - "honest"
 - "fair"
-- "seed" — when it means an origin, trigger, or starting point; name the thing itself. Literal uses (a random seed, a seed number, seeding a database, seed data) are fine.
-- "fork" — when it means a decision or branch point; say "decision" or "branch". Developers read "fork" as a git fork, so the figurative sense misleads. Literal uses (a git fork, `fork()`, forking a process/subagent) are fine.
-- "ladder" — say "order" or "sequence", and list the steps in it. Literal uses (a physical ladder, a ladder diagram) are fine.
+- "seed": when it means an origin, trigger, or starting point; name the thing itself. Literal uses (a random seed, a seed number, seeding a database, seed data) are fine.
+- "fork": when it means a decision or branch point; say "decision" or "branch". Developers read "fork" as a git fork, so the figurative sense misleads. Literal uses (a git fork, `fork()`, forking a process/subagent) are fine.
+- "ladder": say "order" or "sequence", and list the steps in it. Literal uses (a physical ladder, a ladder diagram) are fine.
+- costume framing: one thing "wearing the costume of", "dressed up as", "masquerading as", or "disguised as" another. Name what the thing is and what it does: "introspection, not testing", not "introspection masquerading as testing".
 
 ### Flavour of the month
 
-Currently-watched words. The date is when an entry was added, not an expiry — a flavour can outlast its month. When editing this file, re-test entries older than six months: remove one, and re-add it if the behaviour recurs.
+Currently-watched words. The date is when an entry was added, not an expiry; a flavour can outlast its month. When editing this file, re-test entries older than six months: remove one, and re-add it if the behaviour recurs.
 
 - "tautology" (since 2026-05)
 - "tension" (since 2026-05)
@@ -28,6 +29,6 @@ Currently-watched words. The date is when an entry was added, not an expiry — 
 
 ## Action signal
 
-Not forbidden text — a cue. These surface right before a big or irreversible action. On reaching for one, stop and confirm with the user before continuing.
+These are cues, not forbidden text. They surface right before a big or irreversible action. On reaching for one, stop and confirm with the user before continuing.
 
 - "NUKE"
