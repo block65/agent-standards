@@ -12,8 +12,11 @@ dirty is nobody's fault. It blocks once per session. And it stands down entirely
 while `stop_hook_active` is set, which is the runtime's own signal that a hook is
 looping.
 
-Only `flag` findings are used. A `judge` finding needs a reading of the code and
-has no business stopping a turn.
+Only `flag` findings block. A `judge` finding needs a reading of the code and has
+no business stopping a turn — but blocking and mentioning are different powers,
+and the analysis is already computed. So `PostToolUse` also reports judgeable
+findings on the file just written, where the agent still has the code in hand and
+nothing is at stake if it disagrees.
 """
 
 from __future__ import annotations
@@ -30,11 +33,23 @@ CHECK = os.path.join(HERE, "..", "skills", "diff-check", "scripts", "diff_check.
 # A block that lists everything is the essay this repo also bans.
 MAX_REPORTED = 12
 
+# A one-line comment is cheap to read and the flag checks already decide the
+# defects it can carry. Length is what makes "does this earn its place" a real
+# question, so that is the floor for raising a comment nobody has to fix.
+COMMENT_KINDS = {"comment-added", "comment-on-deletion"}
+JUDGE_MIN_LINES = 3
+
 ADVICE = (
     "Fix these before continuing. Each is decidable from the text alone: delete a "
     "comment that explains deleted code, convert a misplaced /** */ block to //, and "
     "write a state predicate as the states accepted. If a finding is wrong, say so in "
     "your reply and end the turn; this will not block you twice."
+)
+
+JUDGE_ADVICE = (
+    "Nothing here blocks you. Rate each against engineering/comments.md while you "
+    "still have the code in hand: a comment earns its place only by carrying what the "
+    "code cannot. Cut it to the sentence that does, or delete it."
 )
 
 
@@ -73,31 +88,58 @@ def findings(cwd: str) -> list[dict]:
         )
         if proc.returncode != 0:
             return []
-        return [f for f in json.loads(proc.stdout or "[]") if f["disposition"] == "flag"]
+        return json.loads(proc.stdout or "[]")
     except (OSError, ValueError, subprocess.SubprocessError):
         return []
 
 
-def describe(items: list[dict]) -> str:
-    shown = items[:MAX_REPORTED]
-    lines = [f"diff-check: {len(items)} flagged in files you edited this session."]
-    for item in shown:
+def flags(items: list[dict]) -> list[dict]:
+    return [f for f in items if f["disposition"] == "flag"]
+
+
+def judges(items: list[dict]) -> list[dict]:
+    return [
+        f
+        for f in items
+        if f["disposition"] == "judge"
+        and (
+            f["kind"] not in COMMENT_KINDS
+            or len(f["snippet"].splitlines()) >= JUDGE_MIN_LINES
+        )
+    ]
+
+
+def rows(items: list[dict]) -> list[str]:
+    lines = []
+    for item in items[:MAX_REPORTED]:
         head = item["snippet"].splitlines()[0]
         lines.append(f"  {item['path']}:{item['line']} [{item['kind']}] {head}")
         lines.append(f"    {item['rule']}")
-    if len(items) > len(shown):
-        lines.append(f"  ... and {len(items) - len(shown)} more.")
-    lines.append(ADVICE)
+    if len(items) > MAX_REPORTED:
+        lines.append(f"  ... and {len(items) - MAX_REPORTED} more.")
+    return lines
+
+
+def describe(flagged: list[dict], judgeable: list[dict] = ()) -> str:
+    lines: list[str] = []
+    if flagged:
+        lines.append(f"diff-check: {len(flagged)} flagged in files you edited this session.")
+        lines.extend(rows(flagged))
+        lines.append(ADVICE)
+    if judgeable:
+        lines.append(f"diff-check: {len(judgeable)} to rate, not blocking.")
+        lines.extend(rows(judgeable))
+        lines.append(JUDGE_ADVICE)
     return "\n".join(lines)
 
 
-def emit_context(event: str, items: list[dict]) -> None:
+def emit_context(event: str, flagged: list[dict], judgeable: list[dict] = ()) -> None:
     print(
         json.dumps(
             {
                 "hookSpecificOutput": {
                     "hookEventName": event,
-                    "additionalContext": describe(items),
+                    "additionalContext": describe(flagged, judgeable),
                 }
             }
         )
@@ -124,8 +166,8 @@ def main() -> int:
         target = os.path.relpath(edited, cwd)
         record_edit(session, target)
         mine = [f for f in findings(cwd) if f["path"] == target]
-        if mine:
-            emit_context(event, mine)
+        if flags(mine) or judges(mine):
+            emit_context(event, flags(mine), judges(mine))
         return 0
 
     # The runtime sets this once it has seen a hook refuse the same turn. Standing
@@ -137,7 +179,8 @@ def main() -> int:
     if not touched:
         return 0
 
-    items = [f for f in findings(cwd) if f["path"] in touched]
+    # Stop is the blocking event, so only what the text alone decides reaches it.
+    items = flags([f for f in findings(cwd) if f["path"] in touched])
     if not items:
         return 0
 

@@ -39,6 +39,8 @@ survives is not a finding; say nothing about it.
 | `jsdoc-misuse`        | Convert to `//`. A `/** */` block on a statement or an indented local documents nothing and shows up on hover as if it did. On a member of an interface, enum or class it is correct and is not reported.            |
 | `bare-block`          | Convert to `//`, or delete if it is commented-out code.                                                                                                                                                              |
 | `negated-state`       | Rewrite as the states accepted (`state = 'open'`), not the one excluded. A negation admits every state nobody has thought of yet.                                                                                    |
+| `comment-list`        | Rewrite as prose or delete. Ranked items above a function are its branches in English: reorder one and the comment still reads fluently while asserting the opposite of the truth.                                   |
+| `comment-essay`       | Cut to the one or two sentences carrying what the code cannot, or delete. Placement does not excuse length — a correctly placed JSDoc block breaks this as readily as a stray one.                                   |
 
 ## Rate a comment
 

@@ -95,6 +95,20 @@ PAST_STATE_RE = re.compile(
     re.IGNORECASE,
 )
 
+# An enumerated comment. Ranked or bulleted items above a function are either the
+# branches below it rewritten in English, or a spec — and a ranked restatement
+# still reads fluently after someone reorders a branch, asserting the opposite of
+# the truth. Two items, so a single commented line is not an enumeration.
+COMMENT_ITEM_RE = re.compile(r"^(?:[*#]+\s*|//+\s*|--\s*)?(?:[-*+•]\s+|\(?\d+[.)]\s+)\S")
+
+# "one or two complete sentences" is the written rule, so a block several times
+# that is over the line however it is counted. Counted in content lines, which
+# ignores the delimiters and the blank `*` spacers a long block pads itself with.
+MAX_COMMENT_LINES = 6
+
+# A banner is not a comment about code, and its length is inherent.
+BANNER_MARKERS = ("copyright", "spdx-license", "@license", "all rights reserved")
+
 # JSDoc belongs on a declaration, and almost everything is one: an interface
 # member, an enum member, a property, a function, a class. Only a statement is
 # not, so flag on that rather than trying to enumerate every declaration form.
@@ -127,6 +141,8 @@ RULES = {
     "comment-added": "engineering/comments.md — comment the non-obvious, never the obvious",
     "jsdoc-misuse": "engineering/comments.md — JSDoc documents a declaration; use // for a line",
     "bare-block": "engineering/comments.md — never a bare /* */ block",
+    "comment-list": "engineering/comments.md — write it as prose, not a list; ranked items restate the branches",
+    "comment-essay": "engineering/comments.md — one or two sentences; the code already says the rest",
     "sentinel": "lang/javascript.md — never a sentinel; missing must stay distinguishable",
     "shell-default": "a required value has no default; missing means exit non-zero",
     "negated-state": "enumerate the states you accept, not the one you exclude",
@@ -296,6 +312,27 @@ def block_snippet(lines: list[str]) -> str:
     return "\n".join(line.strip() for line in lines)
 
 
+def content_lines(block: list[str]) -> list[str]:
+    """The lines of a comment that say something, with the delimiters and the
+    bare `*` spacers dropped."""
+    out = []
+    for line in block:
+        text = line.strip()
+        for token in ("/**", "/*!", "/*", "*/", "///", "//!", "//", "#", "--"):
+            if text.startswith(token):
+                text = text[len(token) :]
+                break
+        text = text.lstrip("*").strip()
+        if text:
+            out.append(text)
+    return out
+
+
+def is_banner(block: list[str]) -> bool:
+    lowered = " ".join(block).lower()
+    return block[0].startswith("/*!") or any(m in lowered for m in BANNER_MARKERS)
+
+
 def classify(path: str, block: list[str], follows: str, deletes_code: bool) -> tuple[str, str]:
     """Pick the most specific rule the comment breaks. A rule flags only when the
     text alone decides it; everything else is a candidate for judgement."""
@@ -314,8 +351,21 @@ def classify(path: str, block: list[str], follows: str, deletes_code: bool) -> t
         elif head.startswith("/*") and not head.startswith("/*!"):
             return "bare-block", "flag"
 
+    if PAST_STATE_RE.search(body) and deletes_code:
+        return "comment-on-deletion", "flag"
+
+    # Shape rules, which say nothing about placement: a correctly-placed JSDoc
+    # block breaks them as readily as a stray one. Skipped for shell-like files,
+    # where a commented-out config line is not the enumeration this describes.
+    if not is_shell_like(path) and not is_banner(block):
+        content = content_lines(block)
+        if sum(1 for line in content if COMMENT_ITEM_RE.match(line)) >= 2:
+            return "comment-list", "flag"
+        if len(content) > MAX_COMMENT_LINES:
+            return "comment-essay", "flag"
+
     if PAST_STATE_RE.search(body):
-        return "comment-on-deletion", "flag" if deletes_code else "judge"
+        return "comment-on-deletion", "judge"
     return "comment-added", "judge"
 
 
