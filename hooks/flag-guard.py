@@ -4,7 +4,13 @@
 Every rule these flags encode was already written down, cited by name in review,
 and broken again afterwards. So this runs whether or not an agent chooses to run
 it: `PostToolUse` reports a flag on the file just written, and `Stop` refuses the
-turn while any flag is outstanding.
+turn once while a flag is outstanding.
+
+Three limits keep it from becoming the thing it is meant to prevent. It attributes
+only to files the agent edited in this session, so a working tree that was already
+dirty is nobody's fault. It blocks once per session. And it stands down entirely
+while `stop_hook_active` is set, which is the runtime's own signal that a hook is
+looping.
 
 Only `flag` findings are used. A `judge` finding needs a reading of the code and
 has no business stopping a turn.
@@ -12,7 +18,6 @@ has no business stopping a turn.
 
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 import subprocess
@@ -22,12 +27,37 @@ import tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 CHECK = os.path.join(HERE, "..", "skills", "diff-check", "scripts", "diff_check.py")
 
+# A block that lists everything is the essay this repo also bans.
+MAX_REPORTED = 12
+
 ADVICE = (
     "Fix these before continuing. Each is decidable from the text alone: delete a "
     "comment that explains deleted code, convert a misplaced /** */ block to //, and "
-    "write a state predicate as the states accepted. If a finding is wrong, say why "
-    "in your reply rather than leaving it."
+    "write a state predicate as the states accepted. If a finding is wrong, say so in "
+    "your reply and end the turn; this will not block you twice."
 )
+
+
+def state_path(session: str, suffix: str) -> str:
+    return os.path.join(
+        tempfile.gettempdir(), f"diff-check-{session or 'nosession'}.{suffix}"
+    )
+
+
+def edited_files(session: str) -> set[str]:
+    try:
+        with open(state_path(session, "edited"), encoding="utf-8") as fh:
+            return {line.strip() for line in fh if line.strip()}
+    except OSError:
+        return set()
+
+
+def record_edit(session: str, path: str) -> None:
+    try:
+        with open(state_path(session, "edited"), "a", encoding="utf-8") as fh:
+            fh.write(path + "\n")
+    except OSError:
+        pass
 
 
 def findings(cwd: str) -> list[dict]:
@@ -49,32 +79,29 @@ def findings(cwd: str) -> list[dict]:
 
 
 def describe(items: list[dict]) -> str:
-    lines = [f"diff-check: {len(items)} flagged, and every one is already a written rule."]
-    for item in items:
+    shown = items[:MAX_REPORTED]
+    lines = [f"diff-check: {len(items)} flagged in files you edited this session."]
+    for item in shown:
         head = item["snippet"].splitlines()[0]
         lines.append(f"  {item['path']}:{item['line']} [{item['kind']}] {head}")
         lines.append(f"    {item['rule']}")
+    if len(items) > len(shown):
+        lines.append(f"  ... and {len(items) - len(shown)} more.")
     lines.append(ADVICE)
     return "\n".join(lines)
 
 
-def already_blocked(session: str, items: list[dict]) -> bool:
-    """Block a given set of flags once. An agent that cannot fix them, or disputes
-    them, must still be able to end the turn."""
-    digest = hashlib.sha256(
-        "".join(f"{i['path']}:{i['line']}:{i['kind']}" for i in items).encode()
-    ).hexdigest()[:16]
-    marker = os.path.join(
-        tempfile.gettempdir(), f"diff-check-{session or 'nosession'}-{digest}"
+def emit_context(event: str, items: list[dict]) -> None:
+    print(
+        json.dumps(
+            {
+                "hookSpecificOutput": {
+                    "hookEventName": event,
+                    "additionalContext": describe(items),
+                }
+            }
+        )
     )
-    if os.path.exists(marker):
-        return True
-    try:
-        with open(marker, "w", encoding="utf-8") as fh:
-            fh.write(digest)
-    except OSError:
-        pass
-    return False
 
 
 def main() -> int:
@@ -84,46 +111,46 @@ def main() -> int:
         return 0
 
     cwd = payload.get("cwd") or os.getcwd()
+    session = payload.get("session_id", "")
+    event = payload.get("hook_event_name", "")
+
     if not os.path.isdir(os.path.join(cwd, ".git")):
         return 0
 
-    event = payload.get("hook_event_name", "")
-    items = findings(cwd)
+    if event == "PostToolUse":
+        edited = (payload.get("tool_input") or {}).get("file_path", "")
+        if not edited:
+            return 0
+        target = os.path.relpath(edited, cwd)
+        record_edit(session, target)
+        mine = [f for f in findings(cwd) if f["path"] == target]
+        if mine:
+            emit_context(event, mine)
+        return 0
+
+    # The runtime sets this once it has seen a hook refuse the same turn. Standing
+    # down here is what stops the loop that ended a session dead.
+    if payload.get("stop_hook_active"):
+        return 0
+
+    touched = edited_files(session)
+    if not touched:
+        return 0
+
+    items = [f for f in findings(cwd) if f["path"] in touched]
     if not items:
         return 0
 
-    if event == "PostToolUse":
-        # Report only the file the agent just touched, so the feedback lands on
-        # the edit that caused it.
-        edited = (payload.get("tool_input") or {}).get("file_path", "")
-        if edited:
-            target = os.path.relpath(edited, cwd)
-            items = [i for i in items if i["path"] == target]
-        if not items:
-            return 0
-        print(
-            json.dumps(
-                {
-                    "hookSpecificOutput": {
-                        "hookEventName": "PostToolUse",
-                        "additionalContext": describe(items),
-                    }
-                }
-            )
-        )
+    blocked = state_path(session, "blocked")
+    if os.path.exists(blocked):
+        emit_context(event, items)
         return 0
 
-    if already_blocked(payload.get("session_id", ""), items):
-        print(
-            json.dumps(
-                {
-                    "hookSpecificOutput": {
-                        "hookEventName": event,
-                        "additionalContext": describe(items),
-                    }
-                }
-            )
-        )
+    try:
+        with open(blocked, "w", encoding="utf-8") as fh:
+            fh.write("1")
+    except OSError:
+        emit_context(event, items)
         return 0
 
     print(json.dumps({"decision": "block", "reason": describe(items)}))

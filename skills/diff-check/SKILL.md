@@ -33,12 +33,12 @@ One call. Do not run it per file.
 `JUDGE` is a candidate. Read the code around it and rule on it. A candidate that
 survives is not a finding; say nothing about it.
 
-| kind                  | what to do with a FLAG                                                                                                                                                                            |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `comment-on-deletion` | Delete the comment. It explains code that is no longer there. Keep it only if the removed behaviour is needed to understand the present code, and then quote the original expression in one line. |
-| `jsdoc-misuse`        | Convert to `//`. A `/** */` block on a local or a statement documents nothing and shows up on hover as if it did.                                                                                 |
-| `bare-block`          | Convert to `//`, or delete if it is commented-out code.                                                                                                                                           |
-| `negated-state`       | Rewrite as the states accepted (`state = 'open'`), not the one excluded. A negation admits every state nobody has thought of yet.                                                                 |
+| kind                  | what to do with a FLAG                                                                                                                                                                                               |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `comment-on-deletion` | Delete the comment. It narrates a removal in prose and sits beside the deletion. Keep it only if the removed behaviour is needed to understand the present code, and then quote the original expression in one line. |
+| `jsdoc-misuse`        | Convert to `//`. A `/** */` block on a statement or an indented local documents nothing and shows up on hover as if it did. On a member of an interface, enum or class it is correct and is not reported.            |
+| `bare-block`          | Convert to `//`, or delete if it is commented-out code.                                                                                                                                                              |
+| `negated-state`       | Rewrite as the states accepted (`state = 'open'`), not the one excluded. A negation admits every state nobody has thought of yet.                                                                                    |
 
 ## Rate a comment
 
