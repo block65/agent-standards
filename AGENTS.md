@@ -14,10 +14,11 @@ This repo is the source of the standards, so it dogfoods them: every doc here mu
 ```sh
 just fmt          # oxfmt across the repo (markdown included), version pinned in the justfile
 just fmt-check    # verify formatting without writing
-skills/stage-hunk/tests/run-tests.sh   # eval suite for the stage-hunk script (only tested code here)
+skills/stage-hunk/tests/run-tests.sh    # eval suite for the stage-hunk script
+skills/diff-check/tests/run-tests.sh    # eval suite for the diff-check script
 ```
 
-There is no build, no lint, and no test runner beyond that script — the deliverable is markdown.
+Those two scripts are the only tested code here. There is no build, no lint, and no test runner beyond them — the deliverable is markdown.
 
 ## What this repo is
 
