@@ -52,7 +52,7 @@ EOF
 }
 
 # A JSDoc block above a local is a line comment in the wrong syntax; above an
-# export it is correct and must not fire.
+# export, an interface member or an enum member it is correct and must not fire.
 eval_jsdoc_misuse() {
   cat > src/ingest.ts <<'EOF'
 /** Deduplicates the incoming rows. */
@@ -193,7 +193,7 @@ EOF
 
   local out
   out=$("$CHECK" --comments --json)
-  echo "$out" | grep -q '"kind": "comment-on-deletion"' || return 1
+  echo "$out" | grep -q '"kind": "comment-added"' || return 1
   echo "$out" | grep -q '"kind": "negated-state"' && return 1
   return 0
 }
@@ -232,13 +232,33 @@ export function ingest(rows: string[]) {
   return rows.filter((r) => !seen.has(r));
 }
 EOF
-  local payload first second
-  payload="{\"hook_event_name\":\"Stop\",\"cwd\":\"$PWD\",\"session_id\":\"eval-$$\"}"
+  local sid="eval-$$" payload first second
+  # Stop attributes only to files this session edited, which PostToolUse records.
+  echo "{\"hook_event_name\":\"PostToolUse\",\"cwd\":\"$PWD\",\"session_id\":\"$sid\",\"tool_input\":{\"file_path\":\"$PWD/src/ingest.ts\"}}" | python3 "$GUARD" > /dev/null
+  payload="{\"hook_event_name\":\"Stop\",\"cwd\":\"$PWD\",\"session_id\":\"$sid\"}"
   first=$(echo "$payload" | python3 "$GUARD")
   second=$(echo "$payload" | python3 "$GUARD")
   echo "$first" | grep -q '"decision": "block"' || return 1
   echo "$second" | grep -q '"decision": "block"' && return 1
   echo "$second" | grep -q 'additionalContext' || return 1
+}
+
+# The runtime sets stop_hook_active once a hook has refused the same turn. A hook
+# that ignores it ends the session dead, which is what happened on first use.
+eval_hook_respects_stop_hook_active() {
+  local sid="active-$$"
+  echo "{\"hook_event_name\":\"PostToolUse\",\"cwd\":\"$PWD\",\"session_id\":\"$sid\",\"tool_input\":{\"file_path\":\"$PWD/src/ingest.ts\"}}" | python3 "$GUARD" > /dev/null
+  local out
+  out=$(echo "{\"hook_event_name\":\"Stop\",\"cwd\":\"$PWD\",\"session_id\":\"$sid\",\"stop_hook_active\":true}" | python3 "$GUARD")
+  [[ -z "$out" ]] || return 1
+}
+
+# A tree that was already dirty is not this session's fault, so a flag in a file
+# nobody edited must never stop the turn.
+eval_hook_ignores_untouched_files() {
+  local out
+  out=$(echo "{\"hook_event_name\":\"Stop\",\"cwd\":\"$PWD\",\"session_id\":\"untouched-$$\"}" | python3 "$GUARD")
+  [[ -z "$out" ]] || return 1
 }
 
 # A judge finding is a candidate, not a defect, and must never stop a turn.
@@ -260,8 +280,66 @@ eval_hook_never_errors() {
   [[ -z $(echo "{\"hook_event_name\":\"Stop\",\"cwd\":\"$PWD\"}" | python3 "$GUARD") ]] || return 1
 }
 
+# JSDoc on interface and enum members is correct, and a generated payload file is
+# full of it. Flagging those produced 74 findings on first real use.
+eval_jsdoc_on_members_is_fine() {
+  cat > src/types.ts <<'EOF'
+export interface Promo {
+  id: number;
+  /**
+   * Leave off until the advertisement is ready to go live.
+   */
+  enabled?: boolean | null;
+}
+
+export enum Ids {
+  Card,
+  /** @deprecated - not used */
+  Container,
+}
+EOF
+  "$CHECK" --json | grep -q '"disposition": "flag"' && return 1
+  return 0
+}
+
+# Generated output announces itself in a header and sits in an ordinary source
+# directory, so a path pattern alone does not find it.
+eval_generated_header_excluded() {
+  cat > src/payload.ts <<'EOF'
+/* tslint:disable */
+/**
+ * This file was automatically generated. DO NOT EDIT.
+ */
+export interface Thing {
+  /**
+   * A documented member.
+   */
+  name?: string | null;
+}
+EOF
+  [[ $("$CHECK" --json) == "[]" ]] || return 1
+  "$CHECK" --json --include-generated | grep -q 'payload.ts' || return 1
+}
+
+# Present-tense prose about absent things is not narration of a removal.
+eval_present_tense_not_flagged() {
+  cat > src/ingest.ts <<'EOF'
+export function ingest(rows: string[]) {
+  console.log("spam", rows.length);
+  // @ts-expect-error a stale CMS value that is no longer an enum member
+  const seen = new Set<string>();
+  return rows.filter((r) => !seen.has(r));
+}
+EOF
+  "$CHECK" --json | grep -q '"disposition": "flag"' && return 1
+  return 0
+}
+
 run_test "comment added where code was removed" eval_comment_on_deletion
 run_test "prose is not code checked" eval_prose_not_code_checked
+run_test "JSDoc on interface and enum members is fine" eval_jsdoc_on_members_is_fine
+run_test "generated header excluded" eval_generated_header_excluded
+run_test "present tense is not past-state narration" eval_present_tense_not_flagged
 run_test "JSDoc on a local, not on the export" eval_jsdoc_misuse
 run_test "bare block comment" eval_bare_block
 run_test "negated state predicate" eval_negated_state
@@ -275,6 +353,8 @@ run_test "file mode rates committed comments" eval_file_mode
 run_test "--comments drops code checks" eval_comments_only
 run_test "shebang is not a comment" eval_shebang_not_comment
 run_test "hook blocks once, then relents" eval_hook_blocks_then_relents
+run_test "hook respects stop_hook_active" eval_hook_respects_stop_hook_active
+run_test "hook ignores files nobody edited" eval_hook_ignores_untouched_files
 run_test "hook ignores judge findings" eval_hook_ignores_judge
 run_test "hook never breaks the session" eval_hook_never_errors
 
