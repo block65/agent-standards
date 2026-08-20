@@ -22,9 +22,11 @@ If a project has no such block, ask the user for the repo, set the issue type to
 
 ## The contract
 
-Follow **`workflow/github-issues.md`** (the GitHub issue authoring standard): symptom-first, template fields only, ≤120 words of body prose (150 hard max), name file/service but not line numbers, one audience per issue, **never prescribe the fix**, provenance-tagged repro, badge row on top.
+Follow **`workflow/github-issues.md`** (the GitHub issue authoring standard): symptom-first, template fields only, ≤120 words of body prose (150 hard max), name the affected service or surface while filenames and symbols wait for the comment, one audience per issue, **never prescribe the fix**, provenance-tagged repro, badge row on top.
 
-The word budget is on the **body**, not the issue. When the evidence outgrows it, post a comment straight after filing: full verification data, line numbers pinned to a SHA, adjacent findings that aren't this bug. Compressing the body until a verified finding drops out is the wrong trade. A second unrelated problem is still a second issue.
+The register is the part that slips. Write each sentence positively, about a thing the reader can observe, in words the product already uses. A negation earns its place only where the missing thing is on the failing path. The body carries no self-correction and no commentary on itself: when a finding changes, edit the body to what is true now.
+
+The word budget is on the **body**, not the issue. When the evidence outgrows it, post a comment straight after filing: full verification data, filenames and line numbers pinned to a SHA, adjacent findings that aren't this bug. Compressing the body until a verified finding drops out is the wrong trade. A second unrelated problem is still a second issue.
 
 ## How much to investigate
 
@@ -54,7 +56,7 @@ The goal is a _reproducible, well-scoped_ report, not a diagnosis.
    - **What happened**: the symptom. ≤40 words. No function/file name in the first sentence.
    - **Steps to reproduce**: from step 2, provenance tag first.
    - **Expected behaviour**: one sentence.
-   - **Evidence**: embed any screenshot/file (see "Attaching files"), plus a one-line description and the affected file/service if known. Optional trailing `Likely: …` line only if the cause is obvious.
+   - **Evidence**: embed any screenshot/file (see "Attaching files"), plus a one-line description and the affected service or surface if known. Optional trailing `Likely: …` line only if the cause is obvious.
 
    For a capability gap use the enhancement shape: **Problem / motivation**, **Desired outcome**, **Alternatives** (only if a real trade-off exists).
 
