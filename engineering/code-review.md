@@ -15,4 +15,4 @@
 
 - Write tools instead of one-off scripts.
 - When refactoring or renaming a type, check surrounding code for comments and variable names referencing the old name.
-- The only thing worse than no comments is incorrect comments.
+- A comment left behind by a change is a defect in the change; see [Comments](comments.md).
