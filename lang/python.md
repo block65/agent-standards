@@ -53,7 +53,7 @@ the _rules_. On conflict, these win.
 
 ## Comments & docstrings
 
-- **Comments explain WHY, never WHAT.** No narration of obvious code.
+- Comment rules are in [Comments](../engineering/comments.md); Python adds only the docstring rules below.
 - One orientation line per _cluster_ of constants: what the group is + a pointer to the spec it
   implements.
 - Docstrings carry the rationale (for security code, the failure it guards against). PEP 257.
