@@ -69,9 +69,9 @@ different tools. (Rust documents public items with `///`; see
   implementation. JSDoc belongs on the public declaration it documents.
 
 The decidable rules here are enforced by the `comments` rule group in
-`@block65/shared-config`. Enable the group rather than naming rules, which
-drift. The type-tag ban is the exception: no rule covers it, so `@param`,
-`@returns`, `@type` and `@typedef` are caught in review.
+`@block65/oxc-config`. Enable the group rather than naming rules, which drift.
+The type-tag ban is the exception: no rule covers it, so `@param`, `@returns`,
+`@type` and `@typedef` are caught in review.
 
 ```ts
 // BAD: narrates the code

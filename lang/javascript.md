@@ -305,7 +305,7 @@ export async function publish(id: Id, body: Body) {
   list and leaves the value with no name saying what it is. Source is not
   minified output, and the extra `const` costs one line. Where the value has no
   use beyond that one call, `await load(id).then(fn)` also reads in execution
-  order. Enforced by `block65/no-nested-await` from `@block65/shared-config`.
+  order. Enforced by `block65/no-nested-await` from `@block65/oxc-config`.
 
 ```ts
 // BAD: awaits nested as arguments
