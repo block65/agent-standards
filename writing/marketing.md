@@ -1,7 +1,7 @@
 # Marketing & Copywriting
 
-**Usage:** Load this file for marketing/sales/social tasks.
-**Prerequisite:** Also follow the rules in [Writing (Base)](base.md).
+**Usage:** Load this file for marketing/sales/social tasks. **Prerequisite:**
+Also follow the rules in [Writing (Base)](base.md).
 
 ## Psychological Ownership
 
@@ -11,7 +11,8 @@
 
 ## Benefit-First Framing
 
-- **Benefit before feature:** Never describe a feature without the benefit attached.
+- **Benefit before feature:** Never describe a feature without the benefit
+  attached.
   - BAD: "We use [Feature]."
   - GOOD: "[Benefit] with standard [Feature]."
 

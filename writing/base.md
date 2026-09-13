@@ -1,32 +1,50 @@
 # Writing & Documentation Standards
 
-Modular rules for writing. Use the base rules below for everything, then add a specific module if needed.
+Modular rules for writing. Use the base rules below for everything, then add a
+specific module if needed.
 
 ## No Fluff & High Signal
 
-- **Delete adjectives:** Remove subjective or hyperbolic descriptors. If a sentence works without the adjective, delete it.
-- **No unsubstantiated claims:** Avoid bold assertions like "this is rarely done" or "industry standard" unless they are verifiable facts. If there is no evidence, do not state it.
+- **Delete adjectives:** Remove subjective or hyperbolic descriptors. If a
+  sentence works without the adjective, delete it.
+- **No unsubstantiated claims:** Avoid bold assertions like "this is rarely
+  done" or "industry standard" unless they are verifiable facts. If there is no
+  evidence, do not state it.
 
 ## Write for Humans
 
 - **Structure:** Avoid robotic or legalistic tones. Vary sentence structure.
 - **Cohesion:** Combine fragmented thoughts into cohesive paragraphs.
 - **No metaphors:** Do not use metaphors, analogies, or figurative language.
-  - **Established idioms are fine:** Settled idioms and technical terms such as "code smell", "escape hatch", "source of truth", and "user journey" are vocabulary, not figurative language. Novel metaphors coined for the sentence (for example "navigation tax") are not.
+  - **Established idioms are fine:** Settled idioms and technical terms such as
+    "code smell", "escape hatch", "source of truth", and "user journey" are
+    vocabulary, not figurative language. Novel metaphors coined for the sentence
+    (for example "navigation tax") are not.
 
 ## Clarity & Formatting
 
 - **Headings:** Must predict content.
-- **Examples show form, not scenarios:** Use bracketed placeholders (`[Component]`, `[Reason]`) rather than inventing a product, API, or incident to make an example concrete. Whatever the example contains gets copied along with the form it teaches, invented specifics and register included.
-- **Label the two sides in words:** `BAD:` and `GOOD:`, never `❌`/`✅`. An example comment is a template for a real one, and emoji in it become emoji in code.
-- **Antecedents:** Ensure clear antecedents for "it", "this", "that". Do not use "the [noun]" for an entity the document never establishes.
+- **Wrap at 80 columns:** Markdown is read in terminals and diffs, not only
+  rendered. Leave frontmatter, code fences and tables alone.
+- **Examples show form, not scenarios:** Use bracketed placeholders
+  (`[Component]`, `[Reason]`) rather than inventing a product, API, or incident
+  to make an example concrete. Whatever the example contains gets copied along
+  with the form it teaches, invented specifics and register included.
+- **Label the two sides in words:** `BAD:` and `GOOD:`, never `❌`/`✅`. An
+  example comment is a template for a real one, and emoji in it become emoji in
+  code.
+- **Antecedents:** Ensure clear antecedents for "it", "this", "that". Do not use
+  "the [noun]" for an entity the document never establishes.
 
 ## Prohibited Patterns
 
-- **Filler transitions:** Do not use "However,", "Furthermore,", "Moreover,", "Additionally,", "It's important to note that,", "In today's world,".
-- **Excessive em-dashes:** Do not overuse em-dashes to hold a sentence together where a comma, colon, or full stop would serve.
+- **Filler transitions:** Do not use "However,", "Furthermore,", "Moreover,",
+  "Additionally,", "It's important to note that,", "In today's world,".
+- **Excessive em-dashes:** Do not overuse em-dashes to hold a sentence together
+  where a comma, colon, or full stop would serve.
 - **Unnecessary lists:** Use prose when a list adds no structural value.
-- **Banned vocabulary:** See [Banned Words](banned-words.md): words banned from all output (prose, comments, commits, chat).
+- **Banned vocabulary:** See [Banned Words](banned-words.md): words banned from
+  all output (prose, comments, commits, chat).
 
 ## Modules
 
@@ -34,4 +52,5 @@ Each module file below references this base file as a prerequisite.
 
 - **[Technical Docs](technical.md)**: Objectivity and clarity (No "Your").
 - **[Marketing & Copy](marketing.md)**: Persuasion and ownership (Yes "Your").
-- **[Decision Records (ADRs)](adr.md)**: Record why, not how; living records kept in sync with the code.
+- **[Decision Records (ADRs)](adr.md)**: Record why, not how; living records
+  kept in sync with the code.

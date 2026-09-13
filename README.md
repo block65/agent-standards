@@ -10,7 +10,10 @@ Add as a git submodule:
 git submodule add git@github.com:block65/agent-standards.git agent-standards
 ```
 
-Instructions live in `AGENTS.md`, which is tool-neutral and read by every agent that follows the convention. `CLAUDE.md` holds one import line and nothing else, so Claude Code reads the same document as everything else and there is only one file to maintain:
+Instructions live in `AGENTS.md`, which is tool-neutral and read by every agent
+that follows the convention. `CLAUDE.md` holds one import line and nothing else,
+so Claude Code reads the same document as everything else and there is only one
+file to maintain:
 
 ```md
 @AGENTS.md
@@ -27,10 +30,22 @@ For a rust crate, in your project's `AGENTS.md`:
 
 See `examples/` for both files.
 
-`index.md` is the barrel, so a new "Always load" entry needs no AGENTS.md edit in consuming repos. Consumers track latest, not a pin: set the submodule branch to `main` and sync with `git submodule update --remote agent-standards`, wired into the repo's bootstrap/sync task so it runs on every pull. Pin a SHA only when a repo explicitly opts out of latest. Only hardcode task-specific standards.
+`index.md` is the barrel, so a new "Always load" entry needs no AGENTS.md edit
+in consuming repos. Consumers track latest, not a pin: set the submodule branch
+to `main` and sync with `git submodule update --remote agent-standards`, wired
+into the repo's bootstrap/sync task so it runs on every pull. Pin a SHA only
+when a repo explicitly opts out of latest. Only hardcode task-specific
+standards.
 
 ## Assumptions
 
-These standards assume the `compend` CLI (from the `block65/compend` repo) is on PATH. Standards docs defer library and language _facts_ to it rather than copying them (e.g. `lang/rust.md` → `compend get rust-book <topic>`). Where it is not installed, follow the standards alone; do not substitute web fetches for compend lookups.
+These standards assume the `compend` CLI (from the `block65/compend` repo) is on
+PATH. Standards docs defer library and language _facts_ to it rather than
+copying them (e.g. `lang/rust.md` → `compend get rust-book <topic>`). Where it
+is not installed, follow the standards alone; do not substitute web fetches for
+compend lookups.
 
-Code review runs through the `pear` CLI, which carries its own `pear-review` skill (`pear skill install`). The reviewer reads the diff in a browser; the agent attaches to the review and services comments as they arrive. See pear's own README for usage: it is a tool, not a standard, so nothing here restates it.
+Code review runs through the `pear` CLI, which carries its own `pear-review`
+skill (`pear skill install`). The reviewer reads the diff in a browser; the
+agent attaches to the review and services comments as they arrive. See pear's
+own README for usage: it is a tool, not a standard, so nothing here restates it.
