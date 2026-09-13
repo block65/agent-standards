@@ -10,8 +10,8 @@ handful.
 
 What is here is what a linter cannot do: one check needs the diff, the other
 needs someone to read the comment against the code. Everything decidable from
-the source alone is enforced by the `block65/*` rules in
-`@block65/shared-config`, and is not repeated here.
+the source alone is enforced by the `block65/*` rules in `@block65/oxc-config`,
+and is not repeated here.
 
 ## Run it
 
