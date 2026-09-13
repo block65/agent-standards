@@ -4,7 +4,7 @@
 What is left here is what a linter cannot do: `comment-on-deletion` needs the
 diff to see that code was removed, and `comment-added` needs someone to read the
 comment against the code. Every rule decidable from the source alone moved to the
-`block65/*` rules in `@block65/oxc-config`.
+`block65/*` rules in `@block65/oxlint-plugin`.
 
 Repo-wide these are noise — the same rules that yield 0-3 findings on a commit
 yield four figures across a monorepo — so every candidate comes from an added
