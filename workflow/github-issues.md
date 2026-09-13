@@ -1,6 +1,6 @@
 # GitHub Issue Authoring
 
-An issue states a **problem**; the **fix is decided in triage**, not in the issue. Write for the developer who picks it up. Keep it terse; AI-authored issues tend to sprawl.
+An issue states a **problem**; the **fix is decided in triage**, not in the issue. Write for the developer who picks it up, and keep the body to what that developer needs.
 
 Project specifics (target repo, issue types, label vocabulary, attachment upload) are configured per project; see the consuming project's `## GitHub Issues` block. The `github-issue` skill automates create/update against this standard.
 
@@ -71,9 +71,9 @@ Never present inferred steps as if the user gave them.
 
 ## Length
 
-~60–120 words of prose, 150 hard max, counting the body only. Badge markdown, field headings, code spans and URLs don't count; measure the sentences a developer reads. Never include: CI/test results, bisect SHAs, self-referential meta-commentary, or a restatement of the title. Follow `writing/base.md`.
+The body holds the sentences a triager reads to act: the symptom, the repro, and the evidence behind them. Nothing else belongs there. Never include CI/test results, bisect SHAs, self-referential meta-commentary, or a restatement of the title. Follow `writing/base.md`.
 
-The budget constrains the body, not the issue. Overflow goes in a comment (below), never into a compressed body that drops verified evidence. If trimming means losing a finding, stop trimming.
+Depth goes in a comment (below), never into a body compressed until a verified finding drops out.
 
 ## Comments carry the depth
 

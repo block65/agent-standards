@@ -8,7 +8,7 @@
 ## Logging
 
 - **Log generously:** `trace` for noisy detail that would otherwise be swallowed (failed parses, feature-test misses, optional-path errors), `debug` for flow, `warn` for recoverable conditions, `error` for failures.
-- **Use the right level.** An expected-but-noted condition is `debug` or `trace`, not `error`. Reserve `error` for things an operator should investigate. The codebase under-leverages levels, so pick deliberately.
+- **Use the right level.** An expected-but-noted condition is `debug` or `trace`, not `error`. Reserve `error` for things an operator should investigate.
 - **Never delete logs** after adding them. Adjust the level or compile them out if needed; silent code paths are impossible to debug in retrospect.
 
 ## Functional Style
@@ -16,6 +16,7 @@
 - **`const` over `let`:** If you reach for `let`, the code can likely be restructured as a transformation. Never use a `let` + mutation block (`let x; if (...) x = a; else x = b`). Compute the value in an expression and assign to `const`.
 - **Pure functions:** Prefer input→output functions. Side effects should be explicit and minimal.
 - **Transformation over mutation:** Use `.map()`, `.filter()`, spread over imperative loops and object mutation. Never build an array with `const arr = []; arr.push(...)`; use `.map()`, `.flatMap()`, `.filter()`, or `.reduce()`. Never build an object by constructing an empty `{}` and then mutating it; use `Object.fromEntries`, spread, or a builder that preserves types.
+- **No collection-building loops.** Do not fill an empty array or object with `for`, `for…of`, `for…in`, `for await…of`, `while`, or `.forEach()`. Use a transformation. Loops that perform side effects or consume streams still need an explicit termination or cancellation condition; no `for (;;)`, `while (true)`, or equivalent constant-condition loops.
 - **`Object.fromEntries()` over `.reduce()`:** Prefer `Object.fromEntries()` for building objects from arrays. Use `.reduce()` only when `fromEntries` doesn't fit.
 - **Early returns:** A single early return at the top level of a function is fine for a guard or precondition check. Do not use early returns nested inside conditional blocks.
 - **No nested ternaries:** Use `iife()` with a `switch` or `if/else` for multi-branch expressions.
@@ -57,6 +58,7 @@
   - `.catch(() => ({ items: [] }))`: fabricating an empty/default success shape from a failure is the worst variant; downstream code can't tell the difference between "no items" and "the call failed". If you must return a fallback shape, log/report the error first and document why a fallback is the right behaviour at this boundary.
   - empty `catch (e) {}` or argless `catch {}` with no body
 - **Never `catch (e) { throw e }`:** No-op. Delete it.
+- **Recovery needs an explanation.** A catch that completes without throwing must start with `// NOTE: …` explaining why recovery is appropriate at this boundary, and log or report the error. A comment alone does not handle an error; comment-only catch bodies and empty `.catch()` callbacks are forbidden.
 - **Never `void somePromise()`:** Always `await`, `return`, or route through an established pattern. Add a comment when the intent is non-obvious.
 - **Route through the established error path:** Do not bypass the project's error handler.
 
@@ -115,6 +117,7 @@ const { promise: ready, resolve } = Promise.withResolvers<Result>();
 
 ## Naming
 
+- **Callback parameters:** Name caught errors `err`, including `.catch()` callbacks. Name the event parameter in an event handler `e`.
 - **Never `index.ts`:** Entry points and barrels are always `main.ts`.
 - **No tense in variable names:** Prefer `expireTime` over `expiresAt`, `expireTtlSecs` over `expiresIn`.
 - **Intentional abbreviations only:** Conventional short names (`i`, `j`, `n`) are fine. Domain abbreviations (`ms`, `ctx`, `req`) only when unambiguous and consistent across the codebase. Never abbreviate when the short form is ambiguous.
@@ -161,6 +164,18 @@ export async function publish(id: Id, body: Body) {
 }
 ```
 
+- **Bind an `await` before using its value.** Never nest one inside a call or expression: `fn(await load(id))` buries the suspension point in an argument list and leaves the value with no name saying what it is. Source is not minified output, and the extra `const` costs one line. Where the value has no use beyond that one call, `await load(id).then(fn)` also reads in execution order. Enforced by `block65/no-nested-await` from `@block65/shared-config`.
+
+```ts
+// BAD: awaits nested as arguments
+await publish(await serialise(await store.get(id)));
+
+// GOOD
+const record = await store.get(id);
+const payload = await serialise(record);
+await publish(payload);
+```
+
 - **Destructuring:** Always destructure arrays and objects rather than accessing by index or property chain. `const [first] = arr` not `arr[0]`. `const { id, name } = user` not `user.id` / `user.name` repeated. Destructure at the top of the scope so narrowing and defaults are declared once, not scattered through the function as repeated property guard clauses.
 
 ## Testing
@@ -169,5 +184,5 @@ export async function publish(id: Id, body: Body) {
 
 ## Troubleshooting
 
-- **Diagnostic approach:** Use evidence-based exploration. Identify the root cause before changing anything; do not whack-a-mole.
-- **Enable logging:** Do not be afraid to add or enable debug/trace logging to track down errors.
+- **Diagnostic approach:** Use evidence-based exploration. Identify the root cause before changing anything, and change one thing at a time.
+- **Enable logging:** Add or enable debug/trace logging to track down an error.

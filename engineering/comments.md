@@ -11,7 +11,7 @@ A comment earns its place only by carrying information the code cannot. Flag the
 - **No snapshot facts.** Never record measurements from a particular run: failure counts, timings, which tasks passed. They hold for one commit and are silently wrong after the next. Restating a constant's value (above) is one case of this.
 - **A known fix is a task, not a comment.** If a comment can state the fix, apply it or file an issue and reference it. A comment version is a task with no owner and no close.
 - **Shortening a comment must not change its claim.** Delete words or delete the comment; never swap the true reason for a plausible generic one.
-- **Write it as prose.** One or two complete sentences, sentence case, full stop, following [Writing (Base)](../writing/base.md). Not a label (`// get user`), not a fragment, not a heading.
+- **Write it short.** One line, trimmed to the constraint itself. Sentence form is not required: a fragment that carries the constraint beats a sentence that frames it, and no full stop is wanted. [Banned Words](../writing/banned-words.md) still applies. A comment above a private declaration must fit 80 columns, and no comment runs past six lines.
 
 ## Form in JavaScript & TypeScript
 
@@ -20,7 +20,11 @@ Which syntax to use is not a style preference: the two forms are read by differe
 - **JSDoc documents a declaration for its callers; `//` explains code for whoever changes it.** JSDoc is the editor's hover text, so it carries what the thing is for and nothing a caller wouldn't need. A warning, a constraint, the reason the code is written the way it is: that reader is inside the body, so it is `//` beside the line it binds, even when the declaration is exported. A JSDoc block floating in a body or sitting above a local `const` is a line comment written wrong.
 - **Never a bare `/* */` block.** It is neither of the above. This includes commented-out code, which is deleted, not parked.
 - **No tags that restate the types.** `@param`, `@returns`, `@type`, and `@typedef` duplicate the signature and go stale independently of it. The types are the documentation. `@deprecated` earns its place: the editor and the linter act on it.
-- **One sentence stays on one line:** `/** Text. */`.
+- **Documentation is optional.** A named function with typed arguments usually needs no JSDoc. Add it only for information the signature cannot express.
+- **Exported function documentation uses multiline JSDoc.** No one-line `/** Text. */` or `//` documentation above an exported function. Delete a comment that merely repeats the name or types; do not expand it to satisfy the format.
+- **No multiline comments above non-exported declarations.** This includes functions, classes, types, constants, and consecutive `//` lines. Use one line for a necessary constraint, or explain the relevant code inside the implementation. JSDoc belongs on the public declaration it documents.
+
+The decidable rules here are enforced by the `comments` rule group in `@block65/shared-config`. Enable the group rather than naming rules, which drift. The type-tag ban is the exception: no rule covers it, so `@param`, `@returns`, `@type` and `@typedef` are caught in review.
 
 ```ts
 // BAD: narrates the code

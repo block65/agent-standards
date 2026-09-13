@@ -87,7 +87,7 @@ context is gone; this brief is everything. Do not assume knowledge beyond what i
 Quality bar for the brief:
 
 - **Absolute paths everywhere.** The next agent may resolve relative paths differently.
-- **No code dumps.** Point at files; the next agent can read them. The brief should stay well under ~150 lines; a wall of text gets skimmed, and skimming loses facts.
+- **No code dumps.** Point at files; the next agent can read them. Carry what the next agent cannot recover from the repo, and leave out what it can read for itself: a brief long enough to skim is a brief that loses facts.
 - **No conversational references.** "As discussed above" and "the earlier approach" mean nothing to a reader who wasn't there. Restate the fact itself.
 - **Claims carry evidence.** "Tests pass" is weaker than "`pnpm test` passed (42 tests) after the last edit to foo.ts". If the next agent can re-verify a claim cheaply, tell it how.
 - **State uncertainty plainly.** If something is unverified or you suspect a problem, say so. A wrong "done" costs the next agent far more than "probably done, verify with X".

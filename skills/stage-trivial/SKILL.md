@@ -17,11 +17,11 @@ The criterion is not "is this small or mechanical?" but **"would a reviewer have
 
 Every classification, stage _and_ skip alike, must be a conclusion drawn from looking at the diff and the surrounding code, not a reflex driven by what the hunk superficially looks like. "I haven't looked yet" is never a verdict: default-to-skip turns the tool into a no-op, default-to-stage turns it into a hazard.
 
-Reflexes to catch in yourself:
+Three verdicts need the reading done before them, because the category alone decides nothing:
 
-- "Config change → skip" without reading what the field does.
-- "New file → skip" without reading what the file is or how it's wired.
-- "File has substantive changes → skip the file" without enumerating hunks. Coupling is a hunk-level property; a substantive rewrite in one hunk doesn't disqualify a pure-observability hunk two screens down. Always classify at hunk granularity.
+- A config change: read what the field does.
+- A new file: read what the file is and how it's wired.
+- A file with substantive changes: enumerate its hunks. Coupling is a hunk-level property; a substantive rewrite in one hunk doesn't disqualify a pure-observability hunk two screens down. Always classify at hunk granularity.
 
 Banned skip-reasons. These phrases describe nearly every non-mechanical diff, including stageable ones, so they can never stand alone as a verdict:
 
@@ -29,7 +29,7 @@ Banned skip-reasons. These phrases describe nearly every non-mechanical diff, in
 - _"behavioural"_ / _"behavioural change"_ / _"behaviour-affecting"_: the most over-used non-reason; name _what kind_ instead: contract, algorithm, value the reviewer must weigh, smell, lonely one-liner
 - _"coupled"_, _"design choice"_, _"feature"_: without naming, respectively: what it's coupled to (design+adapter or complete-unit wiring?), what the choice is, whether the design lives here or just the wiring
 
-For any hunk that is not an automatic skip category (those are listed under "What is NOT stageable"), do all three before reaching a verdict: quote the literal `+`/`-` line that triggered it (not a paraphrase or category label), answer design-vs-wiring in one phrase referencing the file(s), and name the reviewer's job: weigh _what_ was decided, or only check the wiring. If you reach for a banned phrase or can't do all three, you haven't looked enough. Go look; a verdict without them is a guess.
+For any hunk that is not an automatic skip category (those are listed under "What is NOT stageable"), do all three before reaching a verdict: quote the literal `+`/`-` line that triggered it (not a paraphrase or category label), answer design-vs-wiring in one phrase referencing the file(s), and name the reviewer's job: weigh _what_ was decided, or only check the wiring.
 
 ## Evidence sources, cheapest first
 
@@ -39,7 +39,7 @@ When a hunk is borderline, not clear-cut in either direction, use these to gain 
 2. **The file itself.** Does this change extend a pattern already present in the file? A new `logger.warn(...)` next to four existing `logger.warn(...)` calls is a continuation, not an introduction.
 3. **Imports the hunk references.** If a hunk adds `import { foo } from './bar'`, open `./bar` and read what `foo` is before classifying the usage. A `logger.warn(...)` could be a real logger or `console.warn` aliased; a new helper import could be a tiny utility or a 200-line abstraction. The import source decides.
 4. **`git grep` for the symbol.** Count existing usages of the new call/import elsewhere in the codebase. Zero usages = the change is introducing a new thing; three or more = it's joining an established convention.
-5. **Recent git history on this branch.** Check whether the change continues a pattern already committed: `git log --oneline -20`, `git log -G '<pattern>' --oneline`, or `git log -p -3 -- <file>`. If a recent commit added `data-testid={testids.ListingCard}` and the working tree adds `data-testid={testids.ListingsContainer}` in the same shape, the design was decided in that commit and the new change inherits its approval. That is one of the strongest stage signals, because another reviewer already weighed the design. Recency matters (this branch or this week is strong; months-old is weak), and committed ≠ right, but it has passed a reviewer's eye once.
+5. **Recent git history on this branch.** Check whether the change continues a pattern already committed: `git log --oneline -20`, `git log -G '<pattern>' --oneline`, or `git log -p -3 -- <file>`. If a recent commit added `data-testid={testids.[Component]}` and the working tree adds the same attribute on a sibling component in the same shape, the design was decided in that commit and the new change inherits its approval. That is one of the strongest stage signals, because another reviewer already weighed the design. Recency matters (this branch or this week is strong; months-old is weak), and committed ≠ right, but it has passed a reviewer's eye once.
 6. **Five to ten lines of context around the hunk.** Sometimes the meaning is local: the surrounding code makes the intent clear.
 
 If none of these resolves the doubt, then skip, but only because the evidence ran out, not because looking felt like work.
@@ -50,7 +50,7 @@ If none of these resolves the doubt, then skip, but only because the evidence ra
 - **Formatting / whitespace**: indentation, trailing whitespace, trailing commas, semicolon insertion/removal, line wrapping that doesn't change logic.
 - **Lint auto-fixes**: changes that look like they came from a lint `--fix` (`let` → `const` for never-reassigned variables, removing flagged type assertions).
 - **Typo corrections in strings/comments**: obvious spelling fixes where the correct word is unambiguous. Also includes user-facing copy with no semantic change (capitalisation normalisation, punctuation tidy).
-- **Dead code removal**: commented-out code, unreachable branches the linter flagged. Deletions paired with an in-diff replacement (removing `stripe.ts` because a new `payments/` module in the same diff replaces it) also count; the coupling shows the deletion is intentional.
+- **Dead code removal**: commented-out code, unreachable branches the linter flagged. Deletions paired with an in-diff replacement (removing `[old-module].ts` because a new `[new-module]/` directory in the same diff replaces it) also count; the coupling shows the deletion is intentional.
 - **Import reordering**: imports moved around but not added or removed.
 - **Generated file timestamps**: "Generated on …" header lines in codegen output. When the file has other hunks, **always route via stage-hunk**: the timestamp depends only on generation time, independent of every other hunk, so staging it alone is always safe and never fragments the artifact. The body stays unstaged for review.
 - **Uniform sweeps**: the same change applied identically across three or more files; the repetition itself is the evidence. Count occurrences and verify the added lines really are identical, not just similar, before staging the set.
@@ -58,7 +58,7 @@ If none of these resolves the doubt, then skip, but only because the evidence ra
 - **Continuations of already-committed patterns**: a recent commit on this branch (or recent main) introduced the pattern and the working tree extends it identically to new sites. Verify with `git log -G '<pattern>'` or `git log -p -3 -- <related-file>` that the prior commit did the same shape of change; a pattern from this branch is strong evidence, a 2-year-old commit weak.
 - **Observability additions**: a project-logger call, error-reporting call (e.g. `captureException`), tracing span, or metrics increment, with no control-flow change in the same hunk; verify via imports that the call resolves to a real observability function. A log added inside a previously-silent catch counts, provided return value and control flow are unchanged.
 - **Observability config toggles**: flipping a known observability flag to its standard value (`enabled: true`, sample-rate adjustment, log-level setting), provided the underlying capability is already wired up.
-- **Self-evidently complete additive units**: a new file plus its mechanical wiring, where every wiring hunk is what you'd expect given the new file's purpose. Canonical example: a new dev-harness page is one unit comprising the new `pages/TabsReload.tsx`, its import, a `pageMenuItems` entry matching the existing entries' shape, and the render conditional next to its siblings. Same shape: entries in clearly-indexed lists, test seed files paired with the harness wiring that mounts them.
+- **Self-evidently complete additive units**: a new file plus its mechanical wiring, where every wiring hunk is what you'd expect given the new file's purpose. Canonical example: a new dev-harness page is one unit comprising the new `pages/[Page].tsx`, its import, a menu-list entry matching the existing entries' shape, and the render conditional next to its siblings. Same shape: entries in clearly-indexed lists, test seed files paired with the harness wiring that mounts them.
 - **Documentation and repo orientation**: additions to `AGENTS.md`, `CLAUDE.md`, `README.md` that point at existing files or describe established patterns. Skip only if the doc encodes a _new_ claim a reviewer would scrutinise.
 
 ## What is NOT stageable: leave for review
@@ -67,7 +67,7 @@ If none of these resolves the doubt, then skip, but only because the evidence ra
 - **Schema requirement / validation changes**: making a field required, changing a field's type, swapping enum sets, altering coercion at a boundary (`null` ↔ `undefined` at REST/IPC edges where consumers see the change).
 - **Database queries, migrations**: query bodies, migration files, migration registration changes.
 - **Algorithm / encoding changes**: anything that alters how data is computed or represented (typeid alphabet swap, hash algorithm change, ID format change, route-resolution rule change).
-- **Config values the reviewer must weigh**: TTLs, timeouts, feature flags, security policy, route configs: the _specific value chosen_ is the decision. Distinct from observability config, which changes what is observed. The skip-reason must name the value and the reviewer's question, e.g. "DOWNLOAD_TTL 3600 → 2_592_000 (why 30 days?)". If the change is also isolated from the rest of the diff, classify additionally as smell-adjacent.
+- **Config values the reviewer must weigh**: TTLs, timeouts, feature flags, security policy, route configs: the _specific value chosen_ is the decision. Distinct from observability config, which changes what is observed. The skip-reason must name the value and the reviewer's question, e.g. "`[NAME]_TTL` 3600 → 2_592_000 (why 30 days?)". If the change is also isolated from the rest of the diff, classify additionally as smell-adjacent.
 - **Secret / credential rotations**: secret_name changes, JWK rotations, any binding from a logical name to a piece of credential material. Atomic with environment ops; needs joint review.
 - **Test assertion changes**: modifications to expected values, mocks, snapshots, or test scaffolding logic. Test files that _only_ add a new file or pure docblock comments are still stageable; assertion edits are not.
 - **Public symbol renames**: anything visible across module boundaries where consumers must be checked.
@@ -100,8 +100,7 @@ For each file with unstaged changes:
 
 1. `git diff -U5 -- <file>`: full diff with context.
 2. Apply the reviewer-judgment test per hunk: a named stageable pattern with confirming evidence → stage; a named skip pattern with confirming evidence → skip; borderline → run the evidence checks, cheapest first, until a verdict emerges.
-3. "I'm not sure" means "I haven't checked yet". Go check.
-4. Before writing a file off as "no stageable hunks present," enumerate every hunk with a one-phrase reason. If any hunk in that list is self-evidently correct on its own, the file is _mixed_, not skipped, so route it to stage-hunk in step 3. "This file is a substantive rewrite" describes the file at large, not the pure-observability or pure-annotation hunks inside it.
+3. Before writing a file off as "no stageable hunks present," enumerate every hunk with a one-phrase reason. If any hunk in that list is self-evidently correct on its own, the file is _mixed_, not skipped, so route it to stage-hunk in step 3. "This file is a substantive rewrite" describes the file at large, not the pure-observability or pure-annotation hunks inside it.
 
 ### 3. Stage
 
@@ -110,7 +109,7 @@ For each file with unstaged changes:
 
   ```
   Skill(skill="block65-tools:stage-hunk",
-        args="services/website/src/server/url/resolve-link.ts\nstage only the two logger.warn additions inside existing catches; leave the link-label refactor")
+        args="src/[module]/[file].ts\nstage only the two logger.warn additions inside existing catches; leave the [unrelated] refactor")
   ```
 
 - No hunks trivial → leave the file untouched.
@@ -134,7 +133,7 @@ Staged:
 Skipped:
   <file> — risky: response shape changed 200→204, reviewer must weigh
   <pair: file A + file B> — contract under review: A defines new RPC headers shape, B adapts
-  <file> — config value the reviewer must weigh: DOWNLOAD_TTL 3600 → 2_592_000 (why 30 days, not 7?)
+  <file> — config value the reviewer must weigh: [NAME]_TTL 3600 → 2_592_000 (why 30 days, not 7?)
   <file> — smells: openapi schema duplicated with one prop modified (should compose, not copy)
   <file> — smell-adjacent: lonely one-liner with no analogue elsewhere, intent unclear from diff
   <file> — marked incomplete: "TODO: handle reconnect" added at line 87; skipping function and call sites

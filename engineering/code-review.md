@@ -1,5 +1,7 @@
 # Code Review Standards
 
+Report every defect found, including the uncertain and the low-severity ones, each with its confidence and severity; rank and drop them after the pass, never while reading. A severity bar applied during the read silently costs real defects. The list below is where defects recur, not the limit of what to look for.
+
 ## Common Bugs
 
 - Duplicated code chunks (copy-paste without abstraction).
