@@ -1,14 +1,15 @@
 # Technical Documentation
 
-**Usage:** Load this file for documentation/support tasks.
-**Prerequisite:** Also follow the rules in [Writing (Base)](base.md).
+**Usage:** Load this file for documentation/support tasks. **Prerequisite:**
+Also follow the rules in [Writing (Base)](base.md).
 
 ## Objectivity
 
 - **No "Your":** Software has no "you"; "your [Component]" is ambiguous.
   - BAD: "Configure **your** [Component]."
   - GOOD: "Configure the **[Location]** [Component]."
-- **Subject = component:** In docs for a product, the component acts, never the product's own name.
+- **Subject = component:** In docs for a product, the component acts, never the
+  product's own name.
   - BAD: "[Product] [Action]s the [Component]."
   - GOOD: "The [Component] [Action]s."
 
@@ -21,8 +22,11 @@ Follow this order for guides:
 3. **Action:** The imperative instruction.
 
 - BAD: "To [Result], click [Action]."
-- GOOD: "[Component] performs [Function] at the [Layer]. To [Action] it, run the [Command]."
+- GOOD: "[Component] performs [Function] at the [Layer]. To [Action] it, run the
+  [Command]."
 
 ## Language
 
-- **No death metaphors:** No casual death/violence language (e.g., "the connection dies", "if it's dead"). Established technical terms are fine (e.g., "OOM killer", "kill signal", "killed by SIGTERM").
+- **No death metaphors:** No casual death/violence language (e.g., "the
+  connection dies", "if it's dead"). Established technical terms are fine (e.g.,
+  "OOM killer", "kill signal", "killed by SIGTERM").

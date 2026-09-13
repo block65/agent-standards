@@ -5,15 +5,21 @@ description: "Run the project's code quality pipeline: oxfmt (format), oxlint --
 
 # Tidy: Format, Lint, Typecheck
 
-Run the project's code quality pipeline and fix issues where there is exactly one correct resolution. The goal is zero false moves; if you're not certain, report the error instead of fixing it.
+Run the project's code quality pipeline and fix issues where there is exactly
+one correct resolution. The goal is zero false moves; if you're not certain,
+report the error instead of fixing it.
 
 ## Mode
 
 **Default: fix.** Run the pipeline and fix what's safe, report the rest.
 
-**Report mode:** If the user asks to just check or report (e.g. "just check", "what's broken", "--report"), run the same pipeline but don't edit any files; only report what would need fixing.
+**Report mode:** If the user asks to just check or report (e.g. "just check",
+"what's broken", "--report"), run the same pipeline but don't edit any files;
+only report what would need fixing.
 
-**Typecheck only:** If the user passes `--typecheck-only` or asks only about types, skip steps 1 and 2 and run steps 3 to 5. Formatting and lint fixes rewrite files, so skipping them keeps the diff limited to type fixes.
+**Typecheck only:** If the user passes `--typecheck-only` or asks only about
+types, skip steps 1 and 2 and run steps 3 to 5. Formatting and lint fixes
+rewrite files, so skipping them keeps the diff limited to type fixes.
 
 ## Pipeline
 
@@ -33,7 +39,8 @@ Rewrites files in place. Deterministic and always correct.
 pnpm exec oxlint . --fix
 ```
 
-Applies oxlint's built-in auto-fixes: mechanical transforms the linter guarantees preserve semantics.
+Applies oxlint's built-in auto-fixes: mechanical transforms the linter
+guarantees preserve semantics.
 
 After this step, run lint again without `--fix` to see what remains:
 
@@ -41,7 +48,8 @@ After this step, run lint again without `--fix` to see what remains:
 pnpm exec oxlint .
 ```
 
-Remaining lint errors after `--fix`: report them. Don't attempt manual fixes for lint rules; if `--fix` didn't handle it, it's not mechanical.
+Remaining lint errors after `--fix`: report them. Don't attempt manual fixes for
+lint rules; if `--fix` didn't handle it, it's not mechanical.
 
 ### Step 3: Typecheck
 
@@ -49,13 +57,20 @@ Remaining lint errors after `--fix`: report them. Don't attempt manual fixes for
 pnpm run typecheck
 ```
 
-A workspace typecheck can emit thousands of lines, and one bad declaration usually accounts for most of them. Redirect the output to a file outside the repo and reduce it in the shell (counts by error code, counts by file) rather than reading the whole log into context. Then read the lines you intend to act on. Work from the exact message, never a paraphrase.
+A workspace typecheck can emit thousands of lines, and one bad declaration
+usually accounts for most of them. Redirect the output to a file outside the
+repo and reduce it in the shell (counts by error code, counts by file) rather
+than reading the whole log into context. Then read the lines you intend to act
+on. Work from the exact message, never a paraphrase.
 
-Fix the root cause before the cascade. When the errors concentrate in one file, or name one exported type, correct that and re-run; the downstream errors usually go with it.
+Fix the root cause before the cascade. When the errors concentrate in one file,
+or name one exported type, correct that and re-run; the downstream errors
+usually go with it.
 
 ### Step 4: Fix trivially correct type errors
 
-Fix ONLY errors where the resolution is unambiguous: one possible action, no behavior change, no design decision.
+Fix ONLY errors where the resolution is unambiguous: one possible action, no
+behavior change, no design decision.
 
 **Safe to fix:**
 
@@ -73,7 +88,8 @@ Fix ONLY errors where the resolution is unambiguous: one possible action, no beh
 - `any`
 - Widening a type to make it fit
 
-These are all banned by the codebase standards. If the fix requires one of them, it's not a trivial fix.
+These are all banned by the codebase standards. If the fix requires one of them,
+it's not a trivial fix.
 
 **Report these, do not fix:**
 
@@ -91,14 +107,17 @@ Re-run the pipeline, or typecheck alone if that was the mode.
 pnpm exec oxfmt . && pnpm exec oxlint . && pnpm run typecheck
 ```
 
-Compare the error count against step 3. If it went up, your fixes introduced new errors: undo the offending fix and report it instead.
+Compare the error count against step 3. If it went up, your fixes introduced new
+errors: undo the offending fix and report it instead.
 
 ## Output
 
 Keep it brief:
 
-1. What was fixed (e.g. "formatted 12 files, removed 3 unused imports, added `type` to 2 imports")
-2. Error count before and after, and the breakdown by error code if there are still errors
+1. What was fixed (e.g. "formatted 12 files, removed 3 unused imports, added
+   `type` to 2 imports")
+2. Error count before and after, and the breakdown by error code if there are
+   still errors
 3. Remaining errors that need human judgment: file, line, error message
 
 Don't explain what the tools do. The user knows.
@@ -113,4 +132,5 @@ If the user names a specific package or path, scope to it:
 - `pnpm exec oxlint <path> --fix`
 - `pnpm --filter=<package> run typecheck`
 
-If the project's `justfile` or `AGENTS.md` lists typecheck exclusions, apply them. Otherwise typecheck everything.
+If the project's `justfile` or `AGENTS.md` lists typecheck exclusions, apply
+them. Otherwise typecheck everything.
