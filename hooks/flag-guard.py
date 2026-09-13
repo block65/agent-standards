@@ -40,9 +40,9 @@ COMMENT_KINDS = {"comment-added", "comment-on-deletion"}
 JUDGE_MIN_LINES = 3
 
 ADVICE = (
-    "Fix these before continuing. Each is decidable from the text alone: delete a "
-    "comment that explains deleted code, convert a misplaced /** */ block to //, and "
-    "write a state predicate as the states accepted. If a finding is wrong, say so in "
+    "Fix these before continuing: a comment added beside the code it says was "
+    "removed. Delete it, or quote the original expression in one line where the "
+    "present code cannot be understood without it. If a finding is wrong, say so in "
     "your reply and end the turn; this will not block you twice."
 )
 

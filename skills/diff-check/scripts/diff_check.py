@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-"""Scope failure-mode checks to the lines a change actually touched.
+"""Rate the comments a change adds, against the code they claim to explain.
 
-Repo-wide these checks are noise — the same rules that yield 0-3 findings on a
-commit yield four figures across a monorepo, and a check nobody can act on gets
-muted. Every candidate here comes from an added line in the diff.
+What is left here is what a linter cannot do: `comment-on-deletion` needs the
+diff to see that code was removed, and `comment-added` needs someone to read the
+comment against the code. Every rule decidable from the source alone moved to the
+`block65/*` rules in `@block65/shared-config`.
 
-Findings are either `flag` (the pattern alone is the defect) or `judge` (a human
-or agent has to decide against the named standard). The script never decides a
-`judge` case; it hands over the context needed to decide it.
+Repo-wide these are noise — the same rules that yield 0-3 findings on a commit
+yield four figures across a monorepo — so every candidate comes from an added
+line in the diff.
 """
 
 from __future__ import annotations
@@ -45,28 +46,8 @@ COMMENT_PREFIXES: dict[str, tuple[str, ...]] = {
     ".toml": ("#",),
 }
 
-SHELL_LIKE = {".sh", ".bash", ".zsh", ".py", ".yaml", ".yml"}
+# Files that carry `#` comments without an extension to say so.
 SHELL_LIKE_NAMES = {"Dockerfile", "Tiltfile", "Makefile", "justfile", "compose.yaml"}
-
-# The code checks match source syntax. Run over prose they fire on any sentence
-# quoting the pattern under discussion, and a check that cries wolf gets muted.
-CODE_EXTENSIONS = {
-    ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".rs", ".go", ".java",
-    ".c", ".h", ".sql", ".py", ".sh", ".bash", ".zsh", ".rb",
-    ".yaml", ".yml", ".toml",
-}
-
-# `?? <empty value>` — the sentinel that turns "missing" into "present and wrong".
-SENTINEL_RE = re.compile(r"\?\?\s*(\"\"|''|``|\[\]|\{\}|0\b)")
-
-# `${VAR:-value}` and `${VAR:=value}` — a default for a value that may be required.
-SHELL_DEFAULT_RE = re.compile(r"\$\{[A-Za-z_][A-Za-z0-9_]*:[-=]([^}]*)\}")
-
-# A state/status column compared by negation rather than by the states accepted.
-NEGATED_STATE_RE = re.compile(
-    r"\b(state|status|kind|type|phase|stage)\b\s*(<>|!=|\bNOT\s+IN\b)",
-    re.IGNORECASE,
-)
 
 # Paths whose numeric or comment density is inherent, not a defect.
 DEFAULT_EXCLUDES = (
@@ -95,34 +76,6 @@ PAST_STATE_RE = re.compile(
     re.IGNORECASE,
 )
 
-# An enumerated comment. Ranked or bulleted items above a function are either the
-# branches below it rewritten in English, or a spec — and a ranked restatement
-# still reads fluently after someone reorders a branch, asserting the opposite of
-# the truth. Two items, so a single commented line is not an enumeration.
-COMMENT_ITEM_RE = re.compile(r"^(?:[*#]+\s*|//+\s*|--\s*)?(?:[-*+•]\s+|\(?\d+[.)]\s+)\S")
-
-# "one or two complete sentences" is the written rule, so a block several times
-# that is over the line however it is counted. Counted in content lines, which
-# ignores the delimiters and the blank `*` spacers a long block pads itself with.
-MAX_COMMENT_LINES = 6
-
-# A banner is not a comment about code, and its length is inherent.
-BANNER_MARKERS = ("copyright", "spdx-license", "@license", "all rights reserved")
-
-# JSDoc belongs on a declaration, and almost everything is one: an interface
-# member, an enum member, a property, a function, a class. Only a statement is
-# not, so flag on that rather than trying to enumerate every declaration form.
-STATEMENT_RE = re.compile(
-    r"^(if|for|while|switch|return|throw|try|do|else|break|continue|yield)\b"
-    r"|^\}"
-    r"|^await\b"
-)
-
-# A binding inside a block is a local, and JSDoc on a local shows up on hover as
-# though it documented something exported. At column zero the same binding is a
-# module member, where the block is correct.
-LOCAL_BINDING_RE = re.compile(r"^(const|let|var)\s")
-
 # Generated output carries a header saying so. Paths alone miss the ones that sit
 # in an ordinary source directory.
 GENERATED_MARKERS = (
@@ -134,19 +87,9 @@ GENERATED_MARKERS = (
     "@generated",
 )
 
-TS_EXTENSIONS = (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs")
-
 RULES = {
     "comment-on-deletion": "engineering/comments.md — never narrate past state in prose",
     "comment-added": "engineering/comments.md — comment the non-obvious, never the obvious",
-    "jsdoc-misuse": "engineering/comments.md — JSDoc documents a declaration; use // for a line",
-    "bare-block": "engineering/comments.md — never a bare /* */ block",
-    "comment-list": "engineering/comments.md — write it as prose, not a list; ranked items restate the branches",
-    "comment-essay": "engineering/comments.md — one or two sentences; the code already says the rest",
-    "sentinel": "lang/javascript.md — never a sentinel; missing must stay distinguishable",
-    "shell-default": "a required value has no default; missing means exit non-zero",
-    "negated-state": "enumerate the states you accept, not the one you exclude",
-    "magic-number": "lang/typescript.md — name the value or explain the literal",
 }
 
 
@@ -298,74 +241,17 @@ def is_comment(line: str, prefixes: tuple[str, ...]) -> bool:
     return stripped.startswith(prefixes)
 
 
-def is_code(path: str) -> bool:
-    _, ext = os.path.splitext(path)
-    return ext in CODE_EXTENSIONS or os.path.basename(path) in SHELL_LIKE_NAMES
-
-
-def is_shell_like(path: str) -> bool:
-    _, ext = os.path.splitext(path)
-    return ext in SHELL_LIKE or os.path.basename(path) in SHELL_LIKE_NAMES
-
-
 def block_snippet(lines: list[str]) -> str:
     return "\n".join(line.strip() for line in lines)
 
 
-def content_lines(block: list[str]) -> list[str]:
-    """The lines of a comment that say something, with the delimiters and the
-    bare `*` spacers dropped."""
-    out = []
-    for line in block:
-        text = line.strip()
-        for token in ("/**", "/*!", "/*", "*/", "///", "//!", "//", "#", "--"):
-            if text.startswith(token):
-                text = text[len(token) :]
-                break
-        text = text.lstrip("*").strip()
-        if text:
-            out.append(text)
-    return out
-
-
-def is_banner(block: list[str]) -> bool:
-    lowered = " ".join(block).lower()
-    return block[0].startswith("/*!") or any(m in lowered for m in BANNER_MARKERS)
-
-
-def classify(path: str, block: list[str], follows: str, deletes_code: bool) -> tuple[str, str]:
-    """Pick the most specific rule the comment breaks. A rule flags only when the
-    text alone decides it; everything else is a candidate for judgement."""
-    head = block[0]
-    body = " ".join(block)
-    code = follows.strip()
-    indented = follows[:1].isspace()
-
-    if os.path.splitext(path)[1] in TS_EXTENSIONS:
-        if head.startswith("/**"):
-            misplaced = STATEMENT_RE.match(code) or (
-                indented and LOCAL_BINDING_RE.match(code)
-            )
-            if misplaced:
-                return "jsdoc-misuse", "flag"
-        elif head.startswith("/*") and not head.startswith("/*!"):
-            return "bare-block", "flag"
-
-    if PAST_STATE_RE.search(body) and deletes_code:
-        return "comment-on-deletion", "flag"
-
-    # Shape rules, which say nothing about placement: a correctly-placed JSDoc
-    # block breaks them as readily as a stray one. Skipped for shell-like files,
-    # where a commented-out config line is not the enumeration this describes.
-    if not is_shell_like(path) and not is_banner(block):
-        content = content_lines(block)
-        if sum(1 for line in content if COMMENT_ITEM_RE.match(line)) >= 2:
-            return "comment-list", "flag"
-        if len(content) > MAX_COMMENT_LINES:
-            return "comment-essay", "flag"
-
-    if PAST_STATE_RE.search(body):
-        return "comment-on-deletion", "judge"
+def classify(block: list[str], deletes_code: bool) -> tuple[str, str]:
+    """Narration of a removal is the one comment defect the text decides on its
+    own, and only alongside the deletion it narrates: the phrasing by itself also
+    catches sentences about present state. Every other comment is rated, not
+    decided."""
+    if PAST_STATE_RE.search(" ".join(block)):
+        return "comment-on-deletion", "flag" if deletes_code else "judge"
     return "comment-added", "judge"
 
 
@@ -424,7 +310,7 @@ def scan_comments(hunks: list[Hunk], excludes: tuple[str, ...], cwd: str) -> lis
 
         for start, block in group_comments(hunk.added, prefixes):
             follows = describes(hunk.path, cwd, start + len(block))
-            kind, disposition = classify(hunk.path, block, follows, deletes_code)
+            kind, disposition = classify(block, deletes_code)
             follows = follows.strip()
             findings.append(
                 Finding(
@@ -437,39 +323,6 @@ def scan_comments(hunks: list[Hunk], excludes: tuple[str, ...], cwd: str) -> lis
                     follows=follows,
                 )
             )
-
-    return findings
-
-
-def scan_code(hunks: list[Hunk], excludes: tuple[str, ...], cwd: str) -> list[Finding]:
-    findings: list[Finding] = []
-
-    for hunk in hunks:
-        if is_excluded(hunk.path, excludes, cwd):
-            continue
-        if not is_code(hunk.path):
-            continue
-
-        prefixes = comment_prefixes(hunk.path)
-
-        for line_no, text in hunk.added:
-            if not text.strip() or is_comment(text, prefixes):
-                continue
-
-            if SENTINEL_RE.search(text):
-                findings.append(
-                    Finding(hunk.path, line_no, "sentinel", "judge", text.strip())
-                )
-
-            if NEGATED_STATE_RE.search(text):
-                findings.append(
-                    Finding(hunk.path, line_no, "negated-state", "flag", text.strip())
-                )
-
-            if is_shell_like(hunk.path) and SHELL_DEFAULT_RE.search(text):
-                findings.append(
-                    Finding(hunk.path, line_no, "shell-default", "judge", text.strip())
-                )
 
     return findings
 
@@ -493,7 +346,7 @@ def scan_file_comments(paths: list[str], cwd: str) -> list[Finding]:
         numbered = list(enumerate(body, start=1))
         for start, block in group_comments(numbered, prefixes):
             follows = describes(path, cwd, start + len(block))
-            kind, disposition = classify(path, block, follows, deletes_code=False)
+            kind, disposition = classify(block, deletes_code=False)
             follows = follows.strip()
             findings.append(
                 Finding(
@@ -506,84 +359,6 @@ def scan_file_comments(paths: list[str], cwd: str) -> list[Finding]:
                 )
             )
 
-    return findings
-
-
-OXLINT_CONFIG = {
-    "plugins": [],
-    "categories": {},
-    "rules": {
-        "no-magic-numbers": [
-            "error",
-            {
-                "ignore": [0, 1, -1, 2, 3, 4, -2],
-                "ignoreArrayIndexes": True,
-                "ignoreDefaultValues": True,
-                "detectObjects": False,
-            },
-        ]
-    },
-}
-
-
-def lint_changed(
-    hunks: list[Hunk], cwd: str, excludes: tuple[str, ...]
-) -> list[Finding]:
-    """Run oxlint's no-magic-numbers over changed files, then keep only the
-    findings that land on a line this change added."""
-    import shutil
-    import tempfile
-
-    if shutil.which("oxlint") is None:
-        sys.stderr.write("diff-check: oxlint not on PATH, skipping --lint\n")
-        return []
-
-    changed: dict[str, set[int]] = {}
-    for hunk in hunks:
-        if is_excluded(hunk.path, excludes, cwd):
-            continue
-        if os.path.splitext(hunk.path)[1] not in (".ts", ".tsx", ".js", ".jsx", ".mjs"):
-            continue
-        changed.setdefault(hunk.path, set()).update(no for no, _ in hunk.added)
-
-    if not changed:
-        return []
-
-    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as handle:
-        json.dump(OXLINT_CONFIG, handle)
-        config_path = handle.name
-
-    try:
-        proc = subprocess.run(
-            ["oxlint", "-c", config_path, "--format", "json", *sorted(changed)],
-            cwd=cwd,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        try:
-            report = json.loads(proc.stdout or "{}")
-        except json.JSONDecodeError:
-            sys.stderr.write("diff-check: could not parse oxlint output\n")
-            return []
-    finally:
-        os.unlink(config_path)
-
-    findings: list[Finding] = []
-    for diag in report.get("diagnostics", []):
-        path = diag.get("filename", "")
-        labels = diag.get("labels") or []
-        line = (labels[0].get("span", {}) if labels else {}).get("line", 0)
-        if line in changed.get(path, ()):
-            findings.append(
-                Finding(
-                    path=path,
-                    line=line,
-                    kind="magic-number",
-                    disposition="judge",
-                    snippet=diag.get("message", "").strip(),
-                )
-            )
     return findings
 
 
@@ -627,16 +402,12 @@ def main() -> int:
     group.add_argument("--staged", action="store_true", help="only staged changes")
     group.add_argument("--range", help="a git revision or range, e.g. HEAD~1 or main...")
     parser.add_argument("--json", action="store_true", help="machine-readable output")
-    parser.add_argument("--lint", action="store_true", help="also run oxlint")
     parser.add_argument(
         "--include-generated",
         action="store_true",
         help="do not skip generated, vendored and lockfile paths",
     )
     parser.add_argument("--repo", default=".", help="repository root (default: cwd)")
-    parser.add_argument(
-        "--comments", action="store_true", help="only comments, rated on their own"
-    )
     parser.add_argument(
         "paths",
         nargs="*",
@@ -654,10 +425,6 @@ def main() -> int:
         if not args.range and not args.staged:
             hunks.extend(untracked_hunks(cwd))
         findings = scan_comments(hunks, excludes, cwd)
-        if not args.comments:
-            findings.extend(scan_code(hunks, excludes, cwd))
-            if args.lint:
-                findings.extend(lint_changed(hunks, cwd, excludes))
 
     if args.json:
         print(json.dumps([f.as_dict() for f in findings], indent=2))
