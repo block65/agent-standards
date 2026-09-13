@@ -22,11 +22,11 @@ If a project has no such block, ask the user for the repo, set the issue type to
 
 ## The contract
 
-Follow **`workflow/github-issues.md`** (the GitHub issue authoring standard): symptom-first, template fields only, ≤120 words of body prose (150 hard max), name the affected service or surface while filenames and symbols wait for the comment, one audience per issue, **never prescribe the fix**, provenance-tagged repro, badge row on top.
+Follow **`workflow/github-issues.md`** (the GitHub issue authoring standard): symptom-first, template fields only, a body of just the sentences a triager acts on, name the affected service or surface while filenames and symbols wait for the comment, one audience per issue, **never prescribe the fix**, provenance-tagged repro, badge row on top.
 
 The register is the part that slips. Write each sentence positively, about a thing the reader can observe, in words the product already uses. A negation earns its place only where the missing thing is on the failing path. The body carries no self-correction and no commentary on itself: when a finding changes, edit the body to what is true now.
 
-The word budget is on the **body**, not the issue. When the evidence outgrows it, post a comment straight after filing: full verification data, filenames and line numbers pinned to a SHA, adjacent findings that aren't this bug. Compressing the body until a verified finding drops out is the wrong trade. A second unrelated problem is still a second issue.
+The body carries the triage-facing report, not everything found. When the evidence outgrows it, post a comment straight after filing: full verification data, filenames and line numbers pinned to a SHA, adjacent findings that aren't this bug. Compressing the body until a verified finding drops out is the wrong trade. A second unrelated problem is still a second issue.
 
 ## How much to investigate
 
@@ -50,10 +50,10 @@ The goal is a _reproducible, well-scoped_ report, not a diagnosis.
 
 1. **Read the inputs.** The user's words + any screenshot (use Read on the image; it renders). Establish the single user-visible symptom.
 
-2. **Steps to reproduce, tagging provenance (required).** Start the field with one of `Reported by user:` / `Inferred (unconfirmed):` / `Not reproduced: <what's missing>`. Number the steps, minimal path (≤6). Never present inferred steps as reported.
+2. **Steps to reproduce, tagging provenance (required).** Start the field with one of `Reported by user:` / `Inferred (unconfirmed):` / `Not reproduced: <what's missing>`. Number the steps, on the shortest path that reproduces it. Never present inferred steps as reported.
 
 3. **Write the body.** Start with the **badge row** (see the standard's Badges section), a blank line, then the template fields (bug shape, since most reports are bugs):
-   - **What happened**: the symptom. ≤40 words. No function/file name in the first sentence.
+   - **What happened**: the symptom, in a sentence or two. No function/file name in the first sentence.
    - **Steps to reproduce**: from step 2, provenance tag first.
    - **Expected behaviour**: one sentence.
    - **Evidence**: embed any screenshot/file (see "Attaching files"), plus a one-line description and the affected service or surface if known. Optional trailing `Likely: …` line only if the cause is obvious.

@@ -24,7 +24,7 @@ E2E tests replace a human QA tester: exercise real flows as a user does, fail lo
 
 9. **Never fill only the required fields in a happy-path test.** A real user fills the form. Omission is a validation test, and gets its own test.
 
-10. **ABSOLUTE: `page.goto` is only permitted at points where a real user arrives at the app from outside it.** Two sanctioned forms: (a) `page.goto('/')` or the configured `baseURL`, to enter the app as a user opening it fresh; (b) navigating to an external-entry URL the test obtained from a simulated external system: password reset and email verification links read from a test mail server, magic-link tokens fetched from the API, OAuth callback URLs from the auth provider's test mode. Banned without exception: `page.goto('/dashboard')`, `page.goto('/settings/profile')`, `page.goto('/items/123')`, and any other mid-app route the test author constructed from a guessed route shape. Sanctioned-goto test: did the URL come from a system simulating how a user would receive it (email, SMS, OAuth redirect), or did the author type it in? If typed, it's a banned deep-link shortcut. If this rule blocks your test, invoke rule 11.
+10. **`page.goto` is only permitted at points where a real user arrives at the app from outside it.** Two sanctioned forms: (a) `page.goto('/')` or the configured `baseURL`, to enter the app as a user opening it fresh; (b) navigating to an external-entry URL the test obtained from a simulated external system: password reset and email verification links read from a test mail server, magic-link tokens fetched from the API, OAuth callback URLs from the auth provider's test mode. Banned without exception: `page.goto('/dashboard')`, `page.goto('/settings/profile')`, `page.goto('/items/123')`, and any other mid-app route the test author constructed from a guessed route shape. Sanctioned-goto test: did the URL come from a system simulating how a user would receive it (email, SMS, OAuth redirect), or did the author type it in? If typed, it's a banned deep-link shortcut. If this rule blocks your test, invoke rule 11.
 
 11. **If the rules give no workable path, stop and ask.** Do not substitute a worse selector to satisfy a ban. Surface the problem with: what you were trying to assert, which rule blocked the obvious path, alternatives you considered, your forced choice. Wait for a decision.
 
@@ -97,7 +97,7 @@ Most pages don't need one. A test that navigates to a page and then does somethi
 - The test is a terminal step _and_ the page has no structural role or content that uniquely identifies it (a dashboard of mixed widgets, a profile page, a status screen with no specific list or form).
 - After all other options (role of the structural element, role + filter on user data, role of the primary content region), none can pick out "the user reached this page" without ambiguity.
 
-Even then, the testid is the assertion of _last resort_ for a terminal step, not a routine identity marker for every page. The `ListingsPage` and `OrgPage` style of page-wide testid is mostly unnecessary; the things on the listings page have roles, and the things in the org have data the test produced.
+Even then, the testid is the assertion of _last resort_ for a terminal step, not a routine identity marker for every page. A page-wide testid named after the page is mostly unnecessary: the elements on a list page have roles, and the records inside a container carry data the test produced.
 
 ### Roles before testids when adding semantics
 
@@ -123,14 +123,14 @@ This is an explicit escape hatch, not a general permission. Outside the `frameLo
 
 ### Comment the escapes, not the defaults
 
-Model this on Rust's `// SAFETY:` on an `unsafe` block. A locator that steps outside the priority order carries a one-line comment discharging why, at the call site; a locator that follows it stays silent.
+Model this on Rust's `// SAFETY:` on an `unsafe` block. A locator that steps outside the priority order carries a one-line comment discharging why, at the call site; a locator that follows it stays silent. Write it as prose, not a labelled `word:` prefix, which `block65/no-comment-punctuation` reports.
 
 The payoff matches `// SAFETY`: the comment keeps its meaning because it marks only real escapes; it can't be cargo-culted, because a copied justification is simply false at the new site; and it's lintable, since an uncommented testid is then a smell. This generalises the iframe comment rule above.
 
 A plain stem regex is the required form under rule 4 and needs no comment. Comment only when the regex's _shape_ encodes a decision:
 
 ```ts
-getByRole("button", { name: /^invite$/i }); // anchored: "Send invitation" is also on the page
+getByRole("button", { name: /^invite$/i }); // anchored because "Send invitation" is also on the page
 ```
 
 The tell is not whether it's a regex but whether the regex's shape hides a disambiguation.
@@ -211,7 +211,7 @@ await test.step("request reset", async () => {
 await test.step("follow reset link from email", async () => {
   const resetEmail = await mailServer.waitForEmail({ to: email });
   const resetLink = resetEmail.extractLink({ name: /reset password/i });
-  await page.goto(resetLink); // sanctioned: URL came from the email, not the test
+  await page.goto(resetLink); // sanctioned because the URL came from the email, not the test
   // The next action verifies the reset page mounted, so there is no identity assertion here.
   await page.getByLabel("New password").fill(faker.internet.password({ length: 20 }));
   await page.getByRole("button", { name: "Set new password" }).click();
@@ -382,11 +382,11 @@ No user-visible consequence → the test belongs in another layer (unit, compone
 
 The exception is Playwright's built-in ARIA-state assertions: `toBeDisabled()`, `toBeChecked()`, `toBeFocused()`, `toBeExpanded()`. These check states that _are_ user-visible by definition (a disabled button looks disabled to a screen reader and to a user) and use ARIA, not custom data attributes.
 
-### Base UI toasts
+### Toasts
 
-Base UI toasts render `role="alertdialog"`, not `alert` or `status`, and auto-dismiss. The `getByRole("alert")` examples above don't match them; locate a Base UI toast by its `alertdialog` role.
+Which role a toast renders is a property of the toast library, not of this standard: read the component before assuming `getByRole("alert")` matches it.
 
-Auto-dismissal also breaks the obvious negative assertion. To assert a toast does _not_ contain something, use `.not.toContainText()` on the live toast locator, never `toHaveCount(0)` on a free-floating locator; the latter passes the instant the toast dismisses, whether or not the text was ever there.
+Auto-dismissal breaks the obvious negative assertion. To assert a toast does _not_ contain something, use `.not.toContainText()` on the live toast locator, never `toHaveCount(0)` on a free-floating locator; the latter passes the instant the toast dismisses, whether or not the text was ever there.
 
 ## Coverage strategy
 
@@ -449,22 +449,6 @@ Flaky tests erode trust faster than missing tests.
 ## Anti-patterns
 
 ```ts
-// BAD: branch inside test
-if (await page.getByText("Promo banner").isVisible()) {
-  await page.getByRole("button", { name: "Apply" }).click();
-}
-// GOOD: two tests: "checkout without promo" and "checkout with active promo banner"
-```
-
-```ts
-// BAD: defence-in-depth identity
-await expect(page).toHaveURL(/\/dashboard/);
-await expect(page.getByRole("heading", { name: /dashboard/i })).toBeVisible();
-await expect(page.getByTestId("dashboard")).toBeVisible();
-// GOOD: no identity assertion; do the next thing (see Navigation and synchronisation)
-```
-
-```ts
 // BAD: text-scoping a region
 await page
   .getByText("Account settings")
@@ -479,35 +463,11 @@ await page
 ```
 
 ```ts
-// BAD: cSS selector reaching into implementation
-await page.locator("div.card > div:nth-child(2) button.primary").click();
-// GOOD: role-based, or add a testid
-await page
-  .getByRole("article")
-  .filter({ hasText: itemTitle })
-  .getByRole("button", { name: "Publish" })
-  .click();
-```
-
-```ts
 // BAD: continue-checking, hedging against the test's own setup
 await expect(page.getByRole("heading", { name: title })).toBeVisible();
 await page.getByRole("button", { name: "Publish" }).click();
 // GOOD: just do the next thing; it fails loudly if setup was wrong
 await page.getByRole("button", { name: "Publish" }).click();
-```
-
-```ts
-// BAD: page.goto to a mid-app route
-await page.goto("/settings/profile/security");
-await page.getByRole("button", { name: "Change password" }).click();
-// GOOD: navigate the way a user would; the final click verifies arrival
-await page.goto("/");
-await page.getByRole("button", { name: /account menu/i }).click();
-await page.getByRole("menuitem", { name: "Settings" }).click();
-await page.getByRole("link", { name: "Profile" }).click();
-await page.getByRole("link", { name: "Security" }).click();
-await page.getByRole("button", { name: "Change password" }).click();
 ```
 
 ## Config baseline
@@ -535,15 +495,5 @@ export default defineConfig({
 ```
 
 ## Mental model
-
-A user:
-
-- Doesn't know the DOM; navigates by roles, labels, and what's visibly on screen.
-- Doesn't type URLs into the address bar to get around the app; clicks links and buttons.
-- Doesn't read the address bar to confirm they're on the right page; they see the page and they act.
-- Doesn't reload to check; the UI updates.
-- Fills realistic values, not minimum placeholders.
-- Reads error messages and corrects them.
-- Expects feedback within a reasonable latency, not a fixed sleep.
 
 A test is a recording of what that user did, written so that future-you can read it in 30 seconds and know exactly what broke when it fails. If you can't tell from the name and the trace what the user was trying to do, the test is wrong, regardless of whether it is passing today.

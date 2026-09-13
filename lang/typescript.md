@@ -10,6 +10,7 @@
 
 - **No Casting:** Never use `as any`, `as unknown`, or an unchecked `as T`. `as const` and `satisfies` are fine: they assert or check without overriding the checker.
 - **Inference:** Prefer inference over explicit types when context is clear.
+- **Infer return types.** Omit annotations that repeat the inferred result. Keep an annotation when it defines an intended contract, enables recursion, or expresses a type predicate or assertion signature. Do not require return annotations merely because a function is exported.
 - **`satisfies` over type annotation:** Prefer `const x = { ... } satisfies T` over `const x: T = { ... }`. Validates the shape while preserving inferred literal types.
 - **`const` type parameters:** Use `function<const T>` to preserve literal types from arguments.
 - **No enums:** Use `as const` objects with derived union types instead. Enums are not erasable TypeScript and produce runtime output.
@@ -52,4 +53,4 @@ With `exactOptionalPropertyTypes`, the two spellings mean different things, so t
 
 ## Modern Node
 
-- DO NOT USE `tsx` or `ts-node` or any other transpiler. Current Node runs TypeScript natively without flags.
+- **No transpilers:** Never `tsx`, `ts-node`, or any other transpiler. Current Node runs TypeScript natively without flags.

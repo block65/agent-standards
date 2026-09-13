@@ -143,23 +143,13 @@ Snapshots are the preferred assertion for shape-heavy outputs: API responses, pa
 
 ### Determinism is mandatory
 
-A snapshot must produce identical output every run. For non-deterministic fields (UUIDs, timestamps, hashes, random tokens), use **property matchers**, the first argument to `toMatchInlineSnapshot` / `toMatchSnapshot`:
+A snapshot must produce identical output every run. For non-deterministic fields (UUIDs, timestamps, hashes, random tokens), use **property matchers**, the first argument to `toMatchSnapshot`:
 
 ```ts
-expect(user).toMatchInlineSnapshot(
-  { id: expect.any(String), createdAt: expect.any(Date) },
-  `
-  {
-    "id": Any<String>,
-    "createdAt": Any<Date>,
-    "email": "alice@example.com",
-    "name": "Alice",
-  }
-  `,
-);
+expect(user).toMatchSnapshot({ id: expect.any(String), createdAt: expect.any(Date) });
 ```
 
-For pattern-shaped values, use `expect.stringMatching`. Let `vitest -u` fill in the literal; don't hand-write it, the serialized form of asymmetric matchers can change between vitest versions.
+For pattern-shaped values, use `expect.stringMatching`. Let `vitest -u` write the `.snap` entry; don't hand-write it, the serialized form of asymmetric matchers can change between vitest versions.
 
 When the same non-deterministic shape recurs across many tests, register a **custom serializer** in `vitest.setup.ts` so it normalizes once:
 
@@ -174,10 +164,14 @@ expect.addSnapshotSerializer({
 
 This preserves real randomness in the system under test (per `engineering/testing.md`) while keeping the snapshot stable.
 
-### Inline vs file
+### Never inline
 
-- **Inline (`toMatchInlineSnapshot`)**: preferred for small/medium outputs. The expected value lives next to the test, so a reviewer sees the diff in the PR without opening another file.
-- **File (`toMatchSnapshot` / `toMatchFileSnapshot`)**: for large outputs (rendered HTML, large parsed structures). Anything over ~30 lines.
+**Never `toMatchInlineSnapshot`, at any size.** Vitest writes the literal into the spec file itself, so the test run edits tracked source, and the resulting diff is indistinguishable from a change someone made deliberately. Snapshots belong in files the runner owns:
+
+- **`toMatchSnapshot`** for data: API responses, parsed config, normalized payloads. The `.snap` file sits beside the spec.
+- **`toMatchFileSnapshot`** for content with its own syntax (HTML, SQL, generated source). The snapshot keeps the matching file extension, so it survives review with highlighting intact and without the `"` and `` ` `` escaping that `.snap` files impose.
+
+Vitest itself states no preference here; this one is ours.
 
 ### Updating
 
@@ -236,29 +230,6 @@ const user = faker.person.firstName();
 
 // GOOD: real randomness lets the system meet inputs it will see in production
 const user = faker.person.firstName();
-```
-
-```ts
-// BAD: snapshot with non-deterministic fields and no property matchers, so it fails every run
-expect(user).toMatchInlineSnapshot();
-//   id: 'abc-123', createdAt: '2026-05-03T...' change every run
-
-// GOOD: property matchers replace the non-deterministic fields
-expect(user).toMatchInlineSnapshot({ id: expect.any(String), createdAt: expect.any(Date) }, `...`);
-```
-
-```ts
-// BAD: catching to keep the test green
-try {
-  await migrate();
-} catch {
-  // swallow
-}
-expect(true).toBe(true);
-
-// GOOD: the migration must succeed; if it doesn't, the test must fail
-await migrate();
-await expect(db.tableExists("users")).resolves.toBe(true);
 ```
 
 ```ts

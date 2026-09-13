@@ -55,7 +55,7 @@ For each failure:
 - **Straightforward fixes** (typos, wrong imports, missing mocks, assertion drift from a recent code change, type errors in test code): fix directly and re-run.
 - **Design flaws** (architectural problems, missing features, broken abstractions, test infrastructure issues): collect into a report for the user; do NOT attempt to fix.
 
-After fixing, re-run via another subagent. Repeat until green or until only design-level issues remain.
+After fixing, re-run the command in this session; one command needs no subagent. Repeat until green or until only design-level issues remain.
 
 Cap at 5 iterations. If still failing after 5 rounds, or only design-level issues remain, stop and present the remaining failures; never proceed to Phase 2 on a red unit suite.
 

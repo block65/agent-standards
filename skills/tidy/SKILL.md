@@ -83,10 +83,6 @@ These are all banned by the codebase standards. If the fix requires one of them,
 - Unused variables (TS6133 on non-imports): these may be work-in-progress
 - Anything requiring you to choose between multiple valid approaches
 
-#### Delegating the fixes
-
-Applying the table is mechanical, but it means reading every affected file. When that reading would cost more than a subagent's prompt does, spawn one on the cheapest model that can do the work. Give it the error lines verbatim, the safe-fix table, and the banned patterns, and hold it to the table; anything outside comes back as a report, not a decision. Ask for `file:line` and what changed.
-
 ### Step 5: Verify
 
 Re-run the pipeline, or typecheck alone if that was the mode.
