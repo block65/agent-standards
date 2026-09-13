@@ -3,8 +3,7 @@
 
 The failure this exists for: an agent hits one tool refusal, reports it as a
 standing blocker, and proposes a permanent entry in `permissions.allow` as the
-remedy. The refusal was transient and the grant outlives it. Recorded as the
-addendum in `agent-coding-failure-modes.md`.
+remedy. The refusal was transient and the grant outlives it.
 
 An edit made because the user asked and an edit made on a bad premise produce the
 same diff, so nothing in the text separates them. What does separate them is
