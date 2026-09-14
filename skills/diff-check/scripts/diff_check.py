@@ -2,8 +2,9 @@
 """Rate the comments a change adds, against the code they claim to explain.
 
 What is left here is what a linter cannot do: `comment-on-deletion` needs the
-diff to see that code was removed, and `comment-added` needs someone to read the
-comment against the code. Every rule decidable from the source alone moved to the
+diff to see that code was removed, `reason-deleted` needs the diff to see the
+comment that went, and `comment-added` needs someone to read the comment against
+the code. Every rule decidable from the source alone moved to the
 `block65/*` rules in `@block65/oxlint-plugin`.
 
 Repo-wide these are noise — the same rules that yield 0-3 findings on a commit
@@ -87,8 +88,21 @@ GENERATED_MARKERS = (
     "@generated",
 )
 
+# A deleted comment that gave a reason. Deleting is the one move guaranteed to
+# lower a warning count, so under a backlog the why goes first. The words are the
+# connectives and hazards a reason is built from; a deletion whose replacement
+# keeps any of them is a rewrite, and is not reported.
+REASON_RE = re.compile(
+    r"\b(because|otherwise|so that|prevents?|avoids?|guards? against|must not"
+    r"|must never|never|attack|timing|race|leaks?|invariant|relies on|assumes"
+    r"|guarantees?|corrupts?|overwrites?|skew|order matters|ordering|breaks"
+    r"|would break|silently|constant.time|not thread.safe|off by one)\b",
+    re.IGNORECASE,
+)
+
 RULES = {
     "comment-on-deletion": "engineering/comments.md — never narrate past state in prose",
+    "reason-deleted": "engineering/comments.md — tighten the why, never delete it",
     "comment-added": "engineering/comments.md — comment the non-obvious, never the obvious",
 }
 
@@ -102,6 +116,7 @@ class Finding:
     snippet: str
     context: list[str] = field(default_factory=list)
     follows: str = ""
+    kept: list[str] = field(default_factory=list)
 
     def as_dict(self) -> dict:
         out = {
@@ -116,12 +131,15 @@ class Finding:
             out["removed"] = self.context
         if self.follows:
             out["describes"] = self.follows
+        if self.kept:
+            out["kept"] = self.kept
         return out
 
 
 @dataclass
 class Hunk:
     path: str
+    start: int = 0
     added: list[tuple[int, str]] = field(default_factory=list)
     removed: list[str] = field(default_factory=list)
 
@@ -159,7 +177,7 @@ def parse_diff(diff: str) -> list[Hunk]:
         header = HUNK_HEADER_RE.match(raw)
         if header:
             next_line = int(header.group(1))
-            current = Hunk(path=path)
+            current = Hunk(path=path, start=next_line)
             hunks.append(current)
             continue
 
@@ -172,7 +190,7 @@ def parse_diff(diff: str) -> list[Hunk]:
         elif raw.startswith("-"):
             current.removed.append(raw[1:])
 
-    return [h for h in hunks if h.added]
+    return [h for h in hunks if h.added or h.removed]
 
 
 def untracked_hunks(cwd: str) -> list[Hunk]:
@@ -296,6 +314,32 @@ def group_comments(
     return [(start, block) for start, block in blocks if block]
 
 
+def deleted_reasons(hunk: Hunk, prefixes: tuple[str, ...]) -> list[Finding]:
+    """A removed comment block that gave a reason, unless an added comment in the
+    same hunk carries one of its reason words forward."""
+    added_text = " ".join(
+        text.strip() for _, text in hunk.added if is_comment(text, prefixes)
+    ).lower()
+    findings: list[Finding] = []
+
+    for _, block in group_comments(list(enumerate(hunk.removed, start=1)), prefixes):
+        words = {m.group(0).lower() for m in REASON_RE.finditer(" ".join(block))}
+        if not words or any(word in added_text for word in words):
+            continue
+        findings.append(
+            Finding(
+                path=hunk.path,
+                line=hunk.start,
+                kind="reason-deleted",
+                disposition="judge",
+                snippet=block_snippet(block),
+                kept=[text.strip() for _, text in hunk.added if is_comment(text, prefixes)][:4],
+            )
+        )
+
+    return findings
+
+
 def scan_comments(hunks: list[Hunk], excludes: tuple[str, ...], cwd: str) -> list[Finding]:
     findings: list[Finding] = []
 
@@ -307,6 +351,7 @@ def scan_comments(hunks: list[Hunk], excludes: tuple[str, ...], cwd: str) -> lis
         deletes_code = any(
             line.strip() and not is_comment(line, prefixes) for line in hunk.removed
         )
+        findings.extend(deleted_reasons(hunk, prefixes))
 
         for start, block in group_comments(hunk.added, prefixes):
             follows = describes(hunk.path, cwd, start + len(block))
@@ -388,6 +433,8 @@ def render(findings: list[Finding]) -> str:
             lines.append(f"      describes: {finding.follows}")
         for removed in finding.context:
             lines.append(f"      removed:   {removed}")
+        for kept in finding.kept:
+            lines.append(f"      kept:      {kept}")
         lines.append(f"      rule: {RULES[finding.kind]}")
         lines.append("")
 

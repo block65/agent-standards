@@ -221,7 +221,72 @@ EOF
   return 0
 }
 
+# A deleted comment that carried a reason is a candidate, with the hunk's added
+# comments alongside so the caller can see whether the reason moved.
+eval_reason_deleted() {
+  cat > src/store.ts <<'EOF'
+export function liveQuery() {
+  // Compared in constant time because the token is a bearer credential and a
+  // timing leak would let a caller recover it byte by byte.
+  return "SELECT id FROM review WHERE state = 'open'";
+}
+EOF
+  git commit -qam "reasoned"
+  cat > src/store.ts <<'EOF'
+export function liveQuery() {
+  // Compare the token
+  return "SELECT id FROM review WHERE state = 'open'";
+}
+EOF
+  local out
+  out=$("$CHECK" --json)
+  echo "$out" | grep -q '"kind": "reason-deleted"' || return 1
+  echo "$out" | grep -q '"kept"' || return 1
+  echo "$out" | grep -q 'Compare the token' || return 1
+}
+
+# Tightening a reason is the edit the check exists to reward, so a rewrite that
+# keeps the reason word is not a deletion.
+eval_reason_rewritten_not_reported() {
+  cat > src/store.ts <<'EOF'
+export function liveQuery() {
+  // Compared in constant time because the token is a bearer credential and a
+  // timing leak would let a caller recover it byte by byte.
+  return "SELECT id FROM review WHERE state = 'open'";
+}
+EOF
+  git commit -qam "reasoned"
+  cat > src/store.ts <<'EOF'
+export function liveQuery() {
+  // Constant time: a timing leak recovers the bearer token
+  return "SELECT id FROM review WHERE state = 'open'";
+}
+EOF
+  "$CHECK" --json | grep -q '"kind": "reason-deleted"' && return 1
+  return 0
+}
+
+# A deleted comment with no reason in it is an ordinary deletion.
+eval_plain_comment_deleted_not_reported() {
+  cat > src/store.ts <<'EOF'
+export function liveQuery() {
+  // fetch the open reviews
+  return "SELECT id FROM review WHERE state = 'open'";
+}
+EOF
+  git commit -qam "labelled"
+  cat > src/store.ts <<'EOF'
+export function liveQuery() {
+  return "SELECT id FROM review WHERE state = 'open'";
+}
+EOF
+  [[ $("$CHECK" --json) == "[]" ]] || return 1
+}
+
 run_test "comment added where code was removed" eval_comment_on_deletion
+run_test "deleted reason is a candidate" eval_reason_deleted
+run_test "rewritten reason is not reported" eval_reason_rewritten_not_reported
+run_test "deleted label is not reported" eval_plain_comment_deleted_not_reported
 run_test "generated header excluded" eval_generated_header_excluded
 run_test "present tense is not past-state narration" eval_present_tense_not_flagged
 run_test "untracked file is scanned" eval_untracked_file
