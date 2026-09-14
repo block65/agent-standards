@@ -1,6 +1,6 @@
 ---
 name: diff-check
-description: "Rate the comments a diff adds against the code they claim to explain, and flag prose that narrates code the same change deleted. Use this skill when the user says 'check my comments', 'rate these comments', 'are these comments any good', 'check the diff', 'diff check', 'did I narrate', 'review my changes before I commit', 'check what I just wrote', or asks whether a comment earns its place. Also use it before reporting a change complete, and when the user complains about comment spam, JSDoc blocks on internal code, or comments explaining code that is no longer there. Pass file paths as args to rate the comments already in those files instead of a diff."
+description: "Rate the comments a diff adds against the code they claim to explain, flag prose that narrates code the same change deleted, and catch a deleted comment that carried a reason. Use this skill when the user says 'check my comments', 'rate these comments', 'are these comments any good', 'check the diff', 'diff check', 'did I narrate', 'review my changes before I commit', 'check what I just wrote', or asks whether a comment earns its place. Also use it before reporting a change complete, and when the user complains about comment spam, JSDoc blocks on internal code, or comments explaining code that is no longer there. Pass file paths as args to rate the comments already in those files instead of a diff."
 allowed-tools: Bash(*/diff_check.py *), Read, Edit
 ---
 
@@ -8,7 +8,7 @@ Comment checks scoped to the lines a diff touched. Repo-wide the same rules
 produce four figures of findings and get muted; on one change they produce a
 handful.
 
-What is here is what a linter cannot do: one check needs the diff, the other
+What is here is what a linter cannot do: two checks need the diff, the third
 needs someone to read the comment against the code. Everything decidable from
 the source alone is enforced by the `block65/*` rules in
 `@block65/oxlint-plugin`, and is not repeated here.
@@ -40,6 +40,13 @@ survives is not a finding; say nothing about it.
 A `comment-on-deletion` flag is deleted: it narrates a removal in prose and sits
 beside the deletion. Keep it only where the removed behaviour is needed to
 understand the present code, and then quote the original expression in one line.
+
+A `reason-deleted` candidate is a comment the change removed that gave a reason,
+with nothing added in its place that keeps it. Deleting is the one edit
+guaranteed to lower a warning count, so under a backlog the why goes first. Put
+the reason back, tightened to a clause, unless the code now states it: a named
+constant, an assertion, a type. Its `kept` lines are the comments the hunk added,
+for comparison.
 
 ## Rate a comment
 
