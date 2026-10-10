@@ -193,10 +193,10 @@ def parse_diff(diff: str) -> list[Hunk]:
     return [h for h in hunks if h.added or h.removed]
 
 
-def untracked_hunks(cwd: str) -> list[Hunk]:
+def untracked_hunks(cwd: str, only: list[str]) -> list[Hunk]:
     """A new file is entirely added lines. `git diff` never shows it, and a new
     file is the most common thing a change contributes."""
-    listing = run_git(["ls-files", "--others", "--exclude-standard"], cwd)
+    listing = run_git(["ls-files", "--others", "--exclude-standard", *scope(only)], cwd)
     hunks: list[Hunk] = []
 
     for path in listing.splitlines():
@@ -407,13 +407,20 @@ def scan_file_comments(paths: list[str], cwd: str) -> list[Finding]:
     return findings
 
 
+def scope(only: list[str]) -> list[str]:
+    """A hook that diffs the whole tree on every edit pays for everyone's dirty
+    files. Pathspecs narrow both the diff and the untracked listing to the files
+    the caller actually changed."""
+    return ["--", *only] if only else []
+
+
 def diff_args(args: argparse.Namespace) -> list[str]:
     base = ["diff", "-U0", "--no-color", "--no-ext-diff"]
     if args.range:
-        return [*base, args.range]
+        return [*base, args.range, *scope(args.only)]
     if args.staged:
-        return [*base, "--cached"]
-    return [*base, "HEAD"]
+        return [*base, "--cached", *scope(args.only)]
+    return [*base, "HEAD", *scope(args.only)]
 
 
 def render(findings: list[Finding]) -> str:
@@ -456,6 +463,13 @@ def main() -> int:
     )
     parser.add_argument("--repo", default=".", help="repository root (default: cwd)")
     parser.add_argument(
+        "--only",
+        action="append",
+        default=[],
+        metavar="PATH",
+        help="restrict the diff to this path, relative to the repo (repeatable)",
+    )
+    parser.add_argument(
         "paths",
         nargs="*",
         help="files to read comments from directly, ignoring the diff",
@@ -470,7 +484,7 @@ def main() -> int:
     else:
         hunks = parse_diff(run_git(diff_args(args), cwd))
         if not args.range and not args.staged:
-            hunks.extend(untracked_hunks(cwd))
+            hunks.extend(untracked_hunks(cwd, args.only))
         findings = scan_comments(hunks, excludes, cwd)
 
     if args.json:

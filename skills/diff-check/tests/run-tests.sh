@@ -167,6 +167,54 @@ eval_hook_ignores_untouched_files() {
   [[ -z "$out" ]] || return 1
 }
 
+# A file written outside the repo is never in its diff. Recording it anyway made
+# every later Stop pay for a whole-tree diff that could not find anything.
+eval_hook_ignores_outside_repo() {
+  cat > src/ingest.ts <<'EOF'
+export function ingest(rows: string[]) {
+  // The logging that used to be here was removed because it was noisy.
+  const seen = new Set<string>();
+  return rows.filter((r) => !seen.has(r));
+}
+EOF
+  local sid="outside-$$" out
+  out=$(echo "{\"hook_event_name\":\"PostToolUse\",\"cwd\":\"$PWD\",\"session_id\":\"$sid\",\"tool_input\":{\"file_path\":\"/tmp/elsewhere-$$.ts\"}}" | python3 "$GUARD")
+  [[ -z "$out" ]] || return 1
+  out=$(echo "{\"hook_event_name\":\"Stop\",\"cwd\":\"$PWD\",\"session_id\":\"$sid\"}" | python3 "$GUARD")
+  [[ -z "$out" ]] || return 1
+}
+
+# Two flaggable changes, one in scope: only that one is reported, and an
+# untracked file outside the scope stays out too.
+eval_only_narrows_diff() {
+  cat > src/ingest.ts <<'EOF'
+export function ingest(rows: string[]) {
+  // The logging that used to be here was removed because it was noisy.
+  const seen = new Set<string>();
+  return rows.filter((r) => !seen.has(r));
+}
+EOF
+  cat > src/store.ts <<'EOF'
+export function liveQuery() {
+  // The query that used to be here was removed because it was slow.
+  return "";
+}
+EOF
+  cat > src/fresh.ts <<'EOF'
+// The helper that used to be here was removed because nobody called it.
+export const fresh = 1;
+EOF
+  local out
+  out=$("$CHECK" --json --only src/ingest.ts)
+  echo "$out" | grep -q 'src/ingest.ts' || return 1
+  echo "$out" | grep -q 'src/store.ts' && return 1
+  echo "$out" | grep -q 'src/fresh.ts' && return 1
+  out=$("$CHECK" --json --only src/fresh.ts)
+  echo "$out" | grep -q 'src/fresh.ts' || return 1
+  echo "$out" | grep -q 'src/ingest.ts' && return 1
+  "$CHECK" --json | grep -q 'src/store.ts' || return 1
+}
+
 # A judge finding is a candidate, not a defect, and must never stop a turn.
 eval_hook_ignores_judge() {
   cat > src/store.ts <<'EOF'
@@ -298,6 +346,8 @@ run_test "shebang is not a comment" eval_shebang_not_comment
 run_test "hook blocks once, then relents" eval_hook_blocks_then_relents
 run_test "hook respects stop_hook_active" eval_hook_respects_stop_hook_active
 run_test "hook ignores files nobody edited" eval_hook_ignores_untouched_files
+run_test "hook ignores edits outside the repo" eval_hook_ignores_outside_repo
+run_test "--only narrows the diff to given paths" eval_only_narrows_diff
 
 # Blocking and mentioning are different powers. A multi-line judge finding on the
 # file just written is reported, and still does not block the turn.
