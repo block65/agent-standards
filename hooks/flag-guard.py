@@ -12,6 +12,11 @@ dirty is nobody's fault. It blocks once per session. And it stands down entirely
 while `stop_hook_active` is set, which is the runtime's own signal that a hook is
 looping.
 
+It is also scoped to what it can decide. An edit outside the repo is never in the
+repo's diff, so it is neither recorded nor scanned, and the diff it does run is
+narrowed to the files this session edited. Before that, a session that only wrote
+scratch files paid for a whole-tree diff on every turn.
+
 Only `flag` findings block. A `judge` finding needs a reading of the code and has
 no business stopping a turn — but blocking and mentioning are different powers,
 and the analysis is already computed. So `PostToolUse` also reports judgeable
@@ -75,11 +80,24 @@ def record_edit(session: str, path: str) -> None:
         pass
 
 
-def findings(cwd: str) -> list[dict]:
+def inside_repo(cwd: str, path: str) -> str | None:
+    """The repo-relative path, or None when the file lives outside the repo."""
+    try:
+        rel = os.path.relpath(path, cwd)
+    except ValueError:
+        return None
+    if rel.split(os.sep, 1)[0] == os.pardir:
+        return None
+    return rel
+
+
+def findings(cwd: str, only: set[str]) -> list[dict]:
     """Never let a check break the session: any failure here reports nothing."""
+    if not only:
+        return []
     try:
         proc = subprocess.run(
-            [sys.executable, CHECK, "--json"],
+            [sys.executable, CHECK, "--json", *(f"--only={p}" for p in sorted(only))],
             cwd=cwd,
             capture_output=True,
             text=True,
@@ -163,9 +181,11 @@ def main() -> int:
         edited = (payload.get("tool_input") or {}).get("file_path", "")
         if not edited:
             return 0
-        target = os.path.relpath(edited, cwd)
+        target = inside_repo(cwd, edited)
+        if target is None:
+            return 0
         record_edit(session, target)
-        mine = [f for f in findings(cwd) if f["path"] == target]
+        mine = [f for f in findings(cwd, {target}) if f["path"] == target]
         if flags(mine) or judges(mine):
             emit_context(event, flags(mine), judges(mine))
         return 0
@@ -175,12 +195,12 @@ def main() -> int:
     if payload.get("stop_hook_active"):
         return 0
 
-    touched = edited_files(session)
+    touched = {p for p in edited_files(session) if inside_repo(cwd, p) is not None}
     if not touched:
         return 0
 
     # Stop is the blocking event, so only what the text alone decides reaches it.
-    items = flags([f for f in findings(cwd) if f["path"] in touched])
+    items = flags([f for f in findings(cwd, touched) if f["path"] in touched])
     if not items:
         return 0
 
