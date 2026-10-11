@@ -28,6 +28,8 @@
 - **[GitHub Issues](workflow/github-issues.md)**: Authoring issues that read
   well: symptom-first, no fix-prescription, provenance-tagged repro. Automated
   by the `github-issue` skill.
+- **[Pull Requests](workflow/pull-requests.md)**: Why the change exists and
+  what it changes for consumers; no diff restatement, no invented headings.
 
 ## Load if applicable (content)
 
