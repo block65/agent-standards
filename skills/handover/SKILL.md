@@ -1,13 +1,13 @@
 ---
 name: handover
-description: Wrap up the current session into a complete handover prompt a fresh agent can run with, save it to a file, and copy it to the clipboard so the user can /clear and paste. Use this skill whenever the user says "handover", "hand over to a new agent", "let's handover", "prepare a handoff", "wrap this up for a new session", "I'm going to clear", or otherwise wants to continue this work in a fresh context without losing progress, even if they don't use the word "handover". Accepts an optional steering instruction after the trigger (like /compact takes one), e.g. "handover — just the dragon-hatchery work" or "handover, have the next agent start with the potion tests".
+description: Wrap up the current session into a complete handover prompt a fresh agent can run with, and save it to a file the user can start a new session from. Use this skill whenever the user says "handover", "hand over to a new agent", "let's handover", "prepare a handoff", "wrap this up for a new session", "I'm going to clear", or otherwise wants to continue this work in a fresh context without losing progress, even if they don't use the word "handover". Accepts an optional steering instruction after the trigger (like /compact takes one), e.g. "handover — just the dragon-hatchery work" or "handover, have the next agent start with the potion tests".
 ---
 
 # Handover
 
 Produce a handover prompt: a single self-contained brief that lets a brand-new
 agent session continue this work as if it had been here all along. Save it to a
-file, copy it to the clipboard, and tell the user they can `/clear` and paste.
+file and tell the user where it is.
 
 The one rule that matters: **the new agent knows nothing.** It has not seen this
 conversation, your tool results, or your reasoning. Anything not written into
@@ -133,24 +133,12 @@ Quality bar for the brief:
   problem, say so. A wrong "done" costs the next agent far more than "probably
   done, verify with X".
 
-## Step 3: Copy to clipboard
-
-Run the bundled script with the file you just wrote:
-
-```bash
-bash <skill-dir>/scripts/copy-to-clipboard.sh ~/.claude/handovers/<file>.md
-```
-
-It auto-detects the available clipboard tool (wl-copy, xclip, xsel, pbcopy). If
-it exits non-zero, no clipboard tool exists; don't try to install one; just tell
-the user the file path so they can copy it themselves.
-
-## Step 4: Hand back to the user
+## Step 3: Hand back to the user
 
 Close with a short confirmation, nothing more; the handover file is the
 deliverable, so don't re-summarise its contents here. Tell the user:
 
-- the handover is on the clipboard, and the backup file path
-- next move is theirs: `/clear` (or open a new session), paste, go
+- the handover file's path
+- next move is theirs: start a new session from it
 
 Do not start any new work after this point; the session is ending.
