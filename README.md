@@ -25,7 +25,7 @@ For a rust crate, in your project's `AGENTS.md`:
 
 ```md
 **Always:** Read `agent-standards/index.md`, then follow all "Always load" standards listed there.
-**Before writing or modifying Rust code:** STOP. Read `agent-standards/lang/rust.md` and follow it.
+**Before writing or modifying Rust code:** Read `agent-standards/lang/rust.md` and follow it.
 ```
 
 See `examples/` for both files.
