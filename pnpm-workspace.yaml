@@ -1,0 +1,34 @@
+overrides:
+  oxlint: npm:@block65/oxlint@>=1.87.3
+  oxlint-tsgolint: npm:@block65/oxlint-tsgolint@>=7.0.200303
+
+allowBuilds:
+  esbuild: false
+
+minimumReleaseAge: 10080
+minimumReleaseAgeStrict: true
+minimumReleaseAgeExclude:
+  - "@block65/oxlint-binding-linux-arm64-gnu@1.87.3"
+  - "@block65/oxlint-binding-linux-x64-gnu@1.87.3"
+  - "@block65/oxlint-plugin@0.15.1"
+  - "@block65/oxlint-tsgolint-linux-arm64@7.0.200303"
+  - "@block65/oxlint-tsgolint-linux-x64@7.0.200303"
+  - "@block65/oxlint-tsgolint@7.0.200303"
+  - "@block65/oxlint@1.87.3"
+  - "@block65/shared-config@0.10.0"
+  - "@block65/tsconfig@0.3.1"
+  - "@fallow-cli/darwin-arm64@3.33.1"
+  - "@fallow-cli/darwin-x64@3.33.1"
+  - "@fallow-cli/linux-arm64-gnu@3.33.1"
+  - "@fallow-cli/linux-arm64-musl@3.33.1"
+  - "@fallow-cli/linux-x64-gnu@3.33.1"
+  - "@fallow-cli/linux-x64-musl@3.33.1"
+  - "@fallow-cli/win32-arm64-msvc@3.33.1"
+  - "@fallow-cli/win32-x64-msvc@3.33.1"
+  - "@types/node@26.6.5"
+  - fallow-type-aware@3.33.1
+  - fallow@3.33.1
+minimumReleaseAgeExcludePrune: true
+
+trustPolicy: no-downgrade
+trustPolicyExcludePrune: true

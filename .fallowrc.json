@@ -1,0 +1,10 @@
+{
+	"extends": ["npm:@block65/shared-config/lib/fallow/fallow.jsonc"],
+	"entry": [
+		"hooks/register.ts",
+		"tests/*.test.ts",
+		"oxfmt.config.ts",
+		"oxlint.config.ts"
+	],
+	"ignoreDependencies": ["claude-code"]
+}

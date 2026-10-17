@@ -1,37 +1,38 @@
 {
-  "name": "block65",
-  "owner": {
-    "name": "Block65"
-  },
-  "plugins": [
-    {
-      "name": "block65-tools",
-      "source": "./",
-      "description": "Shared standards and skills for AI assisted Block65 projects"
-    },
-    {
-      "name": "compend",
-      "source": {
-        "source": "github",
-        "repo": "block65/compend"
-      },
-      "description": "Local Body of Knowledge — version-pinned, distilled docs for AI agents via the compend CLI"
-    },
-    {
-      "name": "playwright-harness",
-      "source": {
-        "source": "github",
-        "repo": "block65/playwright-harness"
-      },
-      "description": "Playwright e2e harness with agent-readable failure summaries, plus the playwright-debug skill that interprets them"
-    },
-    {
-      "name": "pear",
-      "source": {
-        "source": "github",
-        "repo": "block65/pear"
-      },
-      "description": "Live local code review, with the pear-review skill that services or authors comments through the pear CLI"
-    }
-  ]
+	"name": "block65",
+	"description": "Block65's Claude Code plugins: shared standards, skills and tools",
+	"owner": {
+		"name": "Block65"
+	},
+	"plugins": [
+		{
+			"name": "block65-tools",
+			"source": "./",
+			"description": "Shared standards and skills for AI assisted Block65 projects"
+		},
+		{
+			"name": "compend",
+			"source": {
+				"source": "github",
+				"repo": "block65/compend"
+			},
+			"description": "Local Body of Knowledge — version-pinned, distilled docs for AI agents via the compend CLI"
+		},
+		{
+			"name": "playwright-harness",
+			"source": {
+				"source": "github",
+				"repo": "block65/playwright-harness"
+			},
+			"description": "Playwright e2e harness with agent-readable failure summaries, plus the playwright-debug skill that interprets them"
+		},
+		{
+			"name": "pear",
+			"source": {
+				"source": "github",
+				"repo": "block65/pear"
+			},
+			"description": "Live local code review, with the pear-review skill that services or authors comments through the pear CLI"
+		}
+	]
 }

@@ -54,12 +54,12 @@ Arrange / Act / Assert, in order, with whitespace between phases.
 
 ```ts
 test("parseConfig defaults missing optional fields", () => {
-  const raw = { host: "localhost" };
+	const raw = { host: "localhost" };
 
-  const config = parseConfig(raw);
+	const config = parseConfig(raw);
 
-  expect(config.port).toBe(8080);
-  expect(config.tls).toBe(false);
+	expect(config.port).toBe(8080);
+	expect(config.tls).toBe(false);
 });
 ```
 
@@ -89,7 +89,9 @@ For things that settle eventually, use `expect.poll` with a meaningful timeout.
 Never `setTimeout` in a test.
 
 ```ts
-await expect.poll(() => store.get(id), { timeout: 5_000 }).toMatchObject({ status: "ready" });
+await expect
+	.poll(() => store.get(id), { timeout: 5_000 })
+	.toMatchObject({ status: "ready" });
 ```
 
 When the production code emits a completion signal (event, promise, callback),
@@ -133,7 +135,7 @@ For shape checks, use a type-guard predicate:
 
 ```ts
 function isMember(value: unknown): value is Member {
-  return typeof value === "object" && value !== null && "role" in value;
+	return typeof value === "object" && value !== null && "role" in value;
 }
 
 const member = response.members.find((m) => m.userId === targetId);
@@ -176,7 +178,10 @@ A snapshot must produce identical output every run. For non-deterministic fields
 argument to `toMatchSnapshot`:
 
 ```ts
-expect(user).toMatchSnapshot({ id: expect.any(String), createdAt: expect.any(Date) });
+expect(user).toMatchSnapshot({
+	id: expect.any(String),
+	createdAt: expect.any(Date),
+});
 ```
 
 For pattern-shaped values, use `expect.stringMatching`. Let `vitest -u` write
@@ -188,8 +193,8 @@ When the same non-deterministic shape recurs across many tests, register a
 
 ```ts
 expect.addSnapshotSerializer({
-  test: (val) => typeof val === "string" && /^[0-9a-f-]{36}$/.test(val),
-  serialize: () => '"<uuid>"',
+	test: (val) => typeof val === "string" && /^[0-9a-f-]{36}$/.test(val),
+	serialize: () => '"<uuid>"',
 });
 ```
 

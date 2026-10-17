@@ -1,9 +1,22 @@
-oxfmt_version := "0.51.0"
+default: typecheck lint fmt-check test dead-code
 
-# Format all supported files in the repo.
+# The engine lays the types tsconfig.json extends when it first loads the
+# plugin from this folder (claude --plugin-dir .)
+typecheck:
+    pnpm exec tsc -p .
+
+lint *ARGS:
+    pnpm exec oxlint {{ ARGS }}
+
 fmt:
-    pnpm dlx oxfmt@{{ oxfmt_version }} .
+    pnpm exec oxfmt
 
-# Verify formatting without writing.
 fmt-check:
-    pnpm dlx oxfmt@{{ oxfmt_version }} --check .
+    pnpm exec oxfmt --check
+
+test:
+    claude plugin test .
+    claude plugin validate .
+
+dead-code:
+    pnpm exec fallow
