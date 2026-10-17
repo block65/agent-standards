@@ -25,7 +25,6 @@ minimumReleaseAgeExclude:
   - "@fallow-cli/linux-x64-musl@3.33.1"
   - "@fallow-cli/win32-arm64-msvc@3.33.1"
   - "@fallow-cli/win32-x64-msvc@3.33.1"
-  - "@types/node@26.6.5"
   - fallow-type-aware@3.33.1
   - fallow@3.33.1
 minimumReleaseAgeExcludePrune: true
