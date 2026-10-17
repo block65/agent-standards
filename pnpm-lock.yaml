@@ -173,6 +173,9 @@ importers:
       '@block65/shared-config':
         specifier: ^0.10.0
         version: 0.10.0(@block65/oxlint-tsgolint@7.0.200303)(@block65/oxlint@1.87.3(@block65/oxlint-tsgolint@7.0.200303))(eslint@10.12.0)(fallow@3.33.1)(oxfmt@0.72.0)
+      '@block65/tsconfig':
+        specifier: ^0.3.1
+        version: 0.3.1
       fallow:
         specifier: ^3.33.1
         version: 3.33.1
@@ -255,6 +258,9 @@ packages:
         optional: true
       oxlint-tsgolint:
         optional: true
+
+  '@block65/tsconfig@0.3.1':
+    resolution: {integrity: sha512-eDuYELFtiXrjYo/V6N6UQbBx4MKOJD2FZ/mzy2fuypyoNNPRxIaf5FxTl/xavO5y4+5FN2h5kQs81B+ko8MUWw==}
 
   '@cacheable/memory@2.2.0':
     resolution: {integrity: sha512-CTLKqLItRCEixEAewD3/j9DB3/o96gpTPD4eJ1v+DGOlxZRZncRQkGYqqnAGCscYd6RNeXfGeiuCphsPtqyIfQ==}
@@ -1093,6 +1099,8 @@ snapshots:
       oxlint-tsgolint: '@block65/oxlint-tsgolint@7.0.200303'
     transitivePeerDependencies:
       - eslint
+
+  '@block65/tsconfig@0.3.1': {}
 
   '@cacheable/memory@2.2.0':
     dependencies:

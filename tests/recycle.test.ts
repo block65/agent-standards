@@ -40,22 +40,22 @@ function inTmux(on: On, summary: ModelCompleteResult, messages = conversation) {
 	on("session.cwd", async () => ({ value: "/work/it's here" }));
 	on("session.model", async () => ({ value: "claude-opus-5-5" }));
 	on("session.messages", async () => ({ value: messages }));
-	on("model.complete", async ($, e) => {
+	on("model.complete", async (_, e) => {
 		world.asks.push([e.system, e.prompt].join("\n"));
 
 		return { value: summary };
 	});
-	on("store.set", async ($, e) => {
+	on("store.set", async (_, e) => {
 		world.store.set(e.key, e.value);
 
 		return { value: undefined };
 	});
-	on("store.delete", async ($, e) => {
+	on("store.delete", async (_, e) => {
 		world.store.delete(e.key);
 
 		return { value: undefined };
 	});
-	on("process.run", async ($, e) => {
+	on("process.run", async (_, e) => {
 		world.runs.push(e.argv);
 
 		return {

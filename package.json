@@ -4,6 +4,7 @@
 	"type": "module",
 	"devDependencies": {
 		"@block65/shared-config": "^0.10.0",
+		"@block65/tsconfig": "^0.3.1",
 		"fallow": "^3.33.1",
 		"oxfmt": "^0.72.0",
 		"oxlint": "^1.87.0",

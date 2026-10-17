@@ -1,3 +1,7 @@
 {
-	"extends": "./.claude-plugin/types/tsconfig.json"
+	"extends": [
+		"@block65/tsconfig/vanilla",
+		"@block65/tsconfig/noprojref",
+		"./.claude-plugin/types/tsconfig.json"
+	]
 }
