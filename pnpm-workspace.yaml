@@ -15,7 +15,7 @@ minimumReleaseAgeExclude:
   - "@block65/oxlint-tsgolint-linux-x64@7.0.200303"
   - "@block65/oxlint-tsgolint@7.0.200303"
   - "@block65/oxlint@1.87.3"
-  - "@block65/shared-config@0.10.0"
+  - "@block65/shared-config@0.10.1"
   - "@block65/tsconfig@0.3.1"
   - "@fallow-cli/darwin-arm64@3.33.1"
   - "@fallow-cli/darwin-x64@3.33.1"
