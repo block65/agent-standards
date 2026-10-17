@@ -1,0 +1,2 @@
+# never merge a lockfile
+pnpm-lock.yaml -merge
