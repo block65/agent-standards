@@ -171,8 +171,8 @@ importers:
   .:
     devDependencies:
       '@block65/shared-config':
-        specifier: ^0.10.0
-        version: 0.10.0(@block65/oxlint-tsgolint@7.0.200303)(@block65/oxlint@1.87.3(@block65/oxlint-tsgolint@7.0.200303))(eslint@10.12.0)(fallow@3.33.1)(oxfmt@0.72.0)
+        specifier: ^0.10.1
+        version: 0.10.1(@block65/oxlint-tsgolint@7.0.200303)(@block65/oxlint@1.87.3(@block65/oxlint-tsgolint@7.0.200303))(eslint@10.12.0)(fallow@3.33.1)(oxfmt@0.72.0)
       '@block65/tsconfig':
         specifier: ^0.3.1
         version: 0.3.1
@@ -241,8 +241,8 @@ packages:
       vite-plus:
         optional: true
 
-  '@block65/shared-config@0.10.0':
-    resolution: {integrity: sha512-fmZkviq5yD75no1Va++0+IeSkAgIxE6htAXIXm57/6jpDqu/n/8dgqATvr4QhNPDwi4KF7XkdSgJ2cU07quhdA==}
+  '@block65/shared-config@0.10.1':
+    resolution: {integrity: sha512-2FOWP1x4WjtWOym6Mls6ZYs9gIy8CucmLYHZn/MuT/h41+E+6EKzFUgaLmUsn29dloasdKhphrhn237B6dtZaA==}
     engines: {node: '>=24'}
     peerDependencies:
       fallow: ^3.27.0
@@ -1089,7 +1089,7 @@ snapshots:
       '@block65/oxlint-binding-linux-x64-gnu': 1.87.3
       oxlint-tsgolint: '@block65/oxlint-tsgolint@7.0.200303'
 
-  '@block65/shared-config@0.10.0(@block65/oxlint-tsgolint@7.0.200303)(@block65/oxlint@1.87.3(@block65/oxlint-tsgolint@7.0.200303))(eslint@10.12.0)(fallow@3.33.1)(oxfmt@0.72.0)':
+  '@block65/shared-config@0.10.1(@block65/oxlint-tsgolint@7.0.200303)(@block65/oxlint@1.87.3(@block65/oxlint-tsgolint@7.0.200303))(eslint@10.12.0)(fallow@3.33.1)(oxfmt@0.72.0)':
     dependencies:
       '@block65/oxlint-plugin': 0.15.1(@block65/oxlint@1.87.3(@block65/oxlint-tsgolint@7.0.200303))(eslint@10.12.0)
     optionalDependencies:
