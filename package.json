@@ -1,0 +1,14 @@
+{
+	"name": "@block65/agent-standards",
+	"private": true,
+	"type": "module",
+	"devDependencies": {
+		"@block65/shared-config": "^0.10.0",
+		"fallow": "^3.33.1",
+		"oxfmt": "^0.72.0",
+		"oxlint": "^1.87.0",
+		"oxlint-tsgolint": "^7.0.2003",
+		"typescript": "^7.0.2"
+	},
+	"packageManager": "pnpm@12.4.0"
+}

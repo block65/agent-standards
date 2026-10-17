@@ -1,5 +1,8 @@
 {
-  "name": "block65-tools",
-  "description": "Shared standards and skills for AI assisted Block65 projects",
-  "version": "0.21.0"
+	"name": "block65-tools",
+	"description": "Shared standards and skills for AI assisted Block65 projects",
+	"version": "0.21.0",
+	"author": {
+		"name": "Block65"
+	}
 }

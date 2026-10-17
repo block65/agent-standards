@@ -152,7 +152,7 @@
 // BAD: resolve escapes the executor
 let resolve: (value: Result) => void;
 const ready = new Promise<Result>((res) => {
-  resolve = res;
+	resolve = res;
 });
 
 // GOOD
@@ -286,17 +286,17 @@ code that knows what missing means. Background: `compend get rust-book option`.
 
 ```ts
 export async function publish(id: Id, body: Body) {
-  const record = await store.get(id);
-  if (!record) {
-    throw new CustomError("record not found").debug({ id });
-  }
+	const record = await store.get(id);
+	if (!record) {
+		throw new CustomError("record not found").debug({ id });
+	}
 
-  const payload = serialise(body);
-  const headers = signHeaders(payload);
+	const payload = serialise(body);
+	const headers = signHeaders(payload);
 
-  const response = await transport.send(record.endpoint, payload, headers);
+	const response = await transport.send(record.endpoint, payload, headers);
 
-  return parseReceipt(response);
+	return parseReceipt(response);
 }
 ```
 

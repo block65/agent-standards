@@ -124,10 +124,10 @@ itself produced.
 
 ```ts
 await page
-  .getByRole("row")
-  .filter({ hasText: itemTitle }) // itemTitle was typed by the test
-  .getByRole("button", { name: "Delete" })
-  .click();
+	.getByRole("row")
+	.filter({ hasText: itemTitle }) // itemTitle was typed by the test
+	.getByRole("button", { name: "Delete" })
+	.click();
 ```
 
 Filtering by data the test created is consistent with the no-text-matching rule:
@@ -147,7 +147,9 @@ elements; reach for a testid only if no role disambiguates.
 ```ts
 // GOOD: terminal step, confirming the data appears where the user expects
 await page.getByRole("link", { name: "View invoice" }).click();
-await expect(page.getByRole("article").filter({ hasText: invoiceNumber })).toBeVisible();
+await expect(
+	page.getByRole("article").filter({ hasText: invoiceNumber }),
+).toBeVisible();
 ```
 
 For "did the user leave page X" (logout, cancel, close modal), use the negative
@@ -156,7 +158,9 @@ falling back to a testid if no role fits:
 
 ```ts
 await page.getByRole("button", { name: "Log out" }).click();
-await expect(page.getByRole("navigation", { name: "Primary" })).not.toBeVisible();
+await expect(
+	page.getByRole("navigation", { name: "Primary" }),
+).not.toBeVisible();
 ```
 
 ### When a page-level testid is the right tool
@@ -315,10 +319,10 @@ navigation succeeded and the destination rendered. That's the verification.
 // GOOD: the auto-wait on the row filter does the navigation check for free
 await page.getByRole("link", { name: "Listings" }).click();
 await page
-  .getByRole("row")
-  .filter({ hasText: listingTitle })
-  .getByRole("button", { name: "Edit" })
-  .click();
+	.getByRole("row")
+	.filter({ hasText: listingTitle })
+	.getByRole("button", { name: "Edit" })
+	.click();
 ```
 
 A navigation event firing doesn't prove the right destination: error pages,
@@ -345,20 +349,22 @@ data, not a guess.
 ```ts
 // GOOD: reset link comes from the mail server, not the test author's keyboard
 await test.step("request reset", async () => {
-  await page.goto("/");
-  await page.getByRole("link", { name: "Forgot password" }).click();
-  await page.getByLabel("Email").fill(email);
-  await page.getByRole("button", { name: "Send reset link" }).click();
-  await expect(page.getByRole("status")).toContainText(/check your email/i);
+	await page.goto("/");
+	await page.getByRole("link", { name: "Forgot password" }).click();
+	await page.getByLabel("Email").fill(email);
+	await page.getByRole("button", { name: "Send reset link" }).click();
+	await expect(page.getByRole("status")).toContainText(/check your email/i);
 });
 
 await test.step("follow reset link from email", async () => {
-  const resetEmail = await mailServer.waitForEmail({ to: email });
-  const resetLink = resetEmail.extractLink({ name: /reset password/i });
-  await page.goto(resetLink); // sanctioned because the URL came from the email, not the test
-  // The next action verifies the reset page mounted, so there is no identity assertion here.
-  await page.getByLabel("New password").fill(faker.internet.password({ length: 20 }));
-  await page.getByRole("button", { name: "Set new password" }).click();
+	const resetEmail = await mailServer.waitForEmail({ to: email });
+	const resetLink = resetEmail.extractLink({ name: /reset password/i });
+	await page.goto(resetLink); // sanctioned because the URL came from the email, not the test
+	// The next action verifies the reset page mounted, so there is no identity assertion here.
+	await page
+		.getByLabel("New password")
+		.fill(faker.internet.password({ length: 20 }));
+	await page.getByRole("button", { name: "Set new password" }).click();
 });
 ```
 
@@ -397,27 +403,29 @@ them visible in the trace viewer. Do not use `console.log` as a substitute.
 
 ```ts
 test("user can submit a draft item", async ({ page, authedUser }) => {
-  await test.step("create draft via API", async () => {
-    await authedUser.api.createItem({ status: "draft", title: itemTitle });
-  });
+	await test.step("create draft via API", async () => {
+		await authedUser.api.createItem({ status: "draft", title: itemTitle });
+	});
 
-  await test.step("submit from dashboard", async () => {
-    await page.goto("/");
-    await page.getByRole("link", { name: "Dashboard" }).click();
-    // The row filter below verifies the dashboard rendered, so there is no identity assertion here.
-    await page
-      .getByRole("row")
-      .filter({ hasText: itemTitle })
-      .getByRole("button", { name: "Submit" })
-      .click();
-    await page.getByRole("button", { name: "Confirm submit" }).click();
-  });
+	await test.step("submit from dashboard", async () => {
+		await page.goto("/");
+		await page.getByRole("link", { name: "Dashboard" }).click();
+		// The row filter below verifies the dashboard rendered, so there is no identity assertion here.
+		await page
+			.getByRole("row")
+			.filter({ hasText: itemTitle })
+			.getByRole("button", { name: "Submit" })
+			.click();
+		await page.getByRole("button", { name: "Confirm submit" }).click();
+	});
 
-  await test.step("item appears in public results", async () => {
-    await page.getByRole("link", { name: "Browse items" }).click();
-    // Terminal step, so it asserts what the user came to see.
-    await expect(page.getByRole("link").filter({ hasText: itemTitle })).toBeVisible();
-  });
+	await test.step("item appears in public results", async () => {
+		await page.getByRole("link", { name: "Browse items" }).click();
+		// Terminal step, so it asserts what the user came to see.
+		await expect(
+			page.getByRole("link").filter({ hasText: itemTitle }),
+		).toBeVisible();
+	});
 });
 ```
 
@@ -446,9 +454,13 @@ realistic values. Use faker or inline realistic data, never `"a"`, `"test"`,
 ```ts
 // GOOD: happy-path signup
 await page.getByLabel("Full name").fill(faker.person.fullName());
-await page.getByLabel("Work email").fill(`qa-${crypto.randomUUID()}@example.test`);
+await page
+	.getByLabel("Work email")
+	.fill(`qa-${crypto.randomUUID()}@example.test`);
 await page.getByLabel("Company").fill(faker.company.name());
-await page.getByLabel("Password", { exact: true }).fill(faker.internet.password({ length: 20 }));
+await page
+	.getByLabel("Password", { exact: true })
+	.fill(faker.internet.password({ length: 20 }));
 await page.getByLabel(/i agree to the terms/i).check();
 await page.getByRole("button", { name: "Create account" }).click();
 
@@ -485,7 +497,9 @@ so the data is queryable in the database and obvious in logs.
 
 ```ts
 // BAD: brittle
-await expect(page.getByRole("alert")).toHaveText("Please enter a valid email address.");
+await expect(page.getByRole("alert")).toHaveText(
+	"Please enter a valid email address.",
+);
 
 // GOOD: resilient
 await expect(page.getByRole("alert")).toContainText(/valid email/i);
@@ -550,17 +564,16 @@ solving a problem that shouldn't exist at this layer.
 
 ```ts
 // BAD: reading state through an attribute
-await expect(page.getByRole("article").filter({ hasText: title })).toHaveAttribute(
-  "data-status",
-  "active",
-);
+await expect(
+	page.getByRole("article").filter({ hasText: title }),
+).toHaveAttribute("data-status", "active");
 
 // GOOD: the user-visible consequence of "active" is that Pause exists
 await page
-  .getByRole("article")
-  .filter({ hasText: title })
-  .getByRole("button", { name: "Pause" })
-  .click();
+	.getByRole("article")
+	.filter({ hasText: title })
+	.getByRole("button", { name: "Pause" })
+	.click();
 ```
 
 No user-visible consequence → the test belongs in another layer (unit,
@@ -616,20 +629,20 @@ Write Playwright fixtures for anything reused 3+ times.
 
 ```ts
 type Fixtures = {
-  authedUser: { page: Page; api: ApiClient; user: User };
+	authedUser: { page: Page; api: ApiClient; user: User };
 };
 
 export const test = base.extend<Fixtures>({
-  authedUser: async ({ browser }, use) => {
-    const user = await createUserViaApi();
-    const context = await browser.newContext({
-      storageState: await user.storageState(),
-    });
-    const page = await context.newPage();
-    await use({ page, api: user.api, user });
-    await context.close();
-    await user.cleanup();
-  },
+	authedUser: async ({ browser }, use) => {
+		const user = await createUserViaApi();
+		const context = await browser.newContext({
+			storageState: await user.storageState(),
+		});
+		const page = await context.newPage();
+		await use({ page, api: user.api, user });
+		await context.close();
+		await user.cleanup();
+	},
 });
 ```
 
@@ -665,15 +678,15 @@ Flaky tests erode trust faster than missing tests.
 ```ts
 // BAD: text-scoping a region
 await page
-  .getByText("Account settings")
-  .locator("..")
-  .getByRole("button", { name: "Save" })
-  .click();
+	.getByText("Account settings")
+	.locator("..")
+	.getByRole("button", { name: "Save" })
+	.click();
 // GOOD: scope by a landmark role, not by copy
 await page
-  .getByRole("region", { name: "Account settings" })
-  .getByRole("button", { name: "Save" })
-  .click();
+	.getByRole("region", { name: "Account settings" })
+	.getByRole("button", { name: "Save" })
+	.click();
 ```
 
 ```ts
@@ -688,23 +701,23 @@ await page.getByRole("button", { name: "Publish" }).click();
 
 ```ts
 export default defineConfig({
-  fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  // One retry absorbs infrastructure blips, not flaky tests. A test needing two is broken.
-  retries: process.env.CI ? 1 : 0,
-  reporter: [["html"], ["list"]],
-  use: {
-    baseURL: process.env.BASE_URL ?? "http://localhost:3000",
-    trace: "on-first-retry",
-    screenshot: "only-on-failure",
-    video: "retain-on-failure",
-    actionTimeout: 10_000,
-    navigationTimeout: 30_000,
-  },
-  projects: [
-    { name: "chromium", use: devices["Desktop Chrome"] },
-    // add webkit/firefox only if you ship there
-  ],
+	fullyParallel: true,
+	forbidOnly: !!process.env.CI,
+	// One retry absorbs infrastructure blips, not flaky tests. A test needing two is broken.
+	retries: process.env.CI ? 1 : 0,
+	reporter: [["html"], ["list"]],
+	use: {
+		baseURL: process.env.BASE_URL ?? "http://localhost:3000",
+		trace: "on-first-retry",
+		screenshot: "only-on-failure",
+		video: "retain-on-failure",
+		actionTimeout: 10_000,
+		navigationTimeout: 30_000,
+	},
+	projects: [
+		{ name: "chromium", use: devices["Desktop Chrome"] },
+		// add webkit/firefox only if you ship there
+	],
 });
 ```
 
