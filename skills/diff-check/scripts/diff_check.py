@@ -15,6 +15,7 @@ line in the diff.
 from __future__ import annotations
 
 import argparse
+import codecs
 import json
 import os
 import re
@@ -147,14 +148,30 @@ class Hunk:
 HUNK_HEADER_RE = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@")
 
 
+# Paths arrive unquoted and match literally, whatever the user's config says:
+# a quoted `"b/src/\303\251.ts"` or a glob match on `f[1].ts` reports the
+# finding under a path nothing else recognises.
+GIT = ["git", "-c", "core.quotePath=false", "--literal-pathspecs"]
+
+
 def run_git(args: list[str], cwd: str) -> str:
     proc = subprocess.run(
-        ["git", *args], cwd=cwd, capture_output=True, text=True, check=False
+        [*GIT, *args], cwd=cwd, capture_output=True, text=True, check=False
     )
     if proc.returncode != 0:
         sys.stderr.write(proc.stderr)
         raise SystemExit(proc.returncode)
     return proc.stdout
+
+
+def header_path(target: str) -> str:
+    """A path git still C-quotes (a tab, a quote, a newline) under
+    `core.quotePath=false`."""
+    target = target.rstrip("\t")
+    if target.startswith('"') and target.endswith('"'):
+        raw = codecs.escape_decode(target[1:-1].encode("utf-8"))[0]
+        target = raw.decode("utf-8", errors="replace")
+    return target[2:] if target.startswith("b/") else target
 
 
 def parse_diff(diff: str) -> list[Hunk]:
@@ -164,15 +181,21 @@ def parse_diff(diff: str) -> list[Hunk]:
     path = ""
     current: Hunk | None = None
     next_line = 0
+    # `---` and `+++` are file headers only before a file's first hunk. Inside
+    # one they are a deleted `-- ` SQL comment or an added `++ i;`.
+    in_header = False
 
-    for raw in diff.splitlines():
-        if raw.startswith("+++ "):
-            target = raw[4:].strip()
-            path = target[2:] if target.startswith("b/") else target
+    for raw in diff.split("\n"):
+        if raw.startswith("diff --git"):
+            in_header = True
             current = None
             continue
-        if raw.startswith("--- ") or raw.startswith("diff --git"):
-            continue
+        if in_header:
+            if raw.startswith("+++ "):
+                path = header_path(raw[4:])
+            if not raw.startswith("@@"):
+                continue
+            in_header = False
 
         header = HUNK_HEADER_RE.match(raw)
         if header:
@@ -189,6 +212,8 @@ def parse_diff(diff: str) -> list[Hunk]:
             next_line += 1
         elif raw.startswith("-"):
             current.removed.append(raw[1:])
+        elif raw.startswith(" "):
+            next_line += 1
 
     return [h for h in hunks if h.added or h.removed]
 
@@ -196,10 +221,12 @@ def parse_diff(diff: str) -> list[Hunk]:
 def untracked_hunks(cwd: str, only: list[str]) -> list[Hunk]:
     """A new file is entirely added lines. `git diff` never shows it, and a new
     file is the most common thing a change contributes."""
-    listing = run_git(["ls-files", "--others", "--exclude-standard", *scope(only)], cwd)
+    listing = run_git(
+        ["ls-files", "-z", "--others", "--exclude-standard", *scope(only)], cwd
+    )
     hunks: list[Hunk] = []
 
-    for path in listing.splitlines():
+    for path in listing.split("\0"):
         if not path.strip():
             continue
         try:
@@ -415,7 +442,16 @@ def scope(only: list[str]) -> list[str]:
 
 
 def diff_args(args: argparse.Namespace) -> list[str]:
-    base = ["diff", "-U0", "--no-color", "--no-ext-diff"]
+    # Pinned so the user's diff config cannot change what parse_diff reads.
+    base = [
+        "diff",
+        "-U0",
+        "--inter-hunk-context=0",
+        "--no-color",
+        "--no-ext-diff",
+        "--src-prefix=a/",
+        "--dst-prefix=b/",
+    ]
     if args.range:
         return [*base, args.range, *scope(args.only)]
     if args.staged:
@@ -454,14 +490,16 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--staged", action="store_true", help="only staged changes")
-    group.add_argument("--range", help="a git revision or range, e.g. HEAD~1 or main...")
+    group.add_argument("--range", help="a git revision or range, e.g. HEAD~1 or origin/HEAD...")
     parser.add_argument("--json", action="store_true", help="machine-readable output")
     parser.add_argument(
         "--include-generated",
         action="store_true",
         help="do not skip generated, vendored and lockfile paths",
     )
-    parser.add_argument("--repo", default=".", help="repository root (default: cwd)")
+    parser.add_argument(
+        "--repo", default=".", help="a directory in the repository (default: cwd)"
+    )
     parser.add_argument(
         "--only",
         action="append",
@@ -482,6 +520,9 @@ def main() -> int:
     if args.paths:
         findings = scan_file_comments(args.paths, cwd)
     else:
+        # Diff paths are relative to the top level, so files are opened from
+        # there even when the caller is in a subdirectory.
+        cwd = run_git(["rev-parse", "--show-toplevel"], cwd).strip()
         hunks = parse_diff(run_git(diff_args(args), cwd))
         if not args.range and not args.staged:
             hunks.extend(untracked_hunks(cwd, args.only))

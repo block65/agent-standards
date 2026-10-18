@@ -26,11 +26,14 @@ nothing is at stake if it disagrees.
 
 from __future__ import annotations
 
+import glob
 import json
 import os
+import stat
 import subprocess
 import sys
 import tempfile
+import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CHECK = os.path.join(HERE, "..", "skills", "diff-check", "scripts", "diff_check.py")
@@ -58,26 +61,97 @@ JUDGE_ADVICE = (
 )
 
 
-def state_path(session: str, suffix: str) -> str:
-    return os.path.join(
-        tempfile.gettempdir(), f"diff-check-{session or 'nosession'}.{suffix}"
-    )
+# A session's state outlives it, since nothing tells the hook a session ended.
+# A week is past any session still worth attributing edits to.
+STATE_MAX_AGE = 7 * 24 * 3600
+
+
+def state_dir() -> str | None:
+    """Per user and private: the edited list names files, and a shared temp dir
+    lets anyone else plant the path first. None when that cannot be had."""
+    path = os.path.join(tempfile.gettempdir(), f"diff-check-{os.getuid()}")
+    try:
+        os.makedirs(path, mode=0o700, exist_ok=True)
+        info = os.lstat(path)
+    except OSError:
+        return None
+    if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid():
+        return None
+    if stat.S_IMODE(info.st_mode) & 0o077:
+        return None
+    return path
+
+
+def state_path(session: str, suffix: str) -> str | None:
+    base = state_dir()
+    if base is None:
+        return None
+    return os.path.join(base, f"{session or 'nosession'}.{suffix}")
+
+
+def prune_state() -> None:
+    """Drop stale sessions' files, and the world-readable ones earlier versions
+    left directly in the temp dir once those sessions are stale too."""
+    cutoff = time.time() - STATE_MAX_AGE
+    base = state_dir()
+    stale = glob.glob(os.path.join(tempfile.gettempdir(), "diff-check-*.edited"))
+    stale += glob.glob(os.path.join(tempfile.gettempdir(), "diff-check-*.blocked"))
+    for path in stale:
+        try:
+            info = os.lstat(path)
+            if info.st_uid == os.getuid() and info.st_mtime < cutoff:
+                os.unlink(path)
+        except OSError:
+            pass
+    if base is None:
+        return
+    for entry in os.scandir(base):
+        try:
+            if entry.stat(follow_symlinks=False).st_mtime < cutoff:
+                os.unlink(entry.path)
+        except OSError:
+            pass
 
 
 def edited_files(session: str) -> set[str]:
+    path = state_path(session, "edited")
+    if path is None:
+        return set()
     try:
-        with open(state_path(session, "edited"), encoding="utf-8") as fh:
+        with open(path, encoding="utf-8") as fh:
             return {line.strip() for line in fh if line.strip()}
     except OSError:
         return set()
 
 
 def record_edit(session: str, path: str) -> None:
+    state = state_path(session, "edited")
+    if state is None:
+        return
     try:
-        with open(state_path(session, "edited"), "a", encoding="utf-8") as fh:
+        with open(state, "a", encoding="utf-8") as fh:
             fh.write(path + "\n")
     except OSError:
         pass
+
+
+def repo_root(cwd: str) -> str | None:
+    """The top level of the repo holding cwd, or None outside one. A `.git`
+    directory test misses worktrees and submodules, where `.git` is a file, and
+    any session started below the top level."""
+    try:
+        proc = subprocess.run(
+            ["git", "-C", cwd, "rev-parse", "--show-toplevel"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if proc.returncode != 0 or not proc.stdout.strip():
+        return None
+    return os.path.realpath(proc.stdout.strip())
 
 
 def inside_repo(cwd: str, path: str) -> str | None:
@@ -91,14 +165,20 @@ def inside_repo(cwd: str, path: str) -> str | None:
     return rel
 
 
-def findings(cwd: str, only: set[str]) -> list[dict]:
+def findings(root: str, only: set[str]) -> list[dict]:
     """Never let a check break the session: any failure here reports nothing."""
     if not only:
         return []
     try:
         proc = subprocess.run(
-            [sys.executable, CHECK, "--json", *(f"--only={p}" for p in sorted(only))],
-            cwd=cwd,
+            [
+                sys.executable,
+                CHECK,
+                "--json",
+                f"--repo={root}",
+                *(f"--only={p}" for p in sorted(only)),
+            ],
+            cwd=root,
             capture_output=True,
             text=True,
             timeout=20,
@@ -174,18 +254,21 @@ def main() -> int:
     session = payload.get("session_id", "")
     event = payload.get("hook_event_name", "")
 
-    if not os.path.isdir(os.path.join(cwd, ".git")):
+    root = repo_root(cwd)
+    if root is None:
         return 0
 
     if event == "PostToolUse":
         edited = (payload.get("tool_input") or {}).get("file_path", "")
         if not edited:
             return 0
-        target = inside_repo(cwd, edited)
+        # Absolute, so an edit still attributes if the session's cwd moves.
+        edited = os.path.realpath(os.path.join(cwd, edited))
+        target = inside_repo(root, edited)
         if target is None:
             return 0
-        record_edit(session, target)
-        mine = [f for f in findings(cwd, {target}) if f["path"] == target]
+        record_edit(session, edited)
+        mine = [f for f in findings(root, {target}) if f["path"] == target]
         if flags(mine) or judges(mine):
             emit_context(event, flags(mine), judges(mine))
         return 0
@@ -195,17 +278,22 @@ def main() -> int:
     if payload.get("stop_hook_active"):
         return 0
 
-    touched = {p for p in edited_files(session) if inside_repo(cwd, p) is not None}
+    prune_state()
+    touched = {
+        rel
+        for rel in (inside_repo(root, p) for p in edited_files(session))
+        if rel is not None
+    }
     if not touched:
         return 0
 
     # Stop is the blocking event, so only what the text alone decides reaches it.
-    items = flags([f for f in findings(cwd, touched) if f["path"] in touched])
+    items = flags([f for f in findings(root, touched) if f["path"] in touched])
     if not items:
         return 0
 
     blocked = state_path(session, "blocked")
-    if os.path.exists(blocked):
+    if blocked is None or os.path.exists(blocked):
         emit_context(event, items)
         return 0
 
