@@ -14,8 +14,10 @@ report the error instead of fixing it.
 **Default: fix.** Run the pipeline and fix what's safe, report the rest.
 
 **Report mode:** If the user asks to just check or report (e.g. "just check",
-"what's broken", "--report"), run the same pipeline but don't edit any files;
-only report what would need fixing.
+"what's broken", "--report"), edit no files. Steps 1 and 2 rewrite files, so run
+their read-only forms instead, `pnpm exec oxfmt --check .` and
+`pnpm exec oxlint .` (no `--fix`), then step 3, skip step 4, and report what
+would need fixing.
 
 **Typecheck only:** If the user passes `--typecheck-only` or asks only about
 types, skip steps 1 and 2 and run steps 3 to 5. Formatting and lint fixes
@@ -101,10 +103,10 @@ it's not a trivial fix.
 
 ### Step 5: Verify
 
-Re-run the pipeline, or typecheck alone if that was the mode.
+Re-run the checks, or typecheck alone if that was the mode.
 
 ```sh
-pnpm exec oxfmt . && pnpm exec oxlint . && pnpm run typecheck
+pnpm exec oxfmt --check . && pnpm exec oxlint . && pnpm run typecheck
 ```
 
 Compare the error count against step 3. If it went up, your fixes introduced new

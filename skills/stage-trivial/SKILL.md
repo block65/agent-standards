@@ -210,11 +210,12 @@ ran out, not because looking felt like work.
   reviewer can't see. Stage a lonely one-liner only when it unambiguously fits
   an established trivial category (typo fix, obvious lint repair); otherwise
   skip with "smell-adjacent: lonely one-liner, intent unclear from diff".
-- **Mixed hunks**: a single hunk that fuses stageable and non-stageable changes
-  (a formatting fix on the same line as a logic change). Classify the whole hunk
-  as non-stageable; `stage-hunk` can't subdivide one hunk. A file with
-  _separate_ stageable and non-stageable hunks is different: route those to
-  `stage-hunk` per Process step 3.
+- **Mixed lines**: a single changed line that fuses stageable and
+  non-stageable changes (a formatting fix on the same line as a logic change).
+  Skip that line. A hunk whose stageable and non-stageable changes sit on
+  _separate_ lines is mixed, not skipped: route it to `stage-hunk` per Process
+  step 3 with a line-level description, since `stage-hunk` can stage individual
+  lines within a hunk.
 - **Merge conflict markers** (UU status files): never touch.
 
 ## Process
@@ -264,12 +265,16 @@ For each file with unstaged changes:
 
 ### 3. Stage
 
+With `--dry-run`, stage nothing: skip to step 4 and report both lists as what
+would be staged.
+
 - All hunks in a file are trivial → `git add <file>`.
-- Some hunks trivial, some not → invoke `block65-tools:stage-hunk` via the
-  **Skill tool**, never via Bash or its underlying script (`stage_hunk.py`,
-  `stage-hunk.sh`, any cached plugin path), which bypasses the skill's
+- Some hunks or lines trivial, some not → invoke `block65-tools:stage-hunk`
+  via the **Skill tool**, never via Bash or its underlying script
+  (`stage_hunk.py`, any cached plugin path), which bypasses the skill's
   hunk-listing and matching steps. `args` is one string: file path on the first
-  line, a plain-language description of which hunks on the remaining lines:
+  line, a plain-language description of which hunks or lines on the remaining
+  lines:
 
   ```
   Skill(skill="block65-tools:stage-hunk",
