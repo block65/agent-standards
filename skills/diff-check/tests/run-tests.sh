@@ -383,6 +383,136 @@ EOF
   [[ -z "$out" ]] || return 1
 }
 
+FLAGGED='export function ingest(rows: string[]) {
+  // The logging that used to be here was removed because it was noisy.
+  const seen = new Set<string>();
+  return rows.filter((r) => !seen.has(r));
+}'
+
+# Prints "path:line:kind:disposition" per finding, so assertions read paths as
+# git wrote them rather than as JSON escaped them.
+findings_of() {
+  python3 -c 'import json,sys
+for f in json.load(sys.stdin): print(":".join(str(f[k]) for k in ("path", "line", "kind", "disposition")))'
+}
+
+# git quotes a non-ASCII path unless told not to, and a quoted path is one
+# nothing downstream recognises.
+eval_non_ascii_path() {
+  printf 'console.log(1);\nexport const a = 1;\n' > "src/é.ts"
+  git add -A && git commit -qm "accent"
+  printf '// The logging that used to be here was removed because it was noisy.\nexport const a = 1;\n' > "src/é.ts"
+  printf '// The helper that used to be here was removed because nobody called it.\nexport const b = 1;\n' > "src/ü.ts"
+  local out
+  out=$("$CHECK" --json | findings_of)
+  echo "$out" | grep -q '^src/é.ts:1:comment-on-deletion:flag$' || return 1
+  echo "$out" | grep -q '^src/ü.ts:1:' || return 1
+}
+
+# User config must not change the header format the parser reads.
+eval_mnemonic_prefix() {
+  echo "$FLAGGED" > src/ingest.ts
+  local config
+  for config in diff.mnemonicPrefix diff.noprefix; do
+    GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0="$config" GIT_CONFIG_VALUE_0=true "$CHECK" --json \
+      | findings_of | grep -q '^src/ingest.ts:2:comment-on-deletion:flag$' || return 1
+  done
+}
+
+# Context lines from diff.interHunkContext would shift every later line number.
+eval_inter_hunk_context() {
+  git config diff.interHunkContext 10
+  cat > src/ingest.ts <<'EOF'
+// top
+export function ingest(rows: string[]) {
+  const seen = new Set<string>();
+  // The logging that used to be here was removed because it was noisy.
+  return rows.filter((r) => !seen.has(r));
+}
+EOF
+  local out
+  out=$("$CHECK" --json | findings_of)
+  echo "$out" | grep -q '^src/ingest.ts:4:comment-on-deletion:' || return 1
+}
+
+# A deleted `-- ` SQL comment arrives as `--- ...` inside a hunk, which is not a
+# file header there.
+eval_sql_reason_deleted() {
+  cat > src/q.sql <<'EOF'
+SELECT 1;
+-- Compared in constant time because a timing leak would expose the token.
+SELECT token FROM sessions;
+EOF
+  git add -A && git commit -qm "sql"
+  printf 'SELECT 1;\nSELECT token FROM sessions;\n' > src/q.sql
+  "$CHECK" --json | findings_of | grep -q '^src/q.sql:.*:reason-deleted:judge$' || return 1
+}
+
+# An added `++ i;` arrives as `+++ ...` and once discarded the rest of its hunk.
+eval_plus_plus_line() {
+  printf 'void f(int i) {\nint j = 0;\nreturn;\n}\n' > src/f.c
+  git add -A && git commit -qm "c"
+  printf 'void f(int i) {\n++ i;\n// The counter that used to be here was removed because it overflowed.\nreturn;\n}\n' > src/f.c
+  "$CHECK" --json | findings_of | grep -q '^src/f.c:3:comment-on-deletion:flag$' || return 1
+}
+
+# A pathspec is a glob unless told otherwise: `f[1].ts` also matches `f1.ts`.
+eval_bracket_filename() {
+  printf '// The helper that used to be here was removed because nobody called it.\nexport const a = 1;\n' > src/f1.ts
+  printf '// The helper that used to be here was removed because nobody called it.\nexport const b = 1;\n' > 'src/f[1].ts'
+  local out
+  out=$("$CHECK" --json --only 'src/f[1].ts' | findings_of)
+  echo "$out" | grep -q '^src/f\[1\].ts:' || return 1
+  echo "$out" | grep -q '^src/f1.ts:' && return 1
+  return 0
+}
+
+# Blocks once from a Stop payload whose cwd is $1, after an edit to $2.
+hook_blocks_in() {
+  local cwd="$1" file="$2" sid="where-$$-$RANDOM"
+  echo "{\"hook_event_name\":\"PostToolUse\",\"cwd\":\"$cwd\",\"session_id\":\"$sid\",\"tool_input\":{\"file_path\":\"$file\"}}" | python3 "$GUARD" | grep -q 'flagged' || return 1
+  echo "{\"hook_event_name\":\"Stop\",\"cwd\":\"$cwd\",\"session_id\":\"$sid\"}" | python3 "$GUARD" | grep -q '"decision": "block"' || return 1
+}
+
+# A linked worktree has a `.git` file, not a directory.
+eval_hook_in_worktree() {
+  local wt="$PWD-wt"
+  git worktree add -q --detach "$wt" || return 1
+  echo "$FLAGGED" > "$wt/src/ingest.ts"
+  local ok=0
+  hook_blocks_in "$wt" "$wt/src/ingest.ts" || ok=1
+  git worktree remove --force "$wt"
+  return $ok
+}
+
+# A session started below the top level has no `.git` at its cwd, and diff
+# paths stay relative to the top level.
+eval_hook_in_subdir() {
+  echo "$FLAGGED" > src/ingest.ts
+  hook_blocks_in "$PWD/src" "$PWD/src/ingest.ts" || return 1
+  (cd src && "$CHECK" --json | findings_of | grep -q '^src/ingest.ts:2:') || return 1
+}
+
+# The edited list names files, so it lives in a directory only its owner reads.
+eval_hook_state_private() {
+  echo "$FLAGGED" > src/ingest.ts
+  echo "{\"hook_event_name\":\"PostToolUse\",\"cwd\":\"$PWD\",\"session_id\":\"private-$$\",\"tool_input\":{\"file_path\":\"$PWD/src/ingest.ts\"}}" | python3 "$GUARD" > /dev/null
+  local dir
+  dir=$(python3 -c 'import os,tempfile; print(os.path.join(tempfile.gettempdir(), f"diff-check-{os.getuid()}"))')
+  [[ -f "$dir/private-$$.edited" ]] || return 1
+  [[ $(stat -c %a "$dir") == 700 ]] || return 1
+  rm -f "$dir/private-$$.edited"
+}
+
+run_test "non-ASCII paths are read unquoted" eval_non_ascii_path
+run_test "diff prefix config does not change paths" eval_mnemonic_prefix
+run_test "inter-hunk context does not shift lines" eval_inter_hunk_context
+run_test "deleted SQL reason is a candidate" eval_sql_reason_deleted
+run_test "added ++ line keeps its hunk" eval_plus_plus_line
+run_test "bracket filename matches literally" eval_bracket_filename
+run_test "hook works in a linked worktree" eval_hook_in_worktree
+run_test "hook works from a subdirectory" eval_hook_in_subdir
+run_test "hook state is private to the user" eval_hook_state_private
 run_test "hook ignores judge findings" eval_hook_ignores_judge
 run_test "hook never breaks the session" eval_hook_never_errors
 run_test "hook reports a judge finding on write" eval_hook_reports_judge_on_write

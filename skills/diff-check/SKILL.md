@@ -23,10 +23,13 @@ and report back.
 ```
 diff_check.py                    # working tree and staged, plus untracked files
 diff_check.py --staged           # only what is about to be committed
-diff_check.py --range main...    # a branch
+diff_check.py --range <base>...  # a branch
 diff_check.py src/a.ts src/b.ts  # rate the comments already in these files
 diff_check.py --json             # machine-readable
 ```
+
+`<base>` is the default branch, resolved and never assumed: it is what
+`git symbolic-ref --short refs/remotes/origin/HEAD` prints.
 
 One call. Do not run it per file.
 
