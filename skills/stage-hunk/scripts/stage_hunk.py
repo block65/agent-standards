@@ -54,14 +54,43 @@ def usage() -> NoReturn:
     sys.exit(1)
 
 
-def git(*args: str, stdin: str | None = None) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        ["git", *args], input=stdin, capture_output=True, text=True
+@dataclass
+class GitResult:
+    returncode: int
+    stdout: str
+    stderr: str
+
+
+def git(*args: str, stdin: str | None = None) -> GitResult:
+    # Bytes in and out: text mode would translate "\r\n" and the rebuilt patch
+    # would no longer match the index. surrogateescape round-trips any byte.
+    # Literal pathspecs, so "f[1].txt" never also matches "f1.txt".
+    result = subprocess.run(
+        ["git", "--literal-pathspecs", *args],
+        input=stdin.encode("utf-8", "surrogateescape") if stdin is not None else None,
+        capture_output=True,
+    )
+    return GitResult(
+        result.returncode,
+        result.stdout.decode("utf-8", "surrogateescape"),
+        result.stderr.decode("utf-8", "replace"),
     )
 
 
+# Pinned against user config that changes the output this script parses:
+# colour codes, an external diff tool, other path prefixes, merged hunks.
+DIFF_FORMAT = (
+    "--no-color",
+    "--no-ext-diff",
+    "--no-relative",
+    "--src-prefix=a/",
+    "--dst-prefix=b/",
+    "--inter-hunk-context=0",
+)
+
+
 def read_diff(file: str, *, staged: bool, context: int | None) -> str:
-    args = ["diff"]
+    args = ["diff", *DIFF_FORMAT]
     if context is not None:
         args.append(f"-U{context}")
     if staged:
@@ -88,7 +117,9 @@ def parse_diff(diff: str) -> tuple[list[str], list[Hunk]]:
     header: list[str] = []
     hunks: list[Hunk] = []
     current: Hunk | None = None
-    for line in diff.splitlines():
+    # Split on "\n" alone: splitlines() also breaks on "\r", "\x0c" and other
+    # characters that can sit inside a line of the file.
+    for line in diff.split("\n")[:-1] if diff.endswith("\n") else diff.split("\n"):
         m = HUNK_RE.match(line)
         if m:
             current = Hunk(
@@ -156,6 +187,9 @@ def collect_changed_lines(diff_u0: str) -> list[ChangedLine]:
                 new_line += 1
             elif tag == "-":
                 changed.append(ChangedLine(hunk_idx, "-", old_line, raw[1:]))
+                old_line += 1
+            elif tag == " ":
+                new_line += 1
                 old_line += 1
     return changed
 
@@ -249,6 +283,8 @@ def build_patch(
     selected addition — so under strict_sides a deletion matches old_ranges only.
     """
     header, hunks = parse_diff(diff)
+    # A mode change is not part of any hunk, so selecting hunks never takes it.
+    header = [l for l in header if not l.startswith(("old mode ", "new mode "))]
     out: list[str] = []
     emitted_delta = 0  # net (new - old) lines from hunks emitted so far (stage)
 
@@ -330,11 +366,48 @@ def apply_patch(patch: str, *, unstage: bool) -> bool:
     return False
 
 
-def list_hunks(file: str, *, staged: bool) -> None:
-    diff = read_diff(file, staged=staged, context=0)
+def is_tracked(file: str) -> bool:
+    return git("ls-files", "--error-unmatch", "--", file).returncode == 0
+
+
+def mode_change(header: list[str]) -> str | None:
+    old = next((l[9:] for l in header if l.startswith("old mode ")), None)
+    new = next((l[9:] for l in header if l.startswith("new mode ")), None)
+    return f"{old} -> {new}" if old and new else None
+
+
+def read_hunks(file: str, *, staged: bool, context: int | None) -> tuple[str, list[str], list[Hunk]]:
+    """Read the diff and stop with a reason when it has no hunks to select."""
+    diff = read_diff(file, staged=staged, context=context)
     if not diff:
+        if not staged and not is_tracked(file):
+            die(f"{file} is untracked: it has no hunks to pick; `git add` stages it whole")
         die(f"no {'staged' if staged else 'unstaged'} changes in {file}")
-    _, hunks = parse_diff(diff)
+    header, hunks = parse_diff(diff)
+    if not hunks:
+        if any(l.startswith("Binary files ") for l in header):
+            die(f"{file} is binary: it has no hunks; `git add` stages it whole")
+        mode = mode_change(header)
+        if mode:
+            die(f"{file} has only a mode change ({mode}), which is not a hunk;"
+                " use `git update-index --chmod`")
+        die(f"no hunks in the diff of {file}")
+    return diff, header, hunks
+
+
+def note_mode_change(header: list[str], file: str) -> None:
+    mode = mode_change(header)
+    if mode:
+        print(
+            f"note: {file} also changes mode {mode}; no hunk or line carries it,"
+            " so this script leaves it alone (`git update-index --chmod`)",
+            file=sys.stderr,
+        )
+
+
+def list_hunks(file: str, *, staged: bool) -> None:
+    _, header, hunks = read_hunks(file, staged=staged, context=0)
+    note_mode_change(header, file)
     for idx, h in enumerate(hunks, start=1):
         adds = dels = 0
         preview = ""
@@ -354,9 +427,8 @@ def list_hunks(file: str, *, staged: bool) -> None:
 
 
 def list_lines(file: str, *, staged: bool) -> None:
-    diff = read_diff(file, staged=staged, context=0)
-    if not diff:
-        die(f"no {'staged' if staged else 'unstaged'} changes in {file}")
+    diff, header, _ = read_hunks(file, staged=staged, context=0)
+    note_mode_change(header, file)
     changed = collect_changed_lines(diff)
     for idx, cl in enumerate(changed, start=1):
         text = cl.text if len(cl.text) <= 80 else cl.text[:77] + "..."
@@ -366,9 +438,7 @@ def list_lines(file: str, *, staged: bool) -> None:
 
 
 def stage(file: str, indices: list[str], *, unstage: bool, by_line: bool) -> None:
-    diff = read_diff(file, staged=unstage, context=None)
-    if not diff:
-        die(f"no {'staged' if unstage else 'unstaged'} changes in {file}")
+    diff, header, _ = read_hunks(file, staged=unstage, context=None)
 
     unit = "line" if by_line else "hunk"
     wanted = parse_index_args(indices, unit=unit)
@@ -392,13 +462,26 @@ def stage(file: str, indices: list[str], *, unstage: bool, by_line: bool) -> Non
 
     if not apply_patch(patch, unstage=unstage):
         print("error: generated patch failed to apply", file=sys.stderr)
+        if any(l.startswith(("new file mode ", "deleted file mode ")) for l in header):
+            print(
+                "note: the file is new or deleted in this diff; git cannot apply"
+                " part of a file's creation or deletion, only all of it",
+                file=sys.stderr,
+            )
+        else:
+            print(
+                "note: if the file has a non-UTF-8 encoding or a clean/smudge"
+                " filter, the rebuilt patch may not match the index",
+                file=sys.stderr,
+            )
         print("patch content:", file=sys.stderr)
         print(patch, file=sys.stderr)
         sys.exit(1)
 
+    note_mode_change(header, file)
     verb = "unstaged" if unstage else "staged"
     print(f"{verb} {unit}s {' '.join(indices)} from {file}")
-    print(git("diff", "--cached", "--stat", "--", file).stdout, end="")
+    print(git("diff", "--cached", "--no-color", "--stat", "--", file).stdout, end="")
 
 
 def main(argv: list[str]) -> None:

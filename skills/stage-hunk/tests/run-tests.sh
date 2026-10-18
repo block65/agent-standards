@@ -395,6 +395,99 @@ run_test "half a rewrite keeps both lines (potions)" eval26
 run_test "pure deletions by line (taiwan)" eval27
 run_test "--unstage one line of a block (pets)" eval28
 
+# --- Hardening ------------------------------------------------------------
+# Each eval commits its own ten-line fixture, then rewrites lines 1 and 10 so
+# the file has two one-line hunks.
+
+ten_lines() {
+  printf '%s\n' one two three four five six seven eight nine ten > "$1"
+  git add -- "$1" && git commit -qm "fixture $1"
+  printf '%s\n' ONE two three four five six seven eight nine TEN > "$1"
+}
+
+# Eval 29: a mode change rides along with no hunk, so it stays unstaged.
+eval29() {
+  ten_lines f.sh
+  chmod +x f.sh
+  local listing
+  listing=$("$STAGE" --list-hunks f.sh 2>&1)
+  [[ "$listing" == *"mode 100644 -> 100755"* ]] || return 1
+  "$STAGE" f.sh 2 2>/dev/null
+  git diff --cached f.sh | grep -q '^+TEN' || return 1
+  ! git diff --cached f.sh | grep -q '^new mode'
+}
+
+# Eval 30: a name that is also a glob selects only itself.
+eval30() {
+  ten_lines 'f[1].txt'
+  # Committed after, since `git add -- 'f[1].txt'` would also take f1.txt.
+  ten_lines f1.txt
+  [[ $("$STAGE" --list-hunks 'f[1].txt' | wc -l) -eq 2 ]] || return 1
+  "$STAGE" 'f[1].txt' 1
+  [[ -z $(git diff --cached --name-only -- f1.txt) ]]
+}
+
+# Eval 31: CRLF line endings survive the rebuilt patch.
+eval31() {
+  printf '%s\r\n' one two three four five six seven eight nine ten > crlf.txt
+  git add crlf.txt && git commit -qm crlf
+  printf '%s\r\n' ONE two three four five six seven eight nine TEN > crlf.txt
+  "$STAGE" crlf.txt 2
+  git show :crlf.txt | tail -1 | grep -q $'^TEN\r$' || return 1
+  git show :crlf.txt | head -1 | grep -q $'^one\r$'
+}
+
+# Eval 32: user diff config that changes the output format is overridden.
+eval32() {
+  ten_lines cfg.txt
+  git config color.ui always
+  git config diff.noprefix true
+  git config diff.mnemonicPrefix true
+  git config diff.external false
+  [[ $("$STAGE" --list-hunks cfg.txt | wc -l) -eq 2 ]] || return 1
+  "$STAGE" cfg.txt 1
+  git -c color.ui=never diff --cached --no-ext-diff cfg.txt | grep -q '^+ONE'
+}
+
+# Eval 33: diff.interHunkContext puts context lines in the -U0 listing; they
+# must not shift the line addresses.
+eval33() {
+  printf '%s\n' l1 l2 l3 l4 l5 l6 l7 > ctx.txt
+  git add ctx.txt && git commit -qm ctx
+  printf '%s\n' L1 l2 l3 l4 l5 L6 l7 > ctx.txt
+  git config diff.interHunkContext 5
+  "$STAGE" --list-lines ctx.txt | grep -q '^line 4: +6 .*"L6"' || return 1
+  "$STAGE" --lines ctx.txt 3-4
+  git diff --cached ctx.txt | grep -q '^+L6' || return 1
+  ! git diff --cached ctx.txt | grep -q '^+L1'
+}
+
+# Eval 34: files with no hunks say why instead of "no changes" or silence.
+eval34() {
+  local out
+  printf 'l1\nl2\n' > untracked.txt
+  out=$("$STAGE" --list-hunks untracked.txt 2>&1) && return 1
+  [[ "$out" == *"untracked"* ]] || return 1
+  printf 'a\0b' > bin.dat
+  git add bin.dat && git commit -qm bin
+  printf 'a\0c' > bin.dat
+  out=$("$STAGE" --list-hunks bin.dat 2>&1) && return 1
+  [[ "$out" == *"binary"* ]] || return 1
+  printf 'n1\nn2\nn3\n' > fresh.txt
+  git add fresh.txt
+  out=$("$STAGE" --unstage --lines fresh.txt 2 2>&1) && return 1
+  [[ "$out" == *"new or deleted"* ]] || return 1
+  # The failed partial unstage left the new file staged whole.
+  [[ $(git diff --cached fresh.txt | grep -c '^+n') -eq 3 ]]
+}
+
+run_test "mode change is never staged with a hunk" eval29
+run_test "glob characters in a file name are literal" eval30
+run_test "CRLF file stages one hunk" eval31
+run_test "colour, prefix and external diff config ignored" eval32
+run_test "interHunkContext does not shift line addresses" eval33
+run_test "untracked, binary and new-file cases explain themselves" eval34
+
 echo ""
-echo "$PASS passed, $FAIL failed out of 28"
+echo "$PASS passed, $FAIL failed out of $((PASS + FAIL))"
 [[ $FAIL -eq 0 ]]

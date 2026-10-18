@@ -3,7 +3,7 @@ name: stage-hunk
 description: "Stage or unstage specific hunks, or individual lines within a hunk, from a changed file in a git repo without interactive prompts. Use this skill whenever you need to partially stage or unstage changes: committing only the bug fix hunk but not the refactor, taking one line out of a block of added lines, or unstaging something that was staged by mistake. Common phrases: 'commit only the X changes', 'stage that hunk', 'stage just that line', 'only the second of those lines', 'don't include the Y part', 'unstage the refactor'. Pass args as: first line = file path, remaining lines = plain-language description of which changes to (un)stage. Example args: \"src/foo.ts\\nstage only the import changes, leave the function rename\"."
 model: haiku
 context: fork
-allowed-tools: Bash(git diff *), Bash(*/stage_hunk.py *)
+allowed-tools: Bash(git diff -U10 -- *), Bash(*/skills/stage-hunk/scripts/stage_hunk.py *)
 ---
 
 You stage or unstage specific hunks from a file. You do NOT commit.
@@ -84,5 +84,10 @@ ${CLAUDE_PLUGIN_ROOT}/skills/stage-hunk/scripts/stage_hunk.py --lines <file> 2 5
 and new line both in the index (the script warns when a selection does this).
 
 If the listing is insufficient to match the description, you may add one
-`git diff -U10 -- <file>` call for more context. If you still can't match,
-report back with a summary so the caller can clarify; do not guess indices.
+`git diff -U10 -- <file>` call for more context, in exactly that form. If you
+still can't match, report back with a summary so the caller can clarify; do not
+guess indices.
+
+A mode change, an untracked file and a binary file have no hunks, so the script
+never stages them and says so. Pass its message back to the caller rather than
+working around it.
