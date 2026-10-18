@@ -8,7 +8,7 @@ import type {
 
 // /recycle and /handover restart the session in this tmux pane without a model turn in the old one.
 // The pane respawns as the user's login shell with `claude` typed into it. The new session reads
-// the saved context from the store by pane id and sends it with its first prompt
+// the saved context from the store by tmux server and pane id and sends it with its first prompt
 
 // How long saved context waits for the pane's next session
 const PENDING_MS = 120_000;
@@ -33,17 +33,35 @@ function quote(text: string) {
 	return `'${text.replaceAll("'", `'\\''`)}'`;
 }
 
-function pendingKey(pane: string) {
-	return `pending:${pane}`;
+// Pane ids restart at %0 in every tmux server, so the server's socket is part of the key
+async function pendingKey($: EngineInterface) {
+	const [pane, tmux] = await Promise.all([
+		$.env.get("TMUX_PANE"),
+		$.env.get("TMUX"),
+	]);
+
+	if (!pane) {
+		return undefined;
+	}
+
+	const socket = tmux?.split(",")[0];
+
+	return {
+		pane,
+		key: socket ? `pending:${socket}:${pane}` : `pending:${pane}`,
+	};
 }
 
-// Harness-injected user text opens with a tag, but a paste is the person's own
+// User text the harness injected, as opposed to anything the person typed or pasted
+const HARNESS_TAG =
+	/^<(system-reminder|command-(name|message|args)|local-command-[\w-]+|task-notification|agent-message)\b/;
+
 function transcript(messages: readonly SessionMessage[]) {
 	return messages
 		.filter(
 			(message) =>
 				message.text !== "" &&
-				(!message.text.startsWith("<") || message.text.startsWith("<pasted")),
+				!(message.role === "user" && HARNESS_TAG.test(message.text)),
 		)
 		.map((message) => `## ${message.role}\n${message.text}\n`);
 }
@@ -157,8 +175,9 @@ async function chooseRestart(
 
 // One second of sleep lets the command's reply show before the pane restarts
 function respawnScript(pane: string, cwd: string, model: string) {
+	// Quoted again inside, or the login shell globs a [1m] suffix
 	const claude = /^[\w.:[\]-]+$/.test(model)
-		? `claude --model ${model}`
+		? `claude --model ${quote(model)}`
 		: "claude";
 	const target = quote(pane);
 
@@ -166,9 +185,9 @@ function respawnScript(pane: string, cwd: string, model: string) {
 }
 
 async function run($: EngineInterface, e: CommandRunInput) {
-	const pane = await $.env.get("TMUX_PANE");
+	const slot = await pendingKey($);
 
-	if (!pane) {
+	if (!slot) {
 		return { text: `${e.command}: not in a tmux pane, nothing to recycle.` };
 	}
 
@@ -184,9 +203,9 @@ async function run($: EngineInterface, e: CommandRunInput) {
 		cwd,
 	);
 	const at = await $.clock.now();
-	await $.store.set(pendingKey(pane), { at, context, kick } satisfies Pending);
+	await $.store.set(slot.key, { at, context, kick } satisfies Pending);
 
-	const script = respawnScript(pane, cwd, model);
+	const script = respawnScript(slot.pane, cwd, model);
 	const { exitCode, stderr } = await $.process.run([
 		"tmux",
 		"run-shell",
@@ -195,7 +214,7 @@ async function run($: EngineInterface, e: CommandRunInput) {
 	]);
 
 	if (exitCode !== 0) {
-		await $.store.delete(pendingKey(pane));
+		await $.store.delete(slot.key);
 
 		return { text: `${e.command}: tmux refused: ${stderr.trim()}` };
 	}
@@ -206,15 +225,15 @@ async function run($: EngineInterface, e: CommandRunInput) {
 }
 
 async function paneWithPending($: EngineInterface) {
-	const pane = await $.env.get("TMUX_PANE");
+	const slot = await pendingKey($);
 
-	if (!pane) {
+	if (!slot) {
 		return undefined;
 	}
 
-	const pending = await $.store.get(pendingKey(pane));
+	const pending = await $.store.get(slot.key);
 
-	return isPending(pending) ? { pane, pending } : undefined;
+	return isPending(pending) ? { key: slot.key, pending } : undefined;
 }
 
 async function registerCommands($: EngineInterface) {
@@ -247,7 +266,7 @@ async function kickIfPending($: EngineInterface, isInteractive: boolean) {
 		return;
 	}
 
-	await $.store.delete(pendingKey(found.pane));
+	await $.store.delete(found.key);
 }
 
 // A prompt.compose section would not run where an organization manages Claude Code
@@ -259,7 +278,7 @@ async function withPendingContext($: EngineInterface, e: PromptSubmitInput) {
 		return e;
 	}
 
-	await $.store.delete(pendingKey(found.pane));
+	await $.store.delete(found.key);
 
 	return { ...e, context: [...(e.context ?? []), found.pending.context] };
 }
