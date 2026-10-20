@@ -30,9 +30,9 @@ specific module if needed.
   (`[Component]`, `[Reason]`) rather than inventing a product, API, or incident
   to make an example concrete. Whatever the example contains gets copied along
   with the form it teaches, invented specifics and register included.
-- **Label the two sides in words:** `BAD:` and `GOOD:`, never `❌`/`✅`. An
-  example comment is a template for a real one, and emoji in it become emoji in
-  code.
+- **Label the two sides in prose:** a `BAD:` or `GOOD:` line above each side's
+  own code block, never `❌`/`✅` and never a comment inside the code. An example
+  is a template, so a label inside it becomes a comment in real code.
 - **Antecedents:** Ensure clear antecedents for "it", "this", "that". Do not use
   "the [noun]" for an entity the document never establishes.
 
