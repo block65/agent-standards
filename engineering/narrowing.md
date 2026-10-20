@@ -35,12 +35,6 @@ has enumerated yet.
   value down instead of the handle itself. Each caller repeats the read, and no
   frame can re-derive it or reach another field once the value is narrowed. Pass
   the handle; let each consumer read what it needs.
-- **A function that takes a projection of its caller.** A function called once,
-  not generic, whose parameters are a slice its single caller had to build
-  first. This is the same narrowing one frame too early: the caller consumed
-  nothing, it pre-narrowed so the callee would not have to hold the whole
-  object. The boundary reads as arbitrary because it is. Give the function the
-  object and move the narrowing inside; the boundary resolves on its own.
 
 ## Where narrowing belongs
 
