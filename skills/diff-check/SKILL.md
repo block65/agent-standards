@@ -9,9 +9,7 @@ produce four figures of findings and get muted; on one change they produce a
 handful.
 
 What is here is what a linter cannot do: two checks need the diff, the third
-needs someone to read the comment against the code. Everything decidable from
-the source alone is enforced by the `block65/*` rules in
-`@block65/oxlint-plugin`, and is not repeated here.
+needs someone to read the comment against the code.
 
 ## Run it
 
