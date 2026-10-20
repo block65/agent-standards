@@ -5,12 +5,6 @@
 
 ## Components
 
-- **Function declarations:** Use `function ComponentName()`, not arrow functions
-  assigned to variables.
-- **No `FC`:** Do not use `React.FC` or `FC`. Type props directly on the
-  function parameter.
-- **Props:** Use `interface` for pure domain prop types. Use `type` aliases when
-  intersecting with `ComponentProps<typeof X>` or other generics.
 - **Named imports:** Always use named imports from React
   (`import { useState } from 'react'`), never `import React`.
 
@@ -31,13 +25,12 @@
 ## File Naming
 
 - **Components:** `Component.tsx` and `Component.css.ts`.
-- **Hooks:** `use-hook.ts` (kebab-case with `use-` prefix).
+- **Hooks:** `use-[name].ts`, with the `use-` prefix.
 
 ## Styling
 
 - **Vanilla Extract only.** No CSS modules, no Tailwind.
 - **Co-locate styles:** `*.css.ts` files next to the component they style.
-- **No `style` prop:** Never pass inline styles via the `style` prop.
 
 ## State
 
@@ -54,8 +47,7 @@
 
 ## Forms & Validation
 
-- **Valibot** for schema validation. Use `safeParse` and map issues to field
-  errors.
+- **Valibot** for schema validation. Map its issues to field errors.
 
 ## Context
 

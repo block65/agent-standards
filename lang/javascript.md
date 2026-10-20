@@ -18,41 +18,21 @@
 
 ## Functional Style
 
-- **`const` over `let`:** If you reach for `let`, the code can likely be
-  restructured as a transformation. Never use a `let` + mutation block
-  (`let x; if (...) x = a; else x = b`). Compute the value in an expression and
-  assign to `const`.
 - **Pure functions:** Prefer input→output functions. Side effects should be
   explicit and minimal.
-- **Transformation over mutation:** Use `.map()`, `.filter()`, spread over
-  imperative loops and object mutation. Never build an array with
-  `const arr = []; arr.push(...)`; use `.map()`, `.flatMap()`, `.filter()`, or
-  `.reduce()`. Never build an object by constructing an empty `{}` and then
-  mutating it; use `Object.fromEntries`, spread, or a builder that preserves
-  types.
+- **Transformation over mutation:** Build values with `.map()`, `.flatMap()`,
+  `.filter()`, `Object.fromEntries`, spread, or a builder that preserves types,
+  not with imperative loops and object mutation.
 - **No collection-building loops.** Do not fill an empty array or object with
   `for`, `for…of`, `for…in`, `for await…of`, `while`, or `.forEach()`. Use a
   transformation. Loops that perform side effects or consume streams still need
   an explicit termination or cancellation condition; no `for (;;)`,
   `while (true)`, or equivalent constant-condition loops.
-- **`Object.fromEntries()` over `.reduce()`:** Prefer `Object.fromEntries()` for
-  building objects from arrays. Use `.reduce()` only when `fromEntries` doesn't
-  fit.
-- **Early returns:** A single early return at the top level of a function is
-  fine for a guard or precondition check. Do not use early returns nested inside
-  conditional blocks.
-- **No nested ternaries:** Use `iife()` with a `switch` or `if/else` for
-  multi-branch expressions.
+- **Early returns:** Return early at the top level of a function for a guard or
+  precondition check. Do not use early returns nested inside conditional blocks.
 - **`iife()` for complex `const` values:** Use `iife()` from `@block65/toolkit`
-  for `const` values needing branching logic, instead of `let` + reassignment or
-  raw `(() => {})()`.
-
-## Imports
-
-- **Imports stay contiguous:** Keep all `import` statements as one unbroken
-  block at the top; never interleave any other code (declarations, types,
-  constants, functions). Side-effect imports go in the same block. A constant or
-  helper needed near the imports goes _below_ them, not inside.
+  with a `switch` or `if/else` for `const` values needing branching logic,
+  instead of `let` + reassignment or raw `(() => {})()`.
 
 ## File Organization
 
@@ -76,8 +56,8 @@
 
 ## Error Handling
 
-- **Never throw a plain `Error`.** Every error you construct is a `CustomError`
-  from `@block65/custom-error`. A plain `Error` carries a string and nothing
+- **Never throw a plain `Error`.** Throw a `CustomError` from
+  `@block65/custom-error`. A plain `Error` carries a string and nothing
   else: no status, no machine-readable code, no way for the top-level handler to
   decide what the user should see.
 - **Sensitive data goes in `debug`, never in the message.** `.debug({ ... })` is
@@ -123,13 +103,10 @@
     fallback shape, log/report the error first and document why a fallback is
     the right behaviour at this boundary.
   - empty `catch (e) {}` or argless `catch {}` with no body
-- **Never `catch (e) { throw e }`:** No-op. Delete it.
 - **Recovery needs an explanation.** A catch that completes without throwing
   must start with `// NOTE: …` explaining why recovery is appropriate at this
   boundary, and log or report the error. A comment alone does not handle an
   error; comment-only catch bodies and empty `.catch()` callbacks are forbidden.
-- **Never `void somePromise()`:** Always `await`, `return`, or route through an
-  established pattern. Add a comment when the intent is non-obvious.
 - **Route through the established error path:** Do not bypass the project's
   error handler.
 
@@ -137,9 +114,7 @@
 
 - **`Promise.withResolvers()` when `resolve`/`reject` escape the executor.**
   Capturing them in an outer `let`, storing them on an object, or handing them
-  to a caller is the deferred pattern, and typing it takes a `let` plus a
-  definite-assignment or non-null assertion, all of them banned. One call
-  replaces the lot.
+  to a caller is the deferred pattern. One call replaces it.
 - **`new Promise` only wraps a callback or event API,** and only when the work
   starts inside the executor. Never wrap something that already returns a
   promise: `async`/`await` composes it, the constructor drops rejections between
@@ -148,15 +123,31 @@
   cancelled. Use `setTimeout` from `node:timers/promises` with a `signal` in
   Node, or a cancellable helper from the shared toolkit elsewhere.
 
-```ts
-// BAD: resolve escapes the executor
-let resolve: (value: Result) => void;
-const ready = new Promise<Result>((res) => {
-	resolve = res;
-});
+BAD: `resolve` escapes the executor.
 
-// GOOD
-const { promise: ready, resolve } = Promise.withResolvers<Result>();
+```ts
+export function createGate() {
+	let resolve: (value: Result) => void;
+	const ready = new Promise<Result>((res) => {
+		resolve = res;
+	});
+
+	return {
+		ready,
+		open: (value: Result) => {
+			resolve(value);
+		},
+	};
+}
+```
+
+GOOD: one call returns the promise and its resolver.
+
+```ts
+export function createGate() {
+	const { promise: ready, resolve } = Promise.withResolvers<Result>();
+	return { ready, open: resolve };
+}
 ```
 
 ## Structure
@@ -179,10 +170,6 @@ const { promise: ready, resolve } = Promise.withResolvers<Result>();
   conversion, not `String(value)`. Narrow away `null`/`undefined` first, since
   `.toString()` throws on them, and that loudness is the point; `String()`
   silently prints `"undefined"`.
-- **`Number.parseInt` / `Number.parseFloat` over `Number()`:** Be explicit about
-  radix and float vs int. `Number.parseInt(s, 10)` for integers;
-  `Number.parseFloat(s)` for floats. `Number(s)` hides the parse mode and
-  silently coerces booleans, `null`, and arrays.
 
 ## URLs and Paths
 
@@ -192,20 +179,6 @@ const { promise: ready, resolve } = Promise.withResolvers<Result>();
   segments.
 - **For filesystem paths,** use `node:path` (`path.join`, `path.resolve`), never
   string concat.
-
-## Truthiness Filters
-
-- **`.filter(isTruthy)` over `.filter(Boolean)`:** Use a typed `isTruthy`
-  predicate (e.g. from `@block65/toolkit`) so TypeScript narrows the result
-  type. `.filter(Boolean)` does the runtime work but TS cannot narrow the
-  element type from it.
-
-## APIs & Modernity
-
-- **Deprecated APIs:** Never use deprecated APIs. Use modern, standard
-  alternatives.
-- **Never `btoa`/`atob`:** binary-unsafe legacy shims. Use
-  `Uint8Array.fromBase64`/`.toBase64()`, or `Buffer` conversions in Node.
 
 ## Project Verification
 
@@ -223,38 +196,28 @@ const { promise: ready, resolve } = Promise.withResolvers<Result>();
 
 ## Naming
 
-- **Callback parameters:** Name caught errors `err`, including `.catch()`
-  callbacks. Name the event parameter in an event handler `e`.
+- **Event parameters:** Name the event parameter in an event handler `e`.
 - **Never `index.ts`:** Entry points and barrels are always `main.ts`.
 - **No tense in variable names:** Prefer `expireTime` over `expiresAt`,
   `expireTtlSecs` over `expiresIn`.
-- **Intentional abbreviations only:** Conventional short names (`i`, `j`, `n`)
-  are fine. Domain abbreviations (`ms`, `ctx`, `req`) only when unambiguous and
-  consistent across the codebase. Never abbreviate when the short form is
-  ambiguous.
+- **Intentional abbreviations only:** Domain abbreviations (`ms`, `ctx`) only
+  when unambiguous and consistent across the codebase. Never abbreviate when the
+  short form is ambiguous.
 - **Grep before naming:** Search the codebase before naming anything. Match the
   established vocabulary: `create` vs `insert`, `log` vs `entry`, etc.
-
-## Date & Time
-
-- **Temporal:** Use `Temporal` for all date/time handling. Polyfill:
-  `temporal-polyfill`.
 
 ## Nullability
 
 Modelled on Rust's `Option<T>`: absence is one state, and it is resolved by the
 code that knows what missing means. Background: `compend get rust-book option`.
 
-- **`undefined` is the only absence value.** It means "not specified". `null`
-  means "specified as empty" and lives at boundaries only: DB drivers, wire
-  payloads, third-party responses. The parse layer maps it to `undefined`
-  inbound and back outbound. Above that layer `null` never appears in a
-  signature, and `|| null` or `?? undefined` in domain logic means the boundary
+- **No `?? undefined` in domain logic.** The parse layer converts a boundary's
+  absence value to `undefined`; a `?? undefined` above it means that boundary
   sits in the wrong place.
-- **Never a sentinel.** `?? ""`, `?? 0`, `?? {}`, `?? []` on a value the code
-  requires turns "missing" into "present and wrong", so the failure surfaces
-  somewhere unrelated with nothing pointing back to the cause. `??` supplies a
-  value that is valid in the domain, or it does not appear.
+- **Never a sentinel.** `?? {}` or `?? []` on a value the code requires turns
+  "missing" into "present and wrong", so the failure surfaces somewhere
+  unrelated with nothing pointing back to the cause. `??` supplies a value that
+  is valid in the domain, or it does not appear.
 - **A required parameter is a promise.** Anything not `Option<T>` is present.
   Widening a parameter to `| undefined` so one caller can skip deciding breaks
   that promise for every other caller, and the signature ends up describing the
@@ -277,8 +240,6 @@ code that knows what missing means. Background: `compend get rust-book option`.
   than about five lines that changes subject. An unbroken twenty-line body hides
   where one step ends and the next begins, and it is the first thing to fix in
   generated code.
-- **Blank line before the closing `return`** of any function longer than two
-  statements.
 - **Blank lines are not extraction.** More than about four groups means the
   function does more than one job. Split it.
 - **No decorative blank lines:** none directly after `{` or before `}`, never
@@ -287,6 +248,7 @@ code that knows what missing means. Background: `compend get rust-book option`.
 ```ts
 export async function publish(id: Id, body: Body) {
 	const record = await store.get(id);
+
 	if (!record) {
 		throw new CustomError("record not found").debug({ id });
 	}
@@ -294,27 +256,10 @@ export async function publish(id: Id, body: Body) {
 	const payload = serialise(body);
 	const headers = signHeaders(payload);
 
-	const response = await transport.send(record.endpoint, payload, headers);
+	const res = await transport.send(record.endpoint, payload, headers);
 
-	return parseReceipt(response);
+	return parseReceipt(res);
 }
-```
-
-- **Bind an `await` before using its value.** Never nest one inside a call or
-  expression: `fn(await load(id))` buries the suspension point in an argument
-  list and leaves the value with no name saying what it is. Source is not
-  minified output, and the extra `const` costs one line. Where the value has no
-  use beyond that one call, `await load(id).then(fn)` also reads in execution
-  order. Enforced by `block65/no-nested-await` from `@block65/oxlint-plugin`.
-
-```ts
-// BAD: awaits nested as arguments
-await publish(await serialise(await store.get(id)));
-
-// GOOD
-const record = await store.get(id);
-const payload = await serialise(record);
-await publish(payload);
 ```
 
 - **Destructuring:** Always destructure arrays and objects rather than accessing
