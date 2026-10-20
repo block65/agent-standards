@@ -12,28 +12,24 @@ logic, modules, and small system slices that don't need a browser.
    for skipping `await`s. If a test passes only with fake timers, the production
    code probably has a race.
 
-2. **Never fix a seed.** Use `crypto.randomUUID()`, `Date.now()`, faker without
-   a fixed seed. Seed with a random value and log it, so a failure is
-   reproducible. A test that passes for one seed and breaks for another means a
-   system bug, not a flaky test.
+2. **Never fix a seed.** Use `crypto.randomUUID()`, `Temporal.Now.instant()`,
+   faker without a fixed seed. Seed with a random value and log it, so a failure
+   is reproducible. A test that passes for one seed and breaks for another means
+   a system bug, not a flaky test.
 
 3. **Never `--update` snapshots to fix a failure.** Snapshots regenerate when
    the spec genuinely changes. If you don't know why the snapshot differs, the
    system changed in a way you don't understand; investigate before
    regenerating.
 
-4. **Never leave `.only`, `.skip`, or `.todo` in committed code.** `.only` hides
-   the rest of the suite; `.skip` hides a failure; `.todo` hides an unwritten
-   test that quietly stays unwritten.
-
-5. **Never assert so loosely it can't fail.** `expect(result).toBeDefined()` is
+4. **Never assert so loosely it can't fail.** `expect(result).toBeDefined()` is
    rarely the assertion you actually mean. Pin the meaningful properties.
 
-6. **Never catch in a test to keep it green.** `try { fn() } catch {}` swallows
+5. **Never catch in a test to keep it green.** `try { fn() } catch {}` swallows
    the signal. Use `expect(fn).toThrow(...)` for thrown errors and let
    everything else propagate.
 
-7. **Never raise per-test or `expect.poll` timeouts to absorb a flake.** SLOW =
+6. **Never raise per-test or `expect.poll` timeouts to absorb a flake.** SLOW =
    FAIL; see `engineering/testing.md`. Find the actual completion event or fix
    the saturation in the product.
 
@@ -41,10 +37,15 @@ logic, modules, and small system slices that don't need a browser.
 
 Describe behaviour, not implementation.
 
+GOOD: the title names a behaviour.
+
 ```ts
-// GOOD
 test("rejects requests when the user lacks the items.write scope");
-// BAD
+```
+
+BAD: the title names an implementation detail.
+
+```ts
 test("checkScope returns false");
 ```
 
@@ -67,31 +68,32 @@ Every test owns its data. No `beforeAll` mutation that other tests rely on.
 
 ```ts
 const tableName = `test_${crypto.randomUUID().replaceAll("-", "_")}`;
+await createTable(tableName);
 ```
 
 ## Async
 
-Always `await`. Always assert on the resolved value, not the promise.
+Always assert on the resolved value, not the promise: await it first, or assert
+through `.resolves`.
 
 ```ts
-// BAD: no await, so the test ends before the assertion runs
-fetchUser(id).then((u) => expect(u.email).toBe("..."));
+test("[behaviour]", async () => {
+	const user = await fetchUser(id);
+	expect(user.email).toMatch(/@/);
 
-// GOOD
-const user = await fetchUser(id);
-expect(user.email).toMatch(/@/);
-
-// GOOD
-await expect(fetchUser(id)).resolves.toMatchObject({ id });
+	await expect(fetchUser(id)).resolves.toMatchObject({ id });
+});
 ```
 
 For things that settle eventually, use `expect.poll` with a meaningful timeout.
 Never `setTimeout` in a test.
 
 ```ts
-await expect
-	.poll(() => store.get(id), { timeout: 5_000 })
-	.toMatchObject({ status: "ready" });
+test("[behaviour]", async () => {
+	await expect
+		.poll(() => store.get(id), { timeout: 5000 })
+		.toMatchObject({ status: "ready" });
+});
 ```
 
 When the production code emits a completion signal (event, promise, callback),
@@ -103,11 +105,20 @@ asserting" in `engineering/testing.md`.
 Assert on the error type, not the message string. `CustomError` subclasses
 survive copy changes; string matches don't.
 
+BAD: matches the message string.
+
 ```ts
-// BAD
-await expect(action()).rejects.toThrow("User does not have permission");
-// GOOD
-await expect(action()).rejects.toBeInstanceOf(PermissionDeniedError);
+test("[behaviour]", async () => {
+	await expect(action()).rejects.toThrow("User does not have permission");
+});
+```
+
+GOOD: matches the error type.
+
+```ts
+test("[behaviour]", async () => {
+	await expect(action()).rejects.toBeInstanceOf(PermissionDeniedError);
+});
 ```
 
 If a fragment of the message carries information you actually care about,
@@ -115,20 +126,18 @@ regex-match the fragment, never the full sentence.
 
 ## Assertions and narrowing
 
-Don't reach for `!` (non-null assertion) in test code. It silences the type
-system without a runtime check; if the value is `undefined` you get an unhelpful
-crash deep in the test, not a clear failure at your line.
-
 Use `assert` from vitest to verify and narrow in one step:
 
 ```ts
 import { assert } from "vitest";
 
-const user = await fetchUser(id);
-assert(user, "fetchUser returned no user");
-// `user` is now non-null both at runtime and to the type system
+test("[behaviour]", async () => {
+	const user = await fetchUser(id);
+	assert(user, "fetchUser returned no user");
 
-expect(user.email).toMatch(/@/);
+	// `user` is now non-null both at runtime and to the type system
+	expect(user.email).toMatch(/@/);
+});
 ```
 
 For shape checks, use a type-guard predicate:
@@ -138,27 +147,19 @@ function isMember(value: unknown): value is Member {
 	return typeof value === "object" && value !== null && "role" in value;
 }
 
-const member = response.members.find((m) => m.userId === targetId);
-assert(isMember(member), "expected member with targetId to have Member shape");
+test("[behaviour]", () => {
+	const member = response.members.find((m) => m.userId === targetId);
+	assert(
+		isMember(member),
+		"expected member with targetId to have Member shape",
+	);
 
-expect(member.role).toBe("admin");
+	expect(member.role).toBe("admin");
+});
 ```
 
 `expect(x).toBeDefined()` does not narrow: TypeScript still sees `x` as possibly
 `undefined` after. Use `assert` when you need narrowing.
-
-Anti-pattern:
-
-```ts
-// BAD: non-null assertion, no runtime check, unhelpful failure
-const member = response.members.find((m) => m.userId === targetId)!;
-expect(member.role).toBe("admin");
-
-// GOOD: assert, then read
-const member = response.members.find((m) => m.userId === targetId);
-assert(member, "expected member with targetId");
-expect(member.role).toBe("admin");
-```
 
 ## Snapshots
 
@@ -178,9 +179,11 @@ A snapshot must produce identical output every run. For non-deterministic fields
 argument to `toMatchSnapshot`:
 
 ```ts
-expect(user).toMatchSnapshot({
-	id: expect.any(String),
-	createdAt: expect.any(Date),
+test("[behaviour]", () => {
+	expect(user).toMatchSnapshot({
+		id: expect.any(String),
+		createdAt: expect.any(Temporal.Instant),
+	});
 });
 ```
 
@@ -205,12 +208,9 @@ you need.)
 This preserves real randomness in the system under test (per
 `engineering/testing.md`) while keeping the snapshot stable.
 
-### Never inline
+### Choosing the matcher
 
-**Never `toMatchInlineSnapshot`, at any size.** Vitest writes the literal into
-the spec file itself, so the test run edits tracked source, and the resulting
-diff is indistinguishable from a change someone made deliberately. Snapshots
-belong in files the runner owns:
+Pick the snapshot matcher by the content it holds:
 
 - **`toMatchSnapshot`** for data: API responses, parsed config, normalized
   payloads. The `.snap` file sits beside the spec.
@@ -265,9 +265,9 @@ See `engineering/testing.md` for the philosophy. In vitest specifically:
 
 - **Network:** `msw` at the request layer. The same handlers work in Node,
   browser, and Workers.
-- **Module replacement:** `vi.mock('./module')` replaces an entire module. Use
-  it sparingly, and only for modules that own a real boundary (file system,
-  network, time). Never to swap out internal logic.
+- **Module replacement:** `vi.mock(import('./module'))` replaces an entire
+  module. Use it sparingly, and only for modules that own a real boundary (file
+  system, network, time). Never to swap out internal logic.
 - **Spies:** `vi.spyOn` for asserting calls without changing behaviour. Use
   spies to capture emitted side effects (queue messages, event payloads) and
   assert on their shape.
@@ -292,34 +292,60 @@ lifetime, and that registry is process-global: no caller can name the instance,
 so a fresh one costs a graph rebuild, and every module holding a reference must
 re-import in the same batch or observe a different one.
 
-```ts
-// BAD: memo in module scope, so the graph is rebuilt to reset it; global mutated to inject the client
-vi.resetModules();
-const { loadSettings } = await import("./settings.ts");
-Object.assign(env, { STORE: { fetchDoc } });
+BAD: the memo lives in module scope, so the test rebuilds the graph to reset it,
+and mutates a global to inject the client.
 
-// GOOD: cache is a value, so its owner picks the lifetime; built once at startup, as before
-const cache = createSettingsCache({ store: { fetchDoc }, now: clock.now });
-const settings = await loadSettings({ cache });
+```ts
+test("[behaviour]", async () => {
+	vi.resetModules();
+	const { loadSettings } = await import("./settings.ts");
+	Object.assign(env, { STORE: { fetchDoc } });
+
+	const settings = await loadSettings();
+	expect(settings).toMatchSnapshot();
+});
+```
+
+GOOD: the cache is a value, so its owner picks the lifetime. Production builds it
+once at startup, as before.
+
+```ts
+test("[behaviour]", async () => {
+	const cache = createSettingsCache({ store: { fetchDoc }, now: clock.now });
+	const settings = await loadSettings({ cache });
+	expect(settings).toMatchSnapshot();
+});
 ```
 
 ## Anti-patterns
 
-```ts
-// BAD: seeded RNG hides input-dependent bugs
-faker.seed(42);
-const user = faker.person.firstName();
+BAD: a seeded RNG hides input-dependent bugs.
 
-// GOOD: real randomness lets the system meet inputs it will see in production
-const user = faker.person.firstName();
+```ts
+faker.seed(42);
+await createUser({ name: faker.person.firstName() });
 ```
 
-```ts
-// BAD: polling shared state and hoping
-await new Promise((r) => setTimeout(r, 100));
-expect(received).toHaveLength(1);
+GOOD: real randomness lets the system meet inputs it will see in production.
 
-// GOOD: await the signal the production code already emits
-const message = await subscriber.next();
-expect(message).toMatchObject({ topic: "events.created" });
+```ts
+await createUser({ name: faker.person.firstName() });
+```
+
+BAD: sleeps, then reads shared state on the assumption that it has caught up.
+
+```ts
+test("[behaviour]", async () => {
+	await new Promise((r) => setTimeout(r, 100));
+	expect(received).toHaveLength(1);
+});
+```
+
+GOOD: awaits the completion signal the production code emits.
+
+```ts
+test("[behaviour]", async () => {
+	const message = await subscriber.next();
+	expect(message).toMatchObject({ topic: "events.created" });
+});
 ```

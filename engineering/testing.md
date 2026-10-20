@@ -38,14 +38,19 @@ would miss. If you can't, don't add it.
   (validation shapes, copy variants) are this exception: e2e keeps one
   representative shape, the permutations live at unit/component level.
 
-```ts
-// BAD: same happy path, three layers, one bug surface
-test('validateItem accepts a valid item', ...)
-test('createItem persists a valid item', ...)
-test('POST /items creates an item', ...)
+BAD: the same happy path at three layers, with one bug surface.
 
-// GOOD: keep the test closest to the contract; the others add no failure mode
-test('POST /items creates an item', ...)
+```ts
+test("validateItem accepts a valid item");
+test("createItem persists a valid item");
+test("POST /items creates an item");
+```
+
+GOOD: keep the test closest to the contract, since the others add no failure
+mode.
+
+```ts
+test("POST /items creates an item");
 ```
 
 ## Non-negotiable inputs
@@ -66,7 +71,7 @@ These are responses to a failing test, not fixes:
 
 - Loosening an assertion so it passes
 - Fixing a seed to "stabilise" a test
-- `test.skip` / `it.todo` / `.only` left in committed code
+- `test.skip` / `.only` left in a committed Playwright spec
 - Adding retries to mask a race
 - **Raising a timeout to absorb a flake** (see "SLOW = FAIL" below)
 - Catching exceptions in the test to keep it green

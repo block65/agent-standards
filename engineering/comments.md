@@ -11,16 +11,12 @@ restate what the code already says.
   Reserve comments for the surprising: "this looks wrong but…", a constraint
   that isn't visible locally, an ordering that matters.
 - **Never narrate past state in prose.** Do not describe what the code used to
-  do unless it is crucial to understanding the present. When it is, quote the
-  crucial original expression in the comment instead of paraphrasing: real code
-  carries more than a paragraph. One line, not a resurrected block;
-  commented-out code rots like any dead code, and the same bar applies: if the
-  old expression adds nothing, delete it.
+  do. Commented-out code rots like any dead code: delete it.
 - **Never explain a line by pointing somewhere else.** Naming another file,
   module, package, caller, or a concept that lives outside this file makes the
   comment wrong as soon as the other side moves, and nothing in review connects
-  the two. Explain the code in front of you or delete the comment. A symbol or
-  filename appears only where the reference clearly earns its maintenance.
+  the two. Explain the code in front of you or delete the comment. A symbol
+  appears only where the reference clearly earns its maintenance.
 - **Never restate a constant's value.** A comment that quotes a value defined in
   the code below will go stale and end up asserting the opposite of the truth.
 - **No snapshot facts.** Never record measurements from a particular run:
@@ -34,9 +30,7 @@ restate what the code already says.
   comment; never swap the true reason for a plausible generic one.
 - **Write it short.** One line, trimmed to the constraint itself. Sentence form
   is not required: a fragment that carries the constraint beats a sentence that
-  frames it, and no full stop is wanted.
-  [Banned Words](../writing/banned-words.md) still applies. A comment above a
-  private declaration must fit 80 columns, and no comment runs past six lines.
+  frames it.
 
 ## Form in JavaScript & TypeScript
 
@@ -48,11 +42,7 @@ different tools. (Rust documents public items with `///`; see
   whoever changes it.** JSDoc is the editor's hover text, so it carries what the
   thing is for and nothing a caller wouldn't need. A warning, a constraint, the
   reason the code is written the way it is: that reader is inside the body, so
-  it is `//` beside the line it binds, even when the declaration is exported. A
-  JSDoc block floating in a body or sitting above a local `const` is a line
-  comment written wrong.
-- **Never a bare `/* */` block.** It is neither of the above. This includes
-  commented-out code, which is deleted, not parked.
+  it is `//` beside the line it binds, even when the declaration is exported.
 - **No tags that restate the types.** `@param`, `@returns`, `@type`, and
   `@typedef` duplicate the signature and go stale independently of it. The types
   are the documentation. `@deprecated` earns its place: the editor and the
@@ -63,27 +53,59 @@ different tools. (Rust documents public items with `///`; see
   `/** Text */` or `//` documentation above an exported function. Delete a
   comment that merely repeats the name or types; do not expand it to satisfy the
   format.
-- **No multiline comments above non-exported declarations.** This includes
-  functions, classes, types, constants, and consecutive `//` lines. Use one line
-  for a necessary constraint, or explain the relevant code inside the
-  implementation. JSDoc belongs on the public declaration it documents.
+- **No multiline comments above class members or nested functions.** This
+  includes consecutive `//` lines. Use one line for a necessary constraint, or
+  explain the relevant code inside the implementation.
 
-The decidable rules here are enforced by the `comments` rule group in
-`@block65/oxlint-plugin`, preset by `@block65/shared-config`. Enable the group
-rather than naming rules, which drift. The type-tag ban is the exception: no
-rule covers it, so `@param`, `@returns`, `@type` and `@typedef` are caught in
-review.
+BAD: narrates the code.
 
 ```ts
-// BAD: narrates the code
 // Map the users to their ids
-// BAD: depends on something outside this file
-// The ingest worker expects this sorted
-// BAD: restates the signature
-/** @param id - the id @returns the record */
-// BAD: a reason for whoever edits the body, written as hover text
-/** [Reason the code is written this way] */
+const ids = users.map((user) => user.id);
+await save(ids);
+```
 
-// GOOD: carries what the code cannot
-// [Constraint or surprise the code cannot express]
+BAD: depends on something outside this file.
+
+```ts
+// Ingest worker expects this sorted
+const ordered = items.toSorted(compare);
+await save(ordered);
+```
+
+BAD: the tags restate the signature.
+
+```ts
+/**
+ * Loads a record
+ * @param id - the id
+ * @returns the record
+ */
+export async function load(id: Id) {
+	return store.get(id);
+}
+```
+
+BAD: a reason for whoever edits the body, written as hover text.
+
+```ts
+/**
+ * [Reason the code is written this way]
+ */
+export async function load(id: Id) {
+	return store.get(id);
+}
+```
+
+GOOD: the JSDoc says what the function is for, and the reason sits beside the
+line it binds.
+
+```ts
+/**
+ * [What the function is for]
+ */
+export async function load(id: Id) {
+	// [Reason the code is written this way]
+	return store.get(id);
+}
 ```

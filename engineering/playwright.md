@@ -145,11 +145,12 @@ success, assert on what the user came to see. Prefer role-based structural
 elements; reach for a testid only if no role disambiguates.
 
 ```ts
-// GOOD: terminal step, confirming the data appears where the user expects
-await page.getByRole("link", { name: "View invoice" }).click();
-await expect(
-	page.getByRole("article").filter({ hasText: invoiceNumber }),
-).toBeVisible();
+test("[behaviour]", async ({ page }) => {
+	await page.getByRole("link", { name: "View invoice" }).click();
+	await expect(
+		page.getByRole("article").filter({ hasText: invoiceNumber }),
+	).toBeVisible();
+});
 ```
 
 For "did the user leave page X" (logout, cancel, close modal), use the negative
@@ -157,10 +158,12 @@ form on something the previous page contained, typically a role-based element,
 falling back to a testid if no role fits:
 
 ```ts
-await page.getByRole("button", { name: "Log out" }).click();
-await expect(
-	page.getByRole("navigation", { name: "Primary" }),
-).not.toBeVisible();
+test("[behaviour]", async ({ page }) => {
+	await page.getByRole("button", { name: "Log out" }).click();
+	await expect(
+		page.getByRole("navigation", { name: "Primary" }),
+	).not.toBeVisible();
+});
 ```
 
 ### When a page-level testid is the right tool
@@ -211,7 +214,7 @@ the scope as narrow as possible, and add a comment naming the third-party origin
 so the relaxation is explicit.
 
 ```ts
-// Selectors below match the Stripe iframe's DOM, which this codebase doesn't control.
+// Selectors below match the Stripe iframe's DOM, which this codebase doesn't control
 const cardFrame = page.frameLocator('iframe[name^="__privateStripeFrame"]');
 await cardFrame.locator('[name="cardnumber"]').fill("4242424242424242");
 ```
@@ -223,8 +226,7 @@ This is an explicit escape hatch, not a general permission. Outside the
 
 Model this on Rust's `// SAFETY:` on an `unsafe` block. A locator that steps
 outside the priority order carries a one-line comment discharging why, at the
-call site; a locator that follows it stays silent. Write it as prose, not a
-labelled `word:` prefix, which `block65/no-comment-punctuation` reports.
+call site; a locator that follows it stays silent.
 
 The payoff matches `// SAFETY`: the comment keeps its meaning because it marks
 only real escapes; it can't be cargo-culted, because a copied justification is
@@ -250,9 +252,10 @@ Playwright's dedicated APIs for both.
 `setInputFiles`; no dialog is involved.
 
 ```ts
-// GOOD: drive the file input directly
-await page.getByLabel("Upload avatar").setInputFiles("./fixtures/avatar.png");
-await expect(page.getByTestId("avatar-preview")).toBeVisible();
+test("[behaviour]", async ({ page }) => {
+	await page.getByLabel("Upload avatar").setInputFiles("./fixtures/avatar.png");
+	await expect(page.getByTestId("avatar-preview")).toBeVisible();
+});
 ```
 
 If the file input is visually hidden behind a styled button, the label
@@ -266,16 +269,17 @@ normally in headless CI.
 
 **Downloads:** use the `download` event. The user-visible action (click) and the
 assertion (file received) are two separate things, and Playwright gives you a
-promise for the latter.
+promise for the latter. To inspect the contents, save and read the file;
+otherwise the event firing is the signal.
 
 ```ts
-// GOOD: wait for the download event triggered by the click
-const downloadPromise = page.waitForEvent("download");
-await page.getByRole("button", { name: "Export CSV" }).click();
-const download = await downloadPromise;
+test("[behaviour]", async ({ page }) => {
+	const downloadPromise = page.waitForEvent("download");
+	await page.getByRole("button", { name: "Export CSV" }).click();
+	const download = await downloadPromise;
 
-expect(download.suggestedFilename()).toMatch(/\.csv$/);
-// If the test needs to inspect contents, save and read; otherwise the event firing is the signal.
+	expect(download.suggestedFilename()).toMatch(/\.csv$/);
+});
 ```
 
 `waitForEvent` is the right tool for browser-level events with no DOM effect to
@@ -316,7 +320,6 @@ assertion. The action you're about to perform can't complete unless the
 navigation succeeded and the destination rendered. That's the verification.
 
 ```ts
-// GOOD: the auto-wait on the row filter does the navigation check for free
 await page.getByRole("link", { name: "Listings" }).click();
 await page
 	.getByRole("row")
@@ -347,7 +350,6 @@ be emailed, the auth provider's test mode) and then navigate to it. The URL is
 data, not a guess.
 
 ```ts
-// GOOD: reset link comes from the mail server, not the test author's keyboard
 await test.step("request reset", async () => {
 	await page.goto("/");
 	await page.getByRole("link", { name: "Forgot password" }).click();
@@ -360,7 +362,8 @@ await test.step("follow reset link from email", async () => {
 	const resetEmail = await mailServer.waitForEmail({ to: email });
 	const resetLink = resetEmail.extractLink({ name: /reset password/i });
 	await page.goto(resetLink); // sanctioned because the URL came from the email, not the test
-	// The next action verifies the reset page mounted, so there is no identity assertion here.
+
+	// Next action verifies the reset page mounted, in place of an identity assertion
 	await page
 		.getByLabel("New password")
 		.fill(faker.internet.password({ length: 20 }));
@@ -389,10 +392,15 @@ on better journeys, not deep-linking shortcuts.
 
 Describe user-visible behaviour, not implementation.
 
+GOOD: the title names what the user sees.
+
 ```ts
-// GOOD
 test("user can submit a draft item and see it on their dashboard");
-// BAD
+```
+
+BAD: the title names the requests behind it.
+
+```ts
 test("POST /items returns 200 and dashboard query refetches");
 ```
 
@@ -410,7 +418,8 @@ test("user can submit a draft item", async ({ page, authedUser }) => {
 	await test.step("submit from dashboard", async () => {
 		await page.goto("/");
 		await page.getByRole("link", { name: "Dashboard" }).click();
-		// The row filter below verifies the dashboard rendered, so there is no identity assertion here.
+
+		// Row filter below verifies the dashboard rendered, in place of an identity assertion
 		await page
 			.getByRole("row")
 			.filter({ hasText: itemTitle })
@@ -421,7 +430,8 @@ test("user can submit a draft item", async ({ page, authedUser }) => {
 
 	await test.step("item appears in public results", async () => {
 		await page.getByRole("link", { name: "Browse items" }).click();
-		// Terminal step, so it asserts what the user came to see.
+
+		// Terminal step, so it asserts what the user came to see
 		await expect(
 			page.getByRole("link").filter({ hasText: itemTitle }),
 		).toBeVisible();
@@ -442,7 +452,9 @@ the suite must never collide.
 
 ```ts
 const email = `qa-${crypto.randomUUID()}@example.test`;
-const title = `Test item ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+const title = `Test item ${Temporal.Now.instant().epochMilliseconds}-${Math.random().toString(36).slice(2, 7)}`;
+await page.getByLabel("Email").fill(email);
+await page.getByLabel("Title").fill(title);
 ```
 
 ## Filling forms
@@ -452,20 +464,21 @@ realistic values. Use faker or inline realistic data, never `"a"`, `"test"`,
 `"123"` unless specifically testing minimum-length behaviour.
 
 ```ts
-// GOOD: happy-path signup
-await page.getByLabel("Full name").fill(faker.person.fullName());
-await page
-	.getByLabel("Work email")
-	.fill(`qa-${crypto.randomUUID()}@example.test`);
-await page.getByLabel("Company").fill(faker.company.name());
-await page
-	.getByLabel("Password", { exact: true })
-	.fill(faker.internet.password({ length: 20 }));
-await page.getByLabel(/i agree to the terms/i).check();
-await page.getByRole("button", { name: "Create account" }).click();
+test("[behaviour]", async ({ page }) => {
+	await page.getByLabel("Full name").fill(faker.person.fullName());
+	await page
+		.getByLabel("Work email")
+		.fill(`qa-${crypto.randomUUID()}@example.test`);
+	await page.getByLabel("Company").fill(faker.company.name());
+	await page
+		.getByLabel("Password", { exact: true })
+		.fill(faker.internet.password({ length: 20 }));
+	await page.getByLabel(/i agree to the terms/i).check();
+	await page.getByRole("button", { name: "Create account" }).click();
 
-// The next action verifies arrival on the onboarding flow.
-await page.getByRole("button", { name: "Get started" }).click();
+	// Next action verifies arrival on the onboarding flow
+	await page.getByRole("button", { name: "Get started" }).click();
+});
 ```
 
 Validation tests cover omission, but:
@@ -495,14 +508,22 @@ so the data is queryable in the database and obvious in logs.
 
 ### Shape, not literal value
 
-```ts
-// BAD: brittle
-await expect(page.getByRole("alert")).toHaveText(
-	"Please enter a valid email address.",
-);
+BAD: matches the whole sentence, so any copy change breaks it.
 
-// GOOD: resilient
-await expect(page.getByRole("alert")).toContainText(/valid email/i);
+```ts
+test("[behaviour]", async ({ page }) => {
+	await expect(page.getByRole("alert")).toHaveText(
+		"Please enter a valid email address.",
+	);
+});
+```
+
+GOOD: matches only the fragment under test.
+
+```ts
+test("[behaviour]", async ({ page }) => {
+	await expect(page.getByRole("alert")).toContainText(/valid email/i);
+});
 ```
 
 ### When the words are the behaviour
@@ -519,18 +540,28 @@ toast element; only the words differ, so a text assertion is the only check that
 distinguishes them:
 
 ```ts
-await expect(toast).toContainText(/you can'?t invite yourself/i);
-await expect(toast).not.toContainText(/failed precondition/i);
+test("[behaviour]", async () => {
+	await expect(toast).toContainText(/you can'?t invite yourself/i);
+	await expect(toast).not.toContainText(/failed precondition/i);
+});
 ```
 
 ### Dynamic values: assert presence or pattern
 
-```ts
-// BAD: asserts a specific timestamp
-await expect(page.getByTestId("created-at")).toHaveText("Nov 17, 2025 14:32");
+BAD: asserts a specific timestamp.
 
-// GOOD: asserts the shape
-await expect(page.getByTestId("created-at")).toHaveText(/\w+ \d{1,2}, \d{4}/);
+```ts
+test("[behaviour]", async ({ page }) => {
+	await expect(page.getByTestId("created-at")).toHaveText("Nov 17, 2025 14:32");
+});
+```
+
+GOOD: asserts the shape.
+
+```ts
+test("[behaviour]", async ({ page }) => {
+	await expect(page.getByTestId("created-at")).toHaveText(/\w+ \d{1,2}, \d{4}/);
+});
 ```
 
 ### Web-first assertions only
@@ -539,13 +570,22 @@ await expect(page.getByTestId("created-at")).toHaveText(/\w+ \d{1,2}, \d{4}/);
 `expect(locator).*` family all retry automatically. Never pre-wait manually, and
 never wrap a non-retrying check like `isVisible()` in an `expect()`.
 
-```ts
-// BAD: double-waiting, and isVisible() doesn't retry
-await page.waitForTimeout(1000);
-expect(await page.locator(".success").isVisible()).toBe(true);
+BAD: waits twice, and `isVisible()` reads once without retrying.
 
-// GOOD
-await expect(page.getByRole("status")).toContainText(/saved/i);
+```ts
+test("[behaviour]", async ({ page }) => {
+	await page.waitForTimeout(1000);
+	const visible = await page.locator(".success").isVisible();
+	expect(visible).toBe(true);
+});
+```
+
+GOOD: the web-first assertion retries until it passes or times out.
+
+```ts
+test("[behaviour]", async ({ page }) => {
+	await expect(page.getByRole("status")).toContainText(/saved/i);
+});
 ```
 
 ### Assert the outcome, not the mechanism
@@ -562,18 +602,27 @@ state itself. Never expose internal state via `data-*` attributes for the
 purpose of letting E2E read it; that's introspection, not testing, and it's
 solving a problem that shouldn't exist at this layer.
 
-```ts
-// BAD: reading state through an attribute
-await expect(
-	page.getByRole("article").filter({ hasText: title }),
-).toHaveAttribute("data-status", "active");
+BAD: reads state through an attribute.
 
-// GOOD: the user-visible consequence of "active" is that Pause exists
-await page
-	.getByRole("article")
-	.filter({ hasText: title })
-	.getByRole("button", { name: "Pause" })
-	.click();
+```ts
+test("[behaviour]", async ({ page }) => {
+	await expect(
+		page.getByRole("article").filter({ hasText: title }),
+	).toHaveAttribute("data-status", "active");
+});
+```
+
+GOOD: acts on the user-visible consequence of "active", which is that Pause
+exists.
+
+```ts
+test("[behaviour]", async ({ page }) => {
+	await page
+		.getByRole("article")
+		.filter({ hasText: title })
+		.getByRole("button", { name: "Pause" })
+		.click();
+});
 ```
 
 No user-visible consequence → the test belongs in another layer (unit,
@@ -675,26 +724,44 @@ Flaky tests erode trust faster than missing tests.
 
 ## Anti-patterns
 
-```ts
-// BAD: text-scoping a region
-await page
-	.getByText("Account settings")
-	.locator("..")
-	.getByRole("button", { name: "Save" })
-	.click();
-// GOOD: scope by a landmark role, not by copy
-await page
-	.getByRole("region", { name: "Account settings" })
-	.getByRole("button", { name: "Save" })
-	.click();
-```
+BAD: scopes a region by its text.
 
 ```ts
-// BAD: continue-checking, hedging against the test's own setup
-await expect(page.getByRole("heading", { name: title })).toBeVisible();
-await page.getByRole("button", { name: "Publish" }).click();
-// GOOD: just do the next thing; it fails loudly if setup was wrong
-await page.getByRole("button", { name: "Publish" }).click();
+test("[behaviour]", async ({ page }) => {
+	await page
+		.getByText("Account settings")
+		.locator("..")
+		.getByRole("button", { name: "Save" })
+		.click();
+});
+```
+
+GOOD: scopes by a landmark role, not by copy.
+
+```ts
+test("[behaviour]", async ({ page }) => {
+	await page
+		.getByRole("region", { name: "Account settings" })
+		.getByRole("button", { name: "Save" })
+		.click();
+});
+```
+
+BAD: checks before continuing, hedging against the test's own setup.
+
+```ts
+test("[behaviour]", async ({ page }) => {
+	await expect(page.getByRole("heading", { name: title })).toBeVisible();
+	await page.getByRole("button", { name: "Publish" }).click();
+});
+```
+
+GOOD: does the next thing, which fails loudly if setup was wrong.
+
+```ts
+test("[behaviour]", async ({ page }) => {
+	await page.getByRole("button", { name: "Publish" }).click();
+});
 ```
 
 ## Config baseline
@@ -703,7 +770,7 @@ await page.getByRole("button", { name: "Publish" }).click();
 export default defineConfig({
 	fullyParallel: true,
 	forbidOnly: !!process.env.CI,
-	// One retry absorbs infrastructure blips, not flaky tests. A test needing two is broken.
+	// One retry absorbs infrastructure blips, not flaky tests. A test needing two is broken
 	retries: process.env.CI ? 1 : 0,
 	reporter: [["html"], ["list"]],
 	use: {
@@ -716,7 +783,7 @@ export default defineConfig({
 	},
 	projects: [
 		{ name: "chromium", use: devices["Desktop Chrome"] },
-		// add webkit/firefox only if you ship there
+		// add webkit/firefox when you ship there
 	],
 });
 ```

@@ -5,8 +5,8 @@
 - **No DB defaults:** Prefer optional fields over column-level defaults. Keep
   value control at the application layer. Audit columns are the exception; see
   Tables.
-- **Tense-less names:** Use `create_time`, `expire_time`, never `created_at`,
-  `expires_at`.
+- **Tense-less names:** In SQL written by hand and in schemas defined outside
+  Drizzle, use `create_time`, `expire_time`, never `created_at`, `expires_at`.
 - **Booleans:** Prefix with `is_` (e.g. `is_active`). No default; make the
   application set it explicitly.
 
