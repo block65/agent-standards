@@ -60,7 +60,7 @@ different tools. (Rust documents public items with `///`; see
 - **Documentation is optional.** A named function with typed arguments usually
   needs no JSDoc. Add it only for information the signature cannot express.
 - **Exported function documentation uses multiline JSDoc.** No one-line
-  `/** Text. */` or `//` documentation above an exported function. Delete a
+  `/** Text */` or `//` documentation above an exported function. Delete a
   comment that merely repeats the name or types; do not expand it to satisfy the
   format.
 - **No multiline comments above non-exported declarations.** This includes
@@ -82,8 +82,8 @@ review.
 // BAD: restates the signature
 /** @param id - the id @returns the record */
 // BAD: a reason for whoever edits the body, written as hover text
-/** [Reason the code is written this way]. */
+/** [Reason the code is written this way] */
 
 // GOOD: carries what the code cannot
-// [Constraint or surprise the code cannot express].
+// [Constraint or surprise the code cannot express]
 ```
