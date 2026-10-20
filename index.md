@@ -57,8 +57,8 @@
 - **[TypeScript](lang/typescript.md)**: Strict typing and modern patterns.
 - **[React](lang/react.md)**: Component patterns, i18n, styling, and state
   management.
-- **[JavaScript](lang/javascript.md)**: pnpm, modern API usage, and general JS
-  hygiene.
+- **[JavaScript](lang/javascript.md)**: pnpm, error handling, promises, and
+  general JS hygiene.
 - **[Rust](lang/rust.md)**: Entry point for modular Rust standards.
 - **[Python](lang/python.md)**: Data-before-logic layout, strict typing,
   tamper-evident policy, and a ruff/mypy gate.

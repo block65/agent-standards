@@ -10,14 +10,14 @@
 
 ## Type Safety
 
-- **No Casting:** Never use `as any`, `as unknown`, or an unchecked `as T`.
+- **No `as unknown`:** Widening to `unknown` discards the type the checker had.
   `as const` and `satisfies` are fine: they assert or check without overriding
   the checker.
 - **Inference:** Prefer inference over explicit types when context is clear.
-- **Infer return types.** Omit annotations that repeat the inferred result. Keep
-  an annotation when it defines an intended contract, enables recursion, or
-  expresses a type predicate or assertion signature. Do not require return
-  annotations merely because a function is exported.
+- **Infer exported return types too.** Being exported does not justify an
+  annotation that repeats the inferred result. Keep one when it defines an
+  intended contract, enables recursion, or expresses a type predicate or
+  assertion signature.
 - **`satisfies` over type annotation:** Prefer `const x = { ... } satisfies T`
   over `const x: T = { ... }`. Validates the shape while preserving inferred
   literal types.
@@ -25,16 +25,13 @@
   from arguments.
 - **No enums:** Use `as const` objects with derived union types instead. Enums
   are not erasable TypeScript and produce runtime output.
-- **No non-null assertions:** Never use `!` postfix. Narrow `null`/`undefined`
-  with type guards.
 - **No runtime hacks to avoid type errors.** Fix the type.
 - **Conditional spreads:** `{ ...(cond && { foo: bar }) }` is fine: TS types it
   as `{ foo?: ... }` with no index-signature pollution. This is how you satisfy
   a strict `?: T` target; where the target declares `?: T | undefined`, pass the
   value directly instead (see Optional Properties). For a maybe-object, spread
-  it directly: `...maybeObj` where `maybeObj: T | null | undefined`; the `?? {}`
-  / `|| {}` wrappers are redundant. (Arrays differ: nullish throws, use
-  `...(arr ?? [])`.)
+  it directly: `...maybeObj` where `maybeObj: T | null | undefined`. A nullish
+  array spread throws, so a maybe-array needs `...(arr ?? [])`.
 
 ## Compiler Configuration
 
@@ -71,9 +68,8 @@ the choice is a declaration of intent.
   `false`. Use `"prop" in obj` to ask whether the property was specified, and a
   value comparison to ask what it holds.
 - **Make the invalid value unrepresentable.** When `""` or `0` is invalid for a
-  field, a `?? ""` fallback is a symptom of the wrong type. Constrain the field
-  with a valibot-validated or branded type, the TS equivalent of a Rust newtype,
-  so the invalid state cannot be constructed.
+  field, constrain it with a valibot-validated or branded type, the TS
+  equivalent of a Rust newtype, so the invalid state cannot be constructed.
 
 ## Untyped Input
 
@@ -82,8 +78,7 @@ the choice is a declaration of intent.
   exported function: internal callers are already typed, and re-validating them
   costs a check that can never fail.
 - **Validate what you cannot type.** Anything typed `unknown` is parsed with
-  valibot before use: `safeParse`, and handle the failure. Casting it into shape
-  with `as` asserts a fact you have not established.
+  valibot before use, and the code handles the parse failure.
 
 ## Imports/Exports
 
