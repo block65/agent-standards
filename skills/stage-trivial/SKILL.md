@@ -1,323 +1,157 @@
 ---
 name: stage-trivial
-description: "Scan git diffs and stage only the changes that are self-evidently correct and intentional in context: changes a reviewer would have nothing to deliberate on. Covers lint fixes, formatting, typos, dead code, observability, uniform sweeps, AND self-evidently complete additions like new dev-harness pages wired up via import + menu entry + new file, testid sweeps, mount-marker additions, AGENTS.md pointers. Leaves anything requiring reviewer judgment unstaged: API contract changes, secret rotations, schema requirement changes, algorithm changes, config values the reviewer must weigh, code smells. Use this skill when the user says 'stage the obvious stuff', 'stage trivial changes', 'stage the safe diffs', 'cherry-pick the lint fixes', 'stage what's obviously correct', or wants to triage a messy working tree before committing."
+description: "Scans git diffs and stages only the changes that are self-evidently correct and intentional in context: changes a reviewer would have nothing to deliberate on. Covers lint fixes, formatting, typos, dead code, observability, uniform sweeps, and self-evidently complete additions like new dev-harness pages wired up via import + menu entry + new file, testid sweeps, mount-marker additions, AGENTS.md pointers. Leaves anything requiring reviewer judgment unstaged: API contract changes, secret rotations, schema requirement changes, algorithm changes, config values the reviewer must weigh, code smells. Use when the user says 'stage the obvious stuff', 'stage trivial changes', 'stage the safe diffs', 'cherry-pick the lint fixes', 'stage what's obviously correct', or wants to triage a messy working tree before committing. Supports --dry-run."
 ---
 
-# Stage Trivial Changes
-
-Scan the unstaged git diff, classify every hunk, and stage only the ones that
-are **self-evidently correct and intentional in context**. Never commit; only
-stage. Produce a summary so the user can see what was staged and what was left,
-with the evidence behind each call.
+Classify every unstaged hunk and stage only the ones a reviewer would have
+nothing to deliberate on. Stage, never commit. With `--dry-run`, stage nothing
+and report what would be staged.
 
 ## The reviewer-judgment test
 
-The criterion is not "is this small or mechanical?" but **"would a reviewer have
-anything to deliberate on?"** Stage when the answer is no: the change is
-self-evidently a complete intentional unit. Skip when the answer is yes: the
-change encodes a design choice, a value judgement, or a contract change the
-reviewer must weigh. Equivalently, design-vs-wiring: when the design lives
-_here_ (a new API shape, schema field, algorithm), skip, because the reviewer
-must judge the design. When the design is already decided elsewhere and this
-diff just wires it up consistently, stage, because the reviewer would only check
-the wiring, and the diff shows it.
-
-"Trivial" means **trivial-for-a-reviewer**, not trivial-in-size. New code, new
-files, and coupled multi-file changes can all be stageable: the coupling of a
-clear additive unit (new page + import + menu entry + render line) is often what
-makes it self-evidently complete. A one-character config edit (`200` → `204`, an
-alphabet swap, a TTL bump) can be a design choice that needs review.
+Ask "would a reviewer have anything to deliberate on?", not "is this small?".
+When the design lives here (a new API shape, schema field, algorithm), skip: the
+reviewer must judge it. When the design was decided elsewhere and this diff only
+wires it up consistently, stage: the reviewer would only check the wiring, and
+the diff shows it. New files and coupled multi-file changes can be stageable; a
+one-character config edit (`200` → `204`, a TTL bump) can need review.
 
 ## By evidence, not reflex
 
-Every classification, stage _and_ skip alike, must be a conclusion drawn from
-looking at the diff and the surrounding code, not a reflex driven by what the
-hunk superficially looks like. "I haven't looked yet" is never a verdict:
-default-to-skip turns the tool into a no-op, default-to-stage turns it into a
-hazard.
+Every verdict, stage or skip, comes from reading the diff and the surrounding
+code. Default-to-skip makes the skill a no-op; default-to-stage makes it a
+hazard. Read before deciding: what a changed config field does, what a new file
+is and how it is wired, and every hunk of a substantially changed file (classify
+per hunk; a rewrite in one hunk does not disqualify an observability hunk
+elsewhere in the file).
 
-Three verdicts need the reading done before them, because the category alone
-decides nothing:
+These phrases describe nearly every non-mechanical diff, so they never stand
+alone as a skip reason: "carries intent", "not trivial", "not mechanical", "adds
+new code/logic", "behavioural" (name the kind instead: contract, algorithm,
+value to weigh, smell, lonely one-liner), and "coupled", "design choice" or
+"feature" without naming what it is coupled to, what the choice is, or whether
+the design or only the wiring lives here.
 
-- A config change: read what the field does.
-- A new file: read what the file is and how it's wired.
-- A file with substantive changes: enumerate its hunks. Coupling is a hunk-level
-  property; a substantive rewrite in one hunk doesn't disqualify a
-  pure-observability hunk two screens down. Always classify at hunk granularity.
+For any hunk outside the automatic skip categories, before the verdict: quote
+the literal `+`/`-` line that triggered it, answer design-vs-wiring in one
+phrase naming the file(s), and name the reviewer's job (weigh what was decided,
+or only check the wiring).
 
-Banned skip-reasons. These phrases describe nearly every non-mechanical diff,
-including stageable ones, so they can never stand alone as a verdict:
+## Evidence for a borderline hunk, cheapest first
 
-- _"carries intent"_ (a typo fix carries intent), _"not trivial"_ / _"not
-  mechanical"_, _"adds new code"_ / _"adds new logic"_
-- _"behavioural"_ / _"behavioural change"_ / _"behaviour-affecting"_: the most
-  over-used non-reason; name _what kind_ instead: contract, algorithm, value the
-  reviewer must weigh, smell, lonely one-liner
-- _"coupled"_, _"design choice"_, _"feature"_: without naming, respectively:
-  what it's coupled to (design+adapter or complete-unit wiring?), what the
-  choice is, whether the design lives here or just the wiring
+Stop at the first that resolves it; skip only once the evidence runs out.
 
-For any hunk that is not an automatic skip category (those are listed under
-"What is NOT stageable"), do all three before reaching a verdict: quote the
-literal `+`/`-` line that triggered it (not a paraphrase or category label),
-answer design-vs-wiring in one phrase referencing the file(s), and name the
-reviewer's job: weigh _what_ was decided, or only check the wiring.
+1. **The rest of the diff**: the same lines in three or more files is a sweep.
+   Count them and confirm they are identical, not similar.
+2. **The file**: a new `logger.warn(...)` beside four existing ones continues a
+   pattern.
+3. **The import source**: open the module a new import comes from; it decides
+   whether `logger` is a real logger and whether a helper is tiny or an
+   abstraction.
+4. **`git grep` the symbol**: zero other usages introduces a new thing; three or
+   more joins a convention.
+5. **Branch history** (`git log -G '<pattern>' --oneline`, `git log -p -3 --
+   <file>`): a recent commit with the same shape means a reviewer already
+   weighed the design. This branch or this week is strong; months old is weak.
+6. **Five to ten lines of context** around the hunk.
 
-## Evidence sources, cheapest first
+## Stageable
 
-When a hunk is borderline, not clear-cut in either direction, use these to gain
-confidence. They are ordered by cost; stop as soon as one resolves the question.
+- **Formatting, import reordering, unused import removal, lint auto-fixes**
+  (`let` → `const`).
+- **Typo fixes** in strings or comments where the correct word is unambiguous,
+  and copy tidies with no semantic change.
+- **Dead code removal**: commented-out code, flagged unreachable branches, or a
+  file the same diff replaces.
+- **Generated-file timestamps** ("Generated on …"). When the file has other
+  hunks, route the timestamp alone through stage-hunk and leave the body.
+- **Uniform sweeps**: an identical change in three or more files.
+- **Additive wiring across files**: a coherent pattern where the target symbol
+  already exists (`data-testid={testids.[Name]}`, `data-hydrated` markers).
+- **Continuations of a committed pattern**, verified with `git log` to have the
+  same shape.
+- **Observability**: a project-logger, error-reporting, tracing or metrics call
+  with no control-flow change in the hunk, its import confirmed as real
+  observability. A log in a previously silent catch counts if return value and
+  control flow are unchanged. Also flipping an already-wired observability flag
+  to its standard value.
+- **Complete additive units**: a new file plus wiring that matches its purpose,
+  such as a dev-harness page with its import, a menu entry shaped like its
+  siblings, and the render conditional.
+- **Orientation docs**: `AGENTS.md`, `CLAUDE.md` or `README.md` additions that
+  point at existing files or describe established patterns. Skip one that makes
+  a new claim a reviewer would scrutinise.
 
-1. **The rest of the diff.** Is this change repeated in sibling files? Three or
-   more identical occurrences = sweep = stageable. Verify the lines are
-   genuinely identical (don't assume "looks the same"); count.
-2. **The file itself.** Does this change extend a pattern already present in the
-   file? A new `logger.warn(...)` next to four existing `logger.warn(...)` calls
-   is a continuation, not an introduction.
-3. **Imports the hunk references.** If a hunk adds
-   `import { foo } from './bar'`, open `./bar` and read what `foo` is before
-   classifying the usage. A `logger.warn(...)` could be a real logger or
-   `console.warn` aliased; a new helper import could be a tiny utility or a
-   200-line abstraction. The import source decides.
-4. **`git grep` for the symbol.** Count existing usages of the new call/import
-   elsewhere in the codebase. Zero usages = the change is introducing a new
-   thing; three or more = it's joining an established convention.
-5. **Recent git history on this branch.** Check whether the change continues a
-   pattern already committed: `git log --oneline -20`,
-   `git log -G '<pattern>' --oneline`, or `git log -p -3 -- <file>`. If a recent
-   commit added `data-testid={testids.[Component]}` and the working tree adds
-   the same attribute on a sibling component in the same shape, the design was
-   decided in that commit and the new change inherits its approval. That is one
-   of the strongest stage signals, because another reviewer already weighed the
-   design. Recency matters (this branch or this week is strong; months-old is
-   weak), and committed ≠ right, but it has passed a reviewer's eye once.
-6. **Five to ten lines of context around the hunk.** Sometimes the meaning is
-   local: the surrounding code makes the intent clear.
+## Leave for review
 
-If none of these resolves the doubt, then skip, but only because the evidence
-ran out, not because looking felt like work.
-
-## What counts as stageable
-
-- **Unused import removal**: an import that was deleted and nothing else in the
-  hunk depends on it.
-- **Formatting / whitespace**: indentation, trailing whitespace, trailing
-  commas, semicolon insertion/removal, line wrapping that doesn't change logic.
-- **Lint auto-fixes**: changes that look like they came from a lint `--fix`
-  (`let` → `const` for never-reassigned variables, removing flagged type
-  assertions).
-- **Typo corrections in strings/comments**: obvious spelling fixes where the
-  correct word is unambiguous. Also includes user-facing copy with no semantic
-  change (capitalisation normalisation, punctuation tidy).
-- **Dead code removal**: commented-out code, unreachable branches the linter
-  flagged. Deletions paired with an in-diff replacement (removing
-  `[old-module].ts` because a new `[new-module]/` directory in the same diff
-  replaces it) also count; the coupling shows the deletion is intentional.
-- **Import reordering**: imports moved around but not added or removed.
-- **Generated file timestamps**: "Generated on …" header lines in codegen
-  output. When the file has other hunks, **always route via stage-hunk**: the
-  timestamp depends only on generation time, independent of every other hunk, so
-  staging it alone is always safe and never fragments the artifact. The body
-  stays unstaged for review.
-- **Uniform sweeps**: the same change applied identically across three or more
-  files; the repetition itself is the evidence. Count occurrences and verify the
-  added lines really are identical, not just similar, before staging the set.
-- **Cross-file patterns of additive wiring**: a coherent (not necessarily
-  identical) pattern across 5–10 files, e.g. `data-testid={testids.X}` sweeps or
-  `data-hydrated` mount markers where the target symbol already exists. The
-  pattern plus the unchanged target symbol are the evidence.
-- **Continuations of already-committed patterns**: a recent commit on this
-  branch (or recent main) introduced the pattern and the working tree extends it
-  identically to new sites. Verify with `git log -G '<pattern>'` or
-  `git log -p -3 -- <related-file>` that the prior commit did the same shape of
-  change; a pattern from this branch is strong evidence, a 2-year-old commit
-  weak.
-- **Observability additions**: a project-logger call, error-reporting call (e.g.
-  `captureException`), tracing span, or metrics increment, with no control-flow
-  change in the same hunk; verify via imports that the call resolves to a real
-  observability function. A log added inside a previously-silent catch counts,
-  provided return value and control flow are unchanged.
-- **Observability config toggles**: flipping a known observability flag to its
-  standard value (`enabled: true`, sample-rate adjustment, log-level setting),
-  provided the underlying capability is already wired up.
-- **Self-evidently complete additive units**: a new file plus its mechanical
-  wiring, where every wiring hunk is what you'd expect given the new file's
-  purpose. Canonical example: a new dev-harness page is one unit comprising the
-  new `pages/[Page].tsx`, its import, a menu-list entry matching the existing
-  entries' shape, and the render conditional next to its siblings. Same shape:
-  entries in clearly-indexed lists, test seed files paired with the harness
-  wiring that mounts them.
-- **Documentation and repo orientation**: additions to `AGENTS.md`, `CLAUDE.md`,
-  `README.md` that point at existing files or describe established patterns.
-  Skip only if the doc encodes a _new_ claim a reviewer would scrutinise.
-
-## What is NOT stageable: leave for review
-
-- **API / wire contract changes**: request or response shape changes (e.g. `200`
-  → `204`, `allOf` → `oneOf`, OpenAPI schema field shifts), endpoint signature
-  changes, RPC argument-shape changes. The contract itself is the question.
-- **Schema requirement / validation changes**: making a field required, changing
-  a field's type, swapping enum sets, altering coercion at a boundary (`null` ↔
-  `undefined` at REST/IPC edges where consumers see the change).
-- **Database queries, migrations**: query bodies, migration files, migration
-  registration changes.
-- **Algorithm / encoding changes**: anything that alters how data is computed or
-  represented (typeid alphabet swap, hash algorithm change, ID format change,
-  route-resolution rule change).
-- **Config values the reviewer must weigh**: TTLs, timeouts, feature flags,
-  security policy, route configs: the _specific value chosen_ is the decision.
-  Distinct from observability config, which changes what is observed. The
-  skip-reason must name the value and the reviewer's question, e.g.
-  "`[NAME]_TTL` 3600 → 2_592_000 (why 30 days?)". If the change is also isolated
-  from the rest of the diff, classify additionally as smell-adjacent.
-- **Secret / credential rotations**: secret_name changes, JWK rotations, any
-  binding from a logical name to a piece of credential material. Atomic with
-  environment ops; needs joint review.
-- **Test assertion changes**: modifications to expected values, mocks,
-  snapshots, or test scaffolding logic. Test files that _only_ add a new file or
-  pure docblock comments are still stageable; assertion edits are not.
-- **Public symbol renames**: anything visible across module boundaries where
-  consumers must be checked.
-- **New abstractions whose design is the point**: a new exported helper, type,
-  or module whose existence and shape is the design choice, not wiring of
-  something already decided.
-- **Coupled refactors where one side defines a contract and the other adapts**:
-  RPC server adds a new headers signature; caller adapts to use it. The contract
-  itself is under review; skip the pair. (Distinct from complete additive units,
-  where the coupling spans consumers of an already-decided thing.)
-- **Throwaway debug logging**: `console.log`, raw `print`, placeholder messages
-  ("here", "got x", `JSON.stringify(...)`), or log lines scattered without a
-  pattern: in-flight debugging that shouldn't be committed.
-- **TODO / WARN / FIXME / XXX / HACK markers**: a hunk that adds, modifies, or
-  sits adjacent to such a comment is the author flagging unfinished or risky
-  work. Skip the marked hunk _and_ any hunks in the same function / block /
-  coupled call site, with reason "marked incomplete: <quoted marker text>".
-  In-diff markers are stronger signals than pre-existing ones; both warrant
-  skipping.
-- **Code smells, even when the diff looks small**: a reviewer would push back on
-  the _approach_: duplication (a schema copy-pasted with one prop modified
-  instead of composed), drive-by `zIndex: 9999` / magic-number wedges that paper
-  over a layout bug, workarounds that sidestep a root cause (`?? null` to
-  silence a TS error, retry loops masking a race), suspicious one-liners in hot
-  paths or public exports. If you'd be uncomfortable showing the diff to a peer
-  and saying "this needs no review", it's a smell; skip.
-- **Smell-adjacent**: clean-looking changes lose their self-evidence when
-  connected to a smell. Skip when an otherwise-clean hunk is wired into a smell
-  (imports the duplicated schema, sits inside the z-index-wedged container);
-  when a smell appears alongside another smell in the same file or cluster (two
-  smells compound into one larger concern); or when a one-liner has no analogue
-  anywhere in the diff: loneliness signals hand-placed intent whose reason the
-  reviewer can't see. Stage a lonely one-liner only when it unambiguously fits
-  an established trivial category (typo fix, obvious lint repair); otherwise
-  skip with "smell-adjacent: lonely one-liner, intent unclear from diff".
-- **Mixed lines**: a single changed line that fuses stageable and
-  non-stageable changes (a formatting fix on the same line as a logic change).
-  Skip that line. A hunk whose stageable and non-stageable changes sit on
-  _separate_ lines is mixed, not skipped: route it to `stage-hunk` per Process
-  step 3 with a line-level description, since `stage-hunk` can stage individual
-  lines within a hunk.
-- **Merge conflict markers** (UU status files): never touch.
+- **API or wire contract changes**: response shape (`200` → `204`, `allOf` →
+  `oneOf`), endpoint or RPC signatures.
+- **Schema or validation changes**: a field made required, a type or enum set
+  changed, `null` ↔ `undefined` coercion at a boundary.
+- **Database queries and migrations.**
+- **Algorithm or encoding changes**: ID alphabet or format, hash, route
+  resolution.
+- **Config values to weigh** (TTLs, timeouts, feature flags, security policy):
+  name the value and the question, e.g. "`[NAME]_TTL` 3600 → 2_592_000 (why 30
+  days?)".
+- **Secret or credential rotations.**
+- **Test assertion changes**: expected values, mocks, snapshots, scaffolding. A
+  test file that only adds a new file or docblocks stays stageable.
+- **Public symbol renames.**
+- **New abstractions whose shape is the design**: a new exported helper, type or
+  module.
+- **Contract-and-adapter pairs**: one file changes a contract, another adapts.
+  Skip both together.
+- **Throwaway debug logging**: `console.log`, raw `print`, "here", unpatterned
+  `JSON.stringify(...)`.
+- **TODO, WARN, FIXME, XXX or HACK markers**: skip the hunk adding, changing or
+  sitting beside one, plus the hunks in the same function or call site, with
+  "marked incomplete: <quoted marker>".
+- **Code smells**: duplication instead of composition, a `zIndex: 9999` wedge,
+  a workaround around a root cause (`?? null` to silence a type error, a retry
+  loop over a race), a suspicious one-liner in a hot path or export.
+- **Smell-adjacent**: a clean hunk wired into a smell, two smells in one file or
+  cluster, or a lonely one-liner with no analogue in the diff. Stage a lonely
+  one-liner only if it is plainly a typo or lint fix; otherwise skip with
+  "smell-adjacent: lonely one-liner, intent unclear from diff".
+- **Mixed lines**: skip a single line that fuses a stageable and a reviewable
+  change. A hunk with them on separate lines is mixed, not skipped: route it to
+  stage-hunk with a line-level description.
+- **Merge conflicts** (UU status): leave untouched.
 
 ## Process
 
-Work in batches: read all diffs in the step-1 scan, classify, then stage in
-bulk. Avoid re-reading files already inspected.
+1. **Inventory the whole diff first.** Run `git status --short` every time,
+   including re-runs, and trust it over memory, plus `git diff --name-only` and
+   `git diff --stat`. Drop UU and fully staged files. Find cross-file patterns
+   with `git diff -G '<pattern>' --name-only` or `git diff -U0`, not by grepping
+   `^\+` (which matches context). Name four shapes before any verdict: repeated
+   patterns (one decision), additive units (one stage), contract-and-adapter
+   pairs (one skip, never split), and lonely changes (most scrutiny).
+2. **Classify each file** from `git diff -U5 -- <file>`, read once. Before
+   writing a file off, list every hunk with a one-phrase reason; one
+   self-evident hunk makes the file mixed.
+3. **Stage.** All hunks trivial: `git add <file>`. Some: invoke
+   `block65-tools:stage-hunk` through the Skill tool, never its script via
+   Bash, with the file on the first line of `args` and a plain-language
+   description after:
 
-### 1. Inventory the whole diff, before classifying any single hunk
+   ```
+   Skill(skill="block65-tools:stage-hunk",
+         args="src/[module]/[file].ts\nstage only the two logger.warn additions inside existing catches; leave the [unrelated] refactor")
+   ```
 
-- `git status --short` for the full picture (run on every invocation, including
-  re-runs, and trust it over any memory of prior staging) plus
-  `git diff --name-only` for the unstaged set. Skip up front: UU conflicts,
-  fully-staged files.
-- For cross-file pattern detection, prefer `git diff -G '<pattern>' --name-only`
-  or `git diff -U0` over grepping `^\+` lines in the raw diff: the latter
-  catches pre-existing context lines.
-- Scan every file's hunks at a glance (`git diff --stat` plus a quick read) and
-  identify four shapes before any per-file verdict:
-  - **Repeated patterns**: the same line or block added in three or more files.
-    Mechanical sweep; treat the set as one decision.
-  - **Cross-file additive units**: a new file plus the consumer-side wiring that
-    mounts/imports/registers it (new dev page + import + menu entry + render
-    line; new docs file + AGENTS.md pointer). The coupling is the completeness
-    of the addition; treat as one stageable unit.
-  - **Contract-and-adapter pairs**: file A defines or changes a contract (RPC
-    signature, schema, response shape), file B adapts to it. The contract design
-    is under review; treat as one _skip_ unit: never split, and don't mistake it
-    for an additive unit.
-  - **Isolated lonely changes**: hunks with no analogue elsewhere in the diff.
-    These warrant the most scrutiny: isolation often signals hand-placed intent
-    (a deliberate config bump, an algorithm tweak).
-
-### 2. Classify each file's hunks with whole-diff context
-
-For each file with unstaged changes:
-
-1. `git diff -U5 -- <file>`: full diff with context.
-2. Apply the reviewer-judgment test per hunk: a named stageable pattern with
-   confirming evidence → stage; a named skip pattern with confirming evidence →
-   skip; borderline → run the evidence checks, cheapest first, until a verdict
-   emerges.
-3. Before writing a file off as "no stageable hunks present," enumerate every
-   hunk with a one-phrase reason. If any hunk in that list is self-evidently
-   correct on its own, the file is _mixed_, not skipped, so route it to
-   stage-hunk in step 3. "This file is a substantive rewrite" describes the file
-   at large, not the pure-observability or pure-annotation hunks inside it.
-
-### 3. Stage
-
-With `--dry-run`, stage nothing: skip to step 4 and report both lists as what
-would be staged.
-
-- All hunks in a file are trivial → `git add <file>`.
-- Some hunks or lines trivial, some not → invoke `block65-tools:stage-hunk`
-  via the **Skill tool**, never via Bash or its underlying script
-  (`stage_hunk.py`, any cached plugin path), which bypasses the skill's
-  hunk-listing and matching steps. `args` is one string: file path on the first
-  line, a plain-language description of which hunks or lines on the remaining
-  lines:
-
-  ```
-  Skill(skill="block65-tools:stage-hunk",
-        args="src/[module]/[file].ts\nstage only the two logger.warn additions inside existing catches; leave the [unrelated] refactor")
-  ```
-
-- No hunks trivial → leave the file untouched.
-
-### 4. Report
-
-After processing all files, present two lists; each entry names the evidence
-used to classify, not just the category. **Staged**, grouped by classification
-category:
+4. **Report** two lists, one line per file (per hunk when a file is split),
+   each naming its evidence. Pair every high-level reason with the diff detail
+   behind it: "risky: response shape changed 200→204", never "risky" alone.
 
 ```
 Staged:
-  additive unit:    <set: new-file + wiring files> — new <feature> wired via import + menu entry + render line
-  history continuation: <file> — extends pattern from <commit-sha>; same shape, already reviewed
-  uniform sweep:    <N files> — same M-line change identical across <count> files
-  observability:    <file> — adds logger call; logger import confirmed, K× existing usage in same file
-  formatting:       <file> (hunks 1, 3) — whitespace only
-```
-
-**Skipped**, framed as _why I didn't stage it_: a reviewer-style reason,
-grounded in the actual diff:
-
-```
+  additive unit:  <new file + wiring files> — wired via import + menu entry + render line
+  uniform sweep:  <N files> — same M-line change, identical in each
+  observability:  <file> — logger call; import confirmed, K existing uses in file
 Skipped:
-  <file> — risky: response shape changed 200→204, reviewer must weigh
-  <pair: file A + file B> — contract under review: A defines new RPC headers shape, B adapts
-  <file> — config value the reviewer must weigh: [NAME]_TTL 3600 → 2_592_000 (why 30 days, not 7?)
-  <file> — smells: openapi schema duplicated with one prop modified (should compose, not copy)
-  <file> — smell-adjacent: lonely one-liner with no analogue elsewhere, intent unclear from diff
-  <file> — marked incomplete: "TODO: handle reconnect" added at line 87; skipping function and call sites
+  <file A + file B> — contract under review: A defines new RPC headers shape, B adapts
+  <file> — config value to weigh: [NAME]_TTL 3600 → 2_592_000 (why 30 days?)
+  <file> — marked incomplete: "TODO: [text]" added at line [N]
 ```
-
-A high-level reason ("looks risky", "smells", "smell-adjacent", "marked
-incomplete") must be paired with the concrete diff evidence that triggered it:
-"looks risky" alone is useless, "looks risky: response shape changed 200→204" is
-reviewable, and "behavioural" is never acceptable on its own; see the banned
-skip-reasons. One line per file unless a file mixes staged and skipped hunks;
-then list per hunk.
-
-## Arguments
-
-- `--dry-run`: show what would be staged without actually staging anything.

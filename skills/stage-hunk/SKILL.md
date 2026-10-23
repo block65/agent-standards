@@ -1,93 +1,58 @@
 ---
 name: stage-hunk
-description: "Stage or unstage specific hunks, or individual lines within a hunk, from a changed file in a git repo without interactive prompts. Use this skill whenever you need to partially stage or unstage changes: committing only the bug fix hunk but not the refactor, taking one line out of a block of added lines, or unstaging something that was staged by mistake. Common phrases: 'commit only the X changes', 'stage that hunk', 'stage just that line', 'only the second of those lines', 'don't include the Y part', 'unstage the refactor'. Pass args as: first line = file path, remaining lines = plain-language description of which changes to (un)stage. Example args: \"src/foo.ts\\nstage only the import changes, leave the function rename\"."
+description: "Stages or unstages specific hunks, or individual lines within a hunk, from a changed file in a git repo without interactive prompts. Use whenever changes need partial staging or unstaging: committing only the bug fix hunk but not the refactor, taking one line out of a block of added lines, or unstaging something that was staged by mistake. Common phrases: 'commit only the X changes', 'stage that hunk', 'stage just that line', 'only the second of those lines', 'don't include the Y part', 'unstage the refactor'. Pass args as: first line = file path, remaining lines = plain-language description of which changes to (un)stage. Example args: \"src/foo.ts\\nstage only the import changes, leave the function rename\"."
 model: haiku
 context: fork
 allowed-tools: Bash(git diff -U10 -- *), Bash(*/skills/stage-hunk/scripts/stage_hunk.py *)
 ---
 
-You stage or unstage specific hunks from a file. You do NOT commit.
+Stage or unstage specific hunks from one file, then stop; committing is the
+caller's job.
 
-## Arguments
+`$ARGUMENTS` is one string: everything before the first newline is the file
+(absolute or relative; caller cwd does not matter), everything after is the
+description of what to (un)stage. Words like "stage", "unstage" or "only" are
+part of the description, not field labels. Read it verbatim, without asking the
+caller to reformat. If there is no description, report back asking for one.
 
-`$ARGUMENTS` is a single string with this structure:
+## Run the script
 
-- **First line**: the file path with changes (unstaged or staged). Call this the
-  _file_.
-- **Remaining lines**: a plain-language description of which changes to
-  stage/unstage, or line numbers if known. Call this the _description_. May
-  contain the words "stage", "unstage", "only", etc.; these are part of the
-  description, not field labels.
+Always run it as
+`${CLAUDE_PLUGIN_ROOT}/skills/stage-hunk/scripts/stage_hunk.py`, in exactly that
+form, so the shell expands the variable. Use no relative path, no `cd` into a
+development copy, and no glob under `~/.claude/plugins/cache/`. If the variable
+expands empty, stop and report back.
 
-Treat the whole `$ARGUMENTS` string verbatim. Do not look for `key: value`
-fields, do not ask the caller to re-format. Mentally split on the first newline:
-everything before it is the file; everything after it is the description.
+The whole flow is two Bash calls, list then stage. Substitute the file path
+inline: no shell variables, no echo, no probing, no per-hunk calls.
 
-If `$ARGUMENTS` is empty or contains only the file path with no description,
-report back asking the caller for the description; do not guess.
-
-## Steps
-
-**Path rule, read before running any command:**
-
-The script path is **always**
-`${CLAUDE_PLUGIN_ROOT}/skills/stage-hunk/scripts/stage_hunk.py`. Use that exact
-form in every Bash call so the shell expands `$CLAUDE_PLUGIN_ROOT`. Never
-substitute a relative path (`./skills/...`), never `cd` into a development copy
-of the plugin, never glob for the script under `~/.claude/plugins/cache/...`. If
-`$CLAUDE_PLUGIN_ROOT` is empty when you `echo` it, stop and report back; do not
-improvise.
-
-The file may be absolute or relative to your cwd; the script resolves it to
-absolute and changes to the file's directory internally, so caller cwd does not
-matter.
-
-**Procedure, in the minimum number of Bash calls. Do not prepare variables, do
-not echo, do not probe lengths, do not stage in batches.**
-
-1. Mentally split `$ARGUMENTS` into the file and the description. Do not export
-   shell variables for these; substitute the actual file path inline in the
-   commands below.
-2. List the available hunks in exactly one Bash call:
+1. List the hunks (add `--staged` when unstaging):
    ```
    ${CLAUDE_PLUGIN_ROOT}/skills/stage-hunk/scripts/stage_hunk.py --list-hunks <file>
    ```
-   For unstaging, add `--staged`. Prints each hunk with index, line range, and
-   preview.
-3. Match the description to the listed hunks. The script accepts indices and
-   ranges only (`3`, `3-5`), so convert the description into the indices shown
-   by `--list-hunks`.
-4. Stage (or unstage) all matched hunks in **one** Bash call, passing every
-   index in a single invocation:
+2. Convert the description into the listed indices; the script accepts only
+   indices and ranges (`3`, `3-5`). Pass every index in one call:
    ```
    ${CLAUDE_PLUGIN_ROOT}/skills/stage-hunk/scripts/stage_hunk.py <file> 1 3-5
    ${CLAUDE_PLUGIN_ROOT}/skills/stage-hunk/scripts/stage_hunk.py --unstage <file> 2
    ```
-   Do not run one command per hunk.
-5. Report what was staged/unstaged.
+3. Report what was staged or unstaged.
 
-The whole flow should be 2 Bash calls: list, then stage.
-
-**When the description names part of a hunk**, a hunk index is too coarse: a
-hunk is a contiguous run of changed lines, and the caller may want only some of
-them. Swap both calls for the line-addressed pair, same shape and same 2-call
-budget:
+When the description names part of a hunk, use the line-addressed pair instead,
+with the same two-call budget; `--staged` and `--unstage` work the same:
 
 ```
 ${CLAUDE_PLUGIN_ROOT}/skills/stage-hunk/scripts/stage_hunk.py --list-lines <file>
 ${CLAUDE_PLUGIN_ROOT}/skills/stage-hunk/scripts/stage_hunk.py --lines <file> 2 5-7
 ```
 
-`--list-lines` numbers every changed line and shows which hunk it belongs to;
-`--staged` and `--unstage` work as they do for hunks. A rewritten line is a
-`-`/`+` pair; select both indices to rewrite it, or one alone to leave the old
-and new line both in the index (the script warns when a selection does this).
+A rewritten line is a `-`/`+` pair: select both to rewrite it; selecting one
+leaves the old and new lines both in the index, and the script warns.
 
-If the listing is insufficient to match the description, you may add one
-`git diff -U10 -- <file>` call for more context, in exactly that form. If you
-still can't match, report back with a summary so the caller can clarify; do not
-guess indices.
+If the listing cannot be matched to the description, one
+`git diff -U10 -- <file>` call is allowed, in exactly that form. If it still
+cannot be matched, report back with a summary so the caller can clarify,
+instead of guessing indices.
 
-A mode change, an untracked file and a binary file have no hunks, so the script
-never stages them and says so. Pass its message back to the caller rather than
-working around it.
+A mode change, an untracked file and a binary file have no hunks; pass the
+script's message for them back to the caller unchanged.
