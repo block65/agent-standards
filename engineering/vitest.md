@@ -2,298 +2,74 @@
 
 **Prerequisite:** Also follow the rules in [Testing Philosophy](testing.md).
 
-Vitest is the unit and integration test surface for TypeScript projects: pure
-logic, modules, and small system slices that don't need a browser.
+## Rules
 
-## Non-negotiables
-
-1. **Never use `vi.useFakeTimers()` to dodge real async.** Fake timers are for
-   testing time-dependent logic (debounce, retry backoff). They are not a tool
-   for skipping `await`s. If a test passes only with fake timers, the production
-   code probably has a race.
-
-2. **Never fix a seed.** Use `crypto.randomUUID()`, `Temporal.Now.instant()`,
-   faker without a fixed seed. Seed with a random value and log it, so a failure
-   is reproducible. A test that passes for one seed and breaks for another means
-   a system bug, not a flaky test.
-
-3. **Never `--update` snapshots to fix a failure.** Snapshots regenerate when
-   the spec genuinely changes. If you don't know why the snapshot differs, the
-   system changed in a way you don't understand; investigate before
-   regenerating.
-
-4. **Never assert so loosely it can't fail.** `expect(result).toBeDefined()` is
-   rarely the assertion you actually mean. Pin the meaningful properties.
-
-5. **Never catch in a test to keep it green.** `try { fn() } catch {}` swallows
-   the signal. Use `expect(fn).toThrow(...)` for thrown errors and let
-   everything else propagate.
-
-6. **Never raise per-test or `expect.poll` timeouts to absorb a flake.** SLOW =
-   FAIL; see `engineering/testing.md`. Find the actual completion event or fix
-   the saturation in the product.
-
-## Naming
-
-Describe behaviour, not implementation.
-
-GOOD: the title names a behaviour.
-
-```ts
-test("rejects requests when the user lacks the items.write scope");
-```
-
-BAD: the title names an implementation detail.
-
-```ts
-test("checkScope returns false");
-```
-
-## Structure
-
-Arrange / Act / Assert, in order, with whitespace between phases.
-
-```ts
-test("parseConfig defaults missing optional fields", () => {
-	const raw = { host: "localhost" };
-
-	const config = parseConfig(raw);
-
-	expect(config.port).toBe(8080);
-	expect(config.tls).toBe(false);
-});
-```
-
-Every test owns its data. No `beforeAll` mutation that other tests rely on.
-
-```ts
-const tableName = `test_${crypto.randomUUID().replaceAll("-", "_")}`;
-await createTable(tableName);
-```
-
-## Async
-
-Always assert on the resolved value, not the promise: await it first, or assert
-through `.resolves`.
-
-```ts
-test("[behaviour]", async () => {
-	const user = await fetchUser(id);
-	expect(user.email).toMatch(/@/);
-
-	await expect(fetchUser(id)).resolves.toMatchObject({ id });
-});
-```
-
-For things that settle eventually, use `expect.poll` with a meaningful timeout.
-Never `setTimeout` in a test.
-
-```ts
-test("[behaviour]", async () => {
-	await expect
-		.poll(() => store.get(id), { timeout: 5000 })
-		.toMatchObject({ status: "ready" });
-});
-```
-
-When the production code emits a completion signal (event, promise, callback),
-await _that_, never poll shared state hoping it caught up. See "Observing vs.
-asserting" in `engineering/testing.md`.
-
-## Errors
-
-Assert on the error type, not the message string. `CustomError` subclasses
-survive copy changes; string matches don't.
-
-BAD: matches the message string.
-
-```ts
-test("[behaviour]", async () => {
-	await expect(action()).rejects.toThrow("User does not have permission");
-});
-```
-
-GOOD: matches the error type.
-
-```ts
-test("[behaviour]", async () => {
-	await expect(action()).rejects.toBeInstanceOf(PermissionDeniedError);
-});
-```
-
-If a fragment of the message carries information you actually care about,
-regex-match the fragment, never the full sentence.
-
-## Assertions and narrowing
-
-Use `assert` from vitest to verify and narrow in one step:
-
-```ts
-import { assert } from "vitest";
-
-test("[behaviour]", async () => {
-	const user = await fetchUser(id);
-	assert(user, "fetchUser returned no user");
-
-	// `user` is now non-null both at runtime and to the type system
-	expect(user.email).toMatch(/@/);
-});
-```
-
-For shape checks, use a type-guard predicate:
-
-```ts
-function isMember(value: unknown): value is Member {
-	return typeof value === "object" && value !== null && "role" in value;
-}
-
-test("[behaviour]", () => {
-	const member = response.members.find((m) => m.userId === targetId);
-	assert(
-		isMember(member),
-		"expected member with targetId to have Member shape",
-	);
-
-	expect(member.role).toBe("admin");
-});
-```
-
-`expect(x).toBeDefined()` does not narrow: TypeScript still sees `x` as possibly
-`undefined` after. Use `assert` when you need narrowing.
+- **Fake timers only for time-dependent logic** (debounce, retry backoff), never
+  to skip real `await`s. A test that passes only with fake timers points at a
+  race in the production code.
+- **Pin the meaningful properties.** `toBeDefined()` is rarely the assertion
+  meant, and it does not narrow the type. To verify and narrow in one step, use
+  `assert` from vitest, with a type-guard predicate for shape checks.
+- **Assert the error type, not the message:**
+  `await expect(action()).rejects.toBeInstanceOf([ErrorClass])`. When a message
+  fragment carries information, regex-match the fragment, never the sentence.
+- **Eventual state:** `expect.poll`, never a sleep; await a completion signal
+  when the production code emits one.
+- **Fixtures** (factories, seed helpers, canned payloads) live in `fixtures.ts`
+  or `test/fixtures/*.ts`, imported by the spec.
 
 ## Snapshots
 
-Snapshots are the preferred assertion for shape-heavy outputs: API responses,
-parsed config, normalized payloads. They:
+Prefer snapshots for shape-heavy output (API responses, parsed config,
+normalised payloads): a new field appears in the diff and forces a decision.
 
-- Capture the entire shape, so a new field appears in the diff and forces an
-  explicit decision (rather than slipping through a hand-written
-  `toMatchObject`).
-- Cut assertion boilerplate.
-- Make spec changes visible in PR review.
+- **`toMatchSnapshot`** for data; **`toMatchFileSnapshot`** for content with its
+  own syntax (HTML, SQL, generated source), so the file keeps its extension and
+  highlighting and avoids `.snap` escaping.
+- **Deterministic output.** Cover UUIDs, timestamps, hashes and tokens with
+  property matchers (`toMatchSnapshot({ id: expect.any(String) })`) or
+  `expect.stringMatching`. When one shape recurs across many tests, register an
+  `expect.addSnapshotSerializer` in `vitest.setup.ts`. The system under test
+  keeps its real randomness.
+- **Let `vitest -u` write the `.snap`;** never hand-write it, since the
+  serialised form of asymmetric matchers changes between versions.
+- **Update only for a spec change.** Never run `-u` to fix a failure. After
+  updating, read every hunk; a change you cannot explain is a bug to investigate
+  before committing.
 
-### Determinism is mandatory
+## Coverage per state-changing operation
 
-A snapshot must produce identical output every run. For non-deterministic fields
-(UUIDs, timestamps, hashes, random tokens), use **property matchers**, the first
-argument to `toMatchSnapshot`:
-
-```ts
-test("[behaviour]", () => {
-	expect(user).toMatchSnapshot({
-		id: expect.any(String),
-		createdAt: expect.any(Temporal.Instant),
-	});
-});
-```
-
-For pattern-shaped values, use `expect.stringMatching`. Let `vitest -u` write
-the `.snap` entry; don't hand-write it, the serialized form of asymmetric
-matchers can change between vitest versions.
-
-When the same non-deterministic shape recurs across many tests, register a
-**custom serializer** in `vitest.setup.ts` so it normalizes once:
-
-```ts
-expect.addSnapshotSerializer({
-	test: (val) => typeof val === "string" && /^[0-9a-f-]{36}$/.test(val),
-	serialize: () => '"<uuid>"',
-});
-```
-
-(The full `pretty-format` plugin signature is
-`serialize(val, config, indent, depth, refs, printer)`; only spell out the args
-you need.)
-
-This preserves real randomness in the system under test (per
-`engineering/testing.md`) while keeping the snapshot stable.
-
-### Choosing the matcher
-
-Pick the snapshot matcher by the content it holds:
-
-- **`toMatchSnapshot`** for data: API responses, parsed config, normalized
-  payloads. The `.snap` file sits beside the spec.
-- **`toMatchFileSnapshot`** for content with its own syntax (HTML, SQL,
-  generated source). The snapshot keeps the matching file extension, so it
-  survives review with highlighting intact and without the `"` and `` ` ``
-  escaping that `.snap` files impose.
-
-Vitest itself states no preference here; this one is ours.
-
-### Updating
-
-Regenerate a snapshot only when the spec genuinely changed and the new output is
-the intended new contract. `vitest -u`, then read every diff hunk and confirm
-each change is intentional. If you can't explain a change, the system did
-something you didn't ask for; investigate before committing the new snapshot.
-
-## Coverage rubric per operation
-
-For every operation that changes state, cover:
-
-1. **Happy path**: expected return shape via snapshot with property matchers
-   (see Snapshots), or `toMatchObject` when only a few fields are contractual.
-2. **Permission denial**: call as a principal who shouldn't be allowed; assert
-   the error type (`PermissionDeniedError` or equivalent).
-3. **Not found**: nonexistent ID; the contract-defined response (`undefined` or
-   a typed error).
+1. **Happy path**: snapshot with property matchers, or `toMatchObject` when only
+   a few fields are contractual.
+2. **Permission denial**: call as a principal who is not allowed; assert the
+   error type. Read-only operations skip this only when anyone may read.
+3. **Not found**: the contract-defined response to a nonexistent ID.
 4. **Edge cases**: duplicates, expiry, partial updates, idempotent deletes.
-5. **Side effects**: when the operation emits a queue message, event, or
-   outbound call, assert on the shape of the emitted payload, not just the
-   return value.
-
-Read-only operations skip permission denial only if the contract is "anyone can
-read".
-
-## Helpers
-
-- **Helpers drive production code.** A `seedOrg` helper that calls `createOrg`
-  (the function the rest of the suite is testing) is correct. A `seedOrg` helper
-  that runs `INSERT INTO orgs ...` bypasses the layers you're trying to test.
-- **Raw SQL / direct backend writes are reserved for states the application
-  layer cannot produce**: expired rows, orphaned references, corrupted state for
-  recovery tests. If you can produce the state through the production API, do.
-- **Fixtures live in a fixtures file.** Reusable test data (factories, seed
-  helpers, canned payloads) belongs in `fixtures.ts` (or `test/fixtures/*.ts`),
-  not at the top of every spec or duplicated across files. A spec should import
-  what it needs and read like a single user journey.
+5. **Side effects**: assert the shape of an emitted queue message, event or
+   outbound call (capture it with `vi.spyOn`), not just the return value.
 
 ## Mocking
 
-See `engineering/testing.md` for the philosophy. In vitest specifically:
-
-- **Network:** `msw` at the request layer. The same handlers work in Node,
-  browser, and Workers.
-- **Module replacement:** `vi.mock(import('./module'))` replaces an entire
-  module. Use it sparingly, and only for modules that own a real boundary (file
-  system, network, time). Never to swap out internal logic.
-- **Spies:** `vi.spyOn` for asserting calls without changing behaviour. Use
-  spies to capture emitted side effects (queue messages, event payloads) and
-  assert on their shape.
-- **Reset between tests:** set `restoreMocks: true` in vitest config (calls
-  `mockRestore()` on every spy before each test). For factories from `vi.fn()`
-  or `vi.mock()`, also set `mockReset: true` so implementations are reset, not
-  just history. `vi.restoreAllMocks()` alone only restores `vi.spyOn` originals;
-  it does not reset `vi.fn()` implementations or unmock modules.
+- **`vi.mock`** only for modules that own a real boundary (file system,
+  network, time), never to swap internal logic.
+- **Reset between tests:** set `restoreMocks: true` and `mockReset: true` in the
+  vitest config. `vi.restoreAllMocks()` alone restores `vi.spyOn` originals but
+  does not reset `vi.fn()` implementations or unmock modules.
 
 ## Detecting undeclared dependencies
 
-Rule: "Architecture for testability" in `engineering/testing.md`. In vitest it
-reduces to one question: **does the setup change something no production caller
-changes?** Mutating an ambient object to inject a dependency, `vi.stubGlobal`,
-fake timers used to age stored state, a module-scope `Map` written to directly:
-each is a finding about the code, and the list does not close. Match the shape,
-not the API.
+Applies "Architecture for testability" in [Testing Philosophy](testing.md). Ask:
+does the setup change something no production caller changes? `vi.stubGlobal`,
+mutating an ambient object to inject a dependency, fake timers used to age
+stored state, and writing a module-scope `Map` directly are each a finding about
+the code. Match the shape, not the API.
 
-One form is worth naming because its cost is not obvious. **`vi.resetModules()`,
-or a batch of dynamic imports.** Module-scope state has the module registry's
-lifetime, and that registry is process-global: no caller can name the instance,
-so a fresh one costs a graph rebuild, and every module holding a reference must
-re-import in the same batch or observe a different one.
+`vi.resetModules()` or a batch of dynamic imports is the costly form: the module
+registry is process-global, so a fresh instance costs a graph rebuild and every
+module holding a reference must re-import in the same batch.
 
-BAD: the memo lives in module scope, so the test rebuilds the graph to reset it,
-and mutates a global to inject the client.
+BAD: rebuilds the module graph to reset a module-scope memo, and mutates a
+global to inject the client.
 
 ```ts
 test("[behaviour]", async () => {
@@ -301,51 +77,16 @@ test("[behaviour]", async () => {
 	const { loadSettings } = await import("./settings.ts");
 	Object.assign(env, { STORE: { fetchDoc } });
 
-	const settings = await loadSettings();
-	expect(settings).toMatchSnapshot();
+	await expect(loadSettings()).resolves.toMatchSnapshot();
 });
 ```
 
-GOOD: the cache is a value, so its owner picks the lifetime. Production builds it
-once at startup, as before.
+GOOD: the cache is a value, so its owner picks the lifetime; production builds
+it once at startup.
 
 ```ts
 test("[behaviour]", async () => {
 	const cache = createSettingsCache({ store: { fetchDoc }, now: clock.now });
-	const settings = await loadSettings({ cache });
-	expect(settings).toMatchSnapshot();
-});
-```
-
-## Anti-patterns
-
-BAD: a seeded RNG hides input-dependent bugs.
-
-```ts
-faker.seed(42);
-await createUser({ name: faker.person.firstName() });
-```
-
-GOOD: real randomness lets the system meet inputs it will see in production.
-
-```ts
-await createUser({ name: faker.person.firstName() });
-```
-
-BAD: sleeps, then reads shared state on the assumption that it has caught up.
-
-```ts
-test("[behaviour]", async () => {
-	await new Promise((r) => setTimeout(r, 100));
-	expect(received).toHaveLength(1);
-});
-```
-
-GOOD: awaits the completion signal the production code emits.
-
-```ts
-test("[behaviour]", async () => {
-	const message = await subscriber.next();
-	expect(message).toMatchObject({ topic: "events.created" });
+	await expect(loadSettings({ cache })).resolves.toMatchSnapshot();
 });
 ```

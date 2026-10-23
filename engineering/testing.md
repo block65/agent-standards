@@ -1,174 +1,91 @@
 # Testing Philosophy
 
-Tests are diagnostic instruments. Their job is to _try to break the system_, not
-validate today's code. Win condition: a system you can't break, not a green
-check.
+Tests exist to break the system. A pass confirms only the cases written; a
+failure is the signal, so structure each test to expose a defect.
 
-## Mental model
+## A failing test means the system has a bug
 
-- **Tests are adversaries, not gates.** Structure them to expose problems, not
-  to pass. A test that is hard to fail was written backwards.
-- **Green ≠ working. Red = signal.** A pass only confirms the cases you wrote; a
-  failure tells you something specific about the system. Treat red as the more
-  valuable outcome; that's where you learn.
-- **Fix the code under test by default.** When a test fails, fix the code under
-  test. Adjusting the test (narrowing assertions, seeding randomness, skipping
-  cases, retrying) hides a defect. The only legitimate reason to change what a
-  test asserts is that the **contract** genuinely changed (new spec, deprecated
-  behaviour); document why in the diff.
-- **Test the system, not a simulation of it.** Drive the production code path.
-  Mocks belong at the network boundary, not inside the unit under test.
-- **Failures must be loud and observable.** Swallowing an error, returning
-  `undefined`, or "recovering" silently is a bug, not robustness. Surface what
-  happened: error type, status, UI feedback.
+Fix the code under test. Change what a test asserts only when the contract
+changed (new spec, deprecated behaviour), and say why in the diff. These are not
+fixes:
 
-## One test per failure mode
-
-A test earns its place only if it can fail on a bug no other test catches.
-Before adding one, name the failure mode it surfaces that the rest of the suite
-would miss. If you can't, don't add it.
-
-- **When two tests cover the same failure, delete the lower-level one.** The
-  test closest to the user contract owns the behavior. The same happy path at
-  unit, integration, and e2e is one signal, three maintenance costs, zero extra
-  bugs.
-- **Exception: the lower-level test reaches a branch the higher one can't**: a
-  rare error path, a race, a numerical edge. The retained test must do something
-  the higher-level test _cannot_, not the same thing faster. Input permutations
-  (validation shapes, copy variants) are this exception: e2e keeps one
-  representative shape, the permutations live at unit/component level.
-
-BAD: the same happy path at three layers, with one bug surface.
-
-```ts
-test("validateItem accepts a valid item");
-test("createItem persists a valid item");
-test("POST /items creates an item");
-```
-
-GOOD: keep the test closest to the contract, since the others add no failure
-mode.
-
-```ts
-test("POST /items creates an item");
-```
-
-## Non-negotiable inputs
-
-- **Real randomness, every run.** UUIDs, timestamps, faker output without a
-  fixed seed. No canonical "Test User" that papers over collisions. A test
-  passing once with `id: 1` tells you nothing about the id a real user
-  generates. **Print the seed/inputs on failure** so flakes are reproducible;
-  randomness without traceability is just noise.
-- **Real user flows.** Drive the system through its public surface: API, UI,
-  CLI. No test-only shortcuts that skip the layers under test.
-- **Real failure modes.** Empty inputs, oversized inputs, concurrent writes,
-  dropped connections, malformed payloads. Don't test only the shapes that work.
-
-## Hard rejects
-
-These are responses to a failing test, not fixes:
-
-- Loosening an assertion so it passes
-- Fixing a seed to "stabilise" a test
-- `test.skip` / `.only` left in a committed Playwright spec
+- Loosening an assertion, or one so loose it cannot fail
+- Fixing a seed to stabilise a test
 - Adding retries to mask a race
-- **Raising a timeout to absorb a flake** (see "SLOW = FAIL" below)
+- Raising any timeout (per-test, action, poll) to absorb a flake
 - Catching exceptions in the test to keep it green
 - Mocking past a real boundary to dodge an error
+- Leaving `test.skip` or `.only` in a committed spec
 
-If a test fails, the system has a bug. Fix the system.
+A failure the code swallows (returns `undefined`, recovers silently) is a bug:
+surface the error type, status or UI feedback.
 
-## SLOW = FAIL
+## Slow is a failure
 
-A test flaky at a 5-second timeout but green at 30 has not been fixed. A real
-problem (race condition, resource saturation, unbounded retry) is buried in
-latency. Next time it's slow it crosses the new threshold too, and the suite
-balloons from 2 minutes to 15 and still fails.
-
-- **Treat latency as a failure mode.** If an operation that should be instant is
-  taking seconds, the test has discovered something real. Investigate the
-  system, not the timeout.
-- **Never raise a timeout to absorb a flake.** Find the actual completion signal
-  (see "Observing vs. asserting") or fix the saturation in the product.
-- **Default budgets are signals.** Playwright's `actionTimeout`, vitest's
-  per-test timeout, `expect.poll` timeouts are the slack the framework has
-  already given you. If you need more, the framework is telling you something.
-- **Measure before tuning.** When parallel runs flake, ask what resource is
-  saturating at this concurrency, not for more time per test. Profile the run,
-  find the bottleneck, fix it. Raising parallel timeouts to mask saturation
-  makes the suite slower and still red.
+A test flaky at 5 seconds but green at 30 still hides a race, saturation or
+unbounded retry. Treat latency as a finding: investigate the system, or await
+the real completion signal. When parallel runs flake, find the resource that
+saturates at that concurrency and fix it.
 
 ## Observing vs. asserting
 
-There is one legitimate kind of test change: sharpening _how_ the test observes
-the system, without changing _what_ it asserts.
+The one legitimate test change sharpens _how_ the test observes without changing
+_what_ it asserts: await the completion signal the production code emits (an
+event, a promise, a readiness signal already on the production surface) instead
+of sleeping or polling shared state. If the production code breaks, the test
+must still go red.
 
-- **Cheating (banned):** widening assertions, mocking past the boundary,
-  swallowing errors, stubbing the thing under test, reducing scope.
-- **Sharpening observation (allowed):** awaiting the actual completion signal
-  the production code emits instead of polling shared state; subscribing to an
-  event instead of guessing when it's done; using a deterministic readiness
-  signal already part of the production surface.
+## One test per failure mode
 
-The contract under test must stay the same. If the production code breaks, the
-test must still go red, ideally with a clearer failure (a timeout that names the
-awaited event beats an empty-array surprise).
+Add a test only when you can name the bug it catches that no other test does.
+When two tests cover the same failure, delete the lower-level one: the test
+closest to the user contract owns the behaviour. Keep a lower-level test only
+when it reaches what the higher one cannot (a rare error path, a race, a
+numerical edge). Input permutations (validation shapes, copy variants) live at
+unit or component level; e2e keeps one representative shape.
+
+## Inputs and data
+
+- **Real randomness, every run.** UUIDs, timestamps, faker with no fixed seed;
+  no canonical "Test User". Log the seed or inputs on failure so a flake can be
+  reproduced.
+- **Real failure modes.** Cover empty, oversized, concurrent, dropped and
+  malformed inputs, not only the shapes that work.
+- **Each test owns its data.** Generate unique identifiers per test; no shared
+  mutable state, and no `beforeAll` mutation another test relies on. Two
+  parallel runs of the suite must never collide.
+- **Setup drives production code.** Helpers and fixtures create state through
+  the production API (a `[seed]` helper calls `[create]`). Write to the
+  backend directly only for states the application cannot produce: expired
+  rows, orphaned references, corrupted state.
+- **Name tests by behaviour.** The title says what the caller or user observes,
+  not which function or request runs.
 
 ## Architecture for testability
 
-A test is a second caller. When it cannot pass inputs and read outputs without
-first altering the environment the code runs in (resetting the module registry,
-assigning onto a global, replacing the clock), the code takes an input it never
-accepts as a parameter.
+A test is a second caller. Code that cannot be tested through its public surface
+is a code problem; code that cannot be tested the way you first tried is usually
+a harness problem. Tell them apart by what had to change to reach the behaviour:
 
-**Code that cannot be tested through its public surface is a code problem. Code
-that cannot be tested the way you first tried is usually a harness problem.**
+- **Harness cost** (fix the harness): arguments, containerised backing services,
+  intercepted requests, a wrapper the production caller also applies.
+- **Code problem** (fix the code): resetting the module registry, assigning onto
+  a global, replacing the clock, mocking an internal function. Module-scope
+  state, values read off a global and the current time are inputs the code takes
+  without accepting; construct and pass them so the caller owns the lifetime.
 
-- **Concrete over abstract.** Avoid DI containers and interface/trait
-  abstractions added "for testing"; they add complexity to dodge work that
-  should be done by separating pure logic from boundaries.
-- **Pure logic.** Move business logic into pure functions that take data and
-  return data. Test via input/output assertions, no mocks needed.
-- **Move boundaries, don't mock past them.** If a unit is too hard to test
-  without mocking its internals, the boundary is in the wrong place. Refactor.
-- **Declare ambient inputs.** Module-scope state, values read off a global
-  environment object, and the current time are dependencies taken without being
-  accepted. Construct and pass them, so a caller owns the lifetime and a test
-  can name the instance it wants fresh.
-
-To tell the halves apart, ask what had to change to reach the behaviour. Harness
-cost: arguments, containerised backing services, intercepted requests, a wrapper
-the production caller also applies. Code problem: the module registry, a global
-object, the clock, an internal function replaced by a mock. Neither, so leave
-them alone: domains that resist observation by nature (concurrency, rendering,
-hardware) need a better harness, and splitting a coherent unit so mocks fit
-between the parts buys a coverage number with working code.
+Separate pure logic from boundaries instead of adding DI containers or
+interfaces for testing. Domains that resist observation (concurrency, rendering,
+hardware) need a better harness; leave them whole rather than splitting a unit
+so mocks fit between the parts.
 
 ## Boundary mocking
 
-- **Network, not client.** Mock at the network boundary, not the internal client
-  boundary.
-- **Protocol fidelity.** Intercept the transport layer (HTTP/TCP) so
-  serialization, headers, and status codes are exercised end-to-end.
-- **Two-or-three-mocks limit.** If a test requires more than 2-3 mocks to
-  function, the architectural boundary is misplaced. Refactor before adding a
-  fourth.
-- **Never test the mock.** If most of the test is setup and assertion of mock
-  behaviour rather than system behaviour, the test has no diagnostic value.
-- **Real backing services where you can.** For tests that touch a database,
-  queue, or cache, run the real thing in a container (testcontainers), not an
-  in-memory fake. Fake Postgres has different semantics from real Postgres; a
-  test that passes against the fake is not the test you wanted.
-
-### TypeScript (Node.js / Cloudflare)
-
-- Use `msw` (Mock Service Worker). Intercepts at the request layer so the same
-  handlers cover Node, browsers, and Workers. Don't reach for `undici`'s
-  `MockAgent` or `fetchMock`; they are Node-only, so their handlers can't be
-  shared across runtimes.
-
-### Rust
-
-- Use `wiremock`. Start a local mock server and point your concrete client at
-  the local URL.
+- **Mock the network, not the client.** Intercept HTTP so serialisation, headers
+  and status codes run. TypeScript: `msw`, whose handlers run in Node, browsers
+  and Workers (not `undici` `MockAgent` or `fetchMock`, which are Node-only).
+  Rust: `wiremock`, with the concrete client pointed at its URL.
+- **Real backing services.** Run the database, queue or cache in a container
+  (testcontainers), not an in-memory fake with different semantics.
+- **More than 2-3 mocks means a misplaced boundary.** Refactor before adding a
+  fourth. A test that mostly sets up and asserts mocks tests nothing.
