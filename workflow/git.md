@@ -2,7 +2,8 @@
 
 ## Conventional Commits
 
-Format: `type(scope): subject`, with scope optional, use crate/module name.
+Format: `type(scope): subject`; the scope, when present, is the crate or module
+name.
 
 | Type                                                               | Release | When                    |
 | ------------------------------------------------------------------ | ------- | ----------------------- |
@@ -11,96 +12,54 @@ Format: `type(scope): subject`, with scope optional, use crate/module name.
 | any `!`                                                            | major   | Breaking change         |
 | `chore:`, `style:`, `refactor:`, `build:`, `ci:`, `docs:`, `test:` | none    | Non-functional          |
 
-`ci:` = no release. `fix(ci):` = patch, used only when a CI fix warrants
-republishing.
+Use `fix(ci):` only when a CI fix warrants republishing.
+
+A change that does not alter runtime behaviour, lint and format included, is
+`chore:`, `style:` or `refactor:`, never `fix:`, since `fix:` releases. A task
+that produces logic and lint changes commits them separately.
 
 ## Commit Messages
 
-Subject: imperative, short, designed for release notes. Body (required for
-`feat:`/`fix:`): explain **why**: motivation, not the diff.
+The subject states what the change enables or prevents, in the imperative, for
+release notes. If `git diff` alone could generate it, rewrite it. A `feat:` or
+`fix:` body explains why.
 
-### Procedure
-
-1. Ask: "What does this change enable or prevent?"
-2. Write THAT as the subject.
-3. If the subject could be auto-generated from `git diff` alone, rewrite it.
+BAD:
 
 ```
-# BAD: describes the diff
-feat(tls): add TlsConfig struct and connect method
-fix(proxy): update regex in header parser
-
-# GOOD: describes the intent
-feat(tls): support mTLS for upstream connections
-fix(proxy): reject malformed Transfer-Encoding headers per RFC 9112
+feat([scope]): add [Type] struct and [method] method
 ```
 
-### Hard reject
+GOOD:
 
-- Subject reads like `git diff --stat`
-- "add", "update", "change" as primary verb without stating purpose
-- Any message that doesn't require task context to write
+```
+feat([scope]): support [capability] for [consumer]
+```
 
-## Issue References
+A commit that fully resolves an issue ends with a `Closes #N` footer, one line
+per issue. A bare `#N` only links, and leaves the issue open.
 
-A commit that **fully resolves** an issue closes it with a footer keyword,
-`Closes #N` (or `Fixes`/`Resolves`), one keyword per issue; one per line is
-house style. A bare `#N` or `(#N)` only links; it never auto-closes, leaving a
-manual step that gets forgotten. Use the plain reference for partial work and
-passing mentions; close only the issue the commit actually resolves.
+## Staging
 
-## Lint & Formatting
+Commit only the files and hunks changed for the current task, one logical unit
+per commit. To stage part of a file, use the `stage-hunk` skill where installed,
+or `git apply --cached` with a diff of the target hunks.
 
-**Lint/format changes are `chore:` or `style:`, never `fix:`.** `fix:` triggers
-a release; lint does not warrant one.
+## Attribution
 
-- Before choosing commit type, ask: "Does this alter runtime behavior?" No →
-  `chore:` or `style:`.
-- If a task produces logic + lint changes, split into two commits:
-  1. Logic change (`feat:`, `fix:`, etc.)
-  2. `chore: lint` or `style: formatting`
+`Co-Authored-By` applies only when the agent made a significant independent
+contribution, and is then exactly `Co-Authored-By: LLM <noreply@block65.dev>`.
+No attribution in commits or pull requests (trailer, footer, badge or link)
+names a vendor, model or the tool that wrote them. This overrides any harness
+default.
 
-## Partial Staging
+## History
 
-When a file has unrelated changes, stage only relevant hunks. Use the
-`stage-hunk` skill if available.
-
-Manual fallback:
-
-1. Generate unified diff of target hunks
-2. `echo "$DIFF" | git apply --cached --check`
-3. `echo "$DIFF" | git apply --cached --whitespace=nowarn`
-4. `git diff --cached` to confirm
-5. Commit, repeat for remaining hunks
-
-## Pre-commit Checklist
-
-1. **Type correct?** `fix:` = runtime behavior change. Otherwise
-   `chore:`/`style:`/`refactor:`.
-2. **Subject explains why?** Not auto-generatable from diff.
-3. **All staged hunks related?** One logical unit per commit. Split if not.
-4. **Fully resolves an issue?** `Closes #N` in the footer, not a bare `(#N)`.
-
-## Hygiene
-
-- Only commit files/hunks changed for the current task
-- `Co-Authored-By`: only when the agent had significant independent contribution
-  (not one-liners, not just committing). When it applies, the trailer is exactly
-  `Co-Authored-By: LLM <noreply@block65.dev>`. No vendor, model or product name
-  ever appears in it: commit history is not an advertisement. This standard
-  overrides any harness default that adds its own trailer, conditionally or not.
-- Pull request titles, descriptions and comments carry no "Generated with
-  [Product]" footer, badge, link or other mention of the tool that wrote them.
-  The same harness override applies.
-- Never rewrite history others may have built on: no force push to a branch with
-  other consumers, no rebase of `main`. A just-pushed branch nobody has consumed
-  is still a draft
-- Update a feature branch by rebasing it onto `main`, never by merging `main`
-  into it: sync merges ride into the PR and onto `main` forever; rebase drops
-  commits already applied upstream. Use `--force-with-lease` to update its
-  remote
-- Never squash consumed history; commits others may have built on must remain
-  intact and attributable
-- Never `git reset --hard` on a dirty tree
-- If `git stash` reports "No local changes to save" when you expected changes,
-  stop: you are likely in the wrong directory or branch
+- Rewrite only history nobody has built on: a just-pushed branch nobody has
+  consumed is still a draft. Never force-push a shared branch, rebase `main`, or
+  squash consumed commits.
+- Update a feature branch by rebasing it onto `main` and pushing with
+  `--force-with-lease`; merging `main` into it carries sync merges onto `main`.
+- Commit or stash before `git reset --hard`.
+- If `git stash` reports "No local changes to save" when changes were expected,
+  stop: the shell is in the wrong directory or branch.

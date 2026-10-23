@@ -1,12 +1,7 @@
 # Dependency Trust
 
-## Source Selection
-
-- **Official first:** Prefer dependencies from established organisations or
-  verified publishers over unknown individuals.
-- **No blind installs:** Verify publisher, maintenance status, and repository
-  activity before adding any dependency.
-- **No trivial packages:** Do not add a dependency for functionality that is
-  trivial to implement.
-- **Current versions:** Use the latest stable release. Do not reference outdated
-  or deprecated versions from training data.
+- Before adding a dependency, check its publisher, maintenance and repository
+  activity; prefer established organisations and verified publishers.
+- Implement trivial functionality instead of adding a package for it.
+- Use the latest stable release, checked at the registry, never a version
+  remembered from training data.

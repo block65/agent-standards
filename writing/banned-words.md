@@ -1,35 +1,26 @@
 # Banned Words
 
-Words we don't use, grouped by why.
-
-## Word choice
-
 Banned from all output: prose, comments, commits, chat.
 
-### Permanent
+## Permanent
 
 - "load bearing": say what depends on it.
 - "seam": name the boundary (the interface, parameter or module edge).
 - "honest": cut it, or say "accurate" or "complete".
 - "fair": cut it, or say "reasonable" or "correct".
-- "seed": when it means an origin, trigger, or starting point; name the thing
-  itself. Literal uses (a random seed, a seed number, seeding a database, seed
-  data) are fine.
-- "fork": when it means a decision or branch point; say "decision" or "branch".
-  Developers read "fork" as a git fork, so the figurative sense misleads.
-  Literal uses (a git fork, `fork()`, forking a process/subagent) are fine.
-- "ladder": say "order" or "sequence", and list the steps in it. Literal uses (a
-  physical ladder, a ladder diagram) are fine.
-- costume framing: one thing "wearing the costume of", "dressed up as",
-  "masquerading as", or "disguised as" another. Name what the thing is and what
-  it does: "introspection, not testing", not "introspection masquerading as
-  testing".
+- "seed", meaning an origin or trigger: name the thing. A random seed or seed
+  data is fine.
+- "fork", meaning a decision point: say "decision" or "branch", since
+  developers read a git fork. A git fork, `fork()` or forking a process or
+  subagent is fine.
+- "ladder": say "order" or "sequence", and list the steps.
+- costume framing ("masquerading as", "dressed up as", "disguised as"): name
+  what the thing is and does.
 
-### Flavour of the month
+## Flavour of the month
 
-Currently-watched words. The date is when an entry was added, not an expiry; a
-flavour can outlast its month. When editing this file, re-test entries older
-than six months: remove one, and re-add it if the behaviour recurs.
+The date is when an entry was added. When editing this file, re-test entries
+older than six months: remove one, and re-add it if the behaviour recurs.
 
 - "tautology" (since 2026-05): say "restates" or "always true".
 - "tension" (since 2026-05): say "conflict" or "trade-off".
@@ -39,8 +30,5 @@ than six months: remove one, and re-add it if the behaviour recurs.
 
 ## Action signal
 
-These are cues, not forbidden text. They surface right before a big or
-irreversible action. On reaching for one, stop and confirm with the user before
-continuing.
-
-- "NUKE"
+"NUKE" is a cue, not forbidden text: it surfaces right before a big or
+irreversible action. On reaching for it, stop and confirm with the user.

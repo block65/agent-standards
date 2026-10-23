@@ -1,29 +1,20 @@
 # Code Review Standards
 
-Report every defect found, including the uncertain and the low-severity ones,
-each with its confidence and severity; rank and drop them after the pass, never
-while reading. A severity bar applied during the read silently costs real
-defects. The list below is where defects recur, not the limit of what to look
-for.
+Report every defect found, including the uncertain and low-severity ones, each
+with its confidence and severity. Rank and drop them after the pass: a severity
+bar applied while reading silently costs real defects.
 
-## Common Bugs
+Defects recur in these places; the list is not the limit of the search.
 
-- Duplicated code chunks (copy-paste without abstraction).
-- Splitting or modifying data types only to reassemble them later in the code
-  path.
-- A frame that narrows a value only to pass it on (stringify-to-pass,
-  slice-to-pass, derive-to-pass) instead of passing it at its richest. See
+- Copy-pasted code, and a change to one function in a set that misses its
+  counterparts.
+- Data split or reshaped only to be reassembled later in the same path.
+- A frame that narrows a value only to pass it on; see
   [Narrowing](narrowing.md).
-- Changing one function in a common set but not its counterparts.
-- Inappropriate log levels for messages.
-- Incomprehensible log messages.
+- Log levels and log messages that do not match what happened.
 - Inconsistent terminology.
-- Ignoring surrounding code ("not my code" mindset).
+- A renamed type whose old name survives in nearby comments and variables.
+- A comment the change left behind; see [Comments](comments.md).
+- Surrounding code left broken because it was "not part of the change".
 
-## Behaviours
-
-- Write tools instead of one-off scripts.
-- When refactoring or renaming a type, check surrounding code for comments and
-  variable names referencing the old name.
-- A comment left behind by a change is a defect in the change; see
-  [Comments](comments.md).
+Write a tool for a check that will recur, instead of a one-off script.

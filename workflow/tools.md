@@ -1,16 +1,13 @@
 # Tool Discipline
 
-Prefer the agent's native tools over the shell. Bash is for running programs
-(builds, tests, git, app binaries), not for work a dedicated tool already does.
+Use the agent's native tools for files, and Bash for running programs (builds,
+tests, git, app binaries). This overrides a harness that permits shell file
+work.
 
-- **Read files** with the Read tool, never `cat`, `sed`, `head`, `tail`, or
-  `less` as the way to read a file. As filters on command output
-  (`build 2>&1 | tail -50`, `tail -f app.log`) they are fine.
-- **Search** with the Grep and Glob tools, not `grep`, `rg`, or `find` in Bash.
-- **Edit files** with the Edit/Write tools, not `sed -i`, `echo >`, or
-  here-docs.
-- **Invoke skills** with the Skill tool, never their underlying scripts via
-  Bash.
-- **Loading instructions:** reference a standards or instruction file by path
-  for the agent to Read, or `@import` it. Never instruct a shell command (e.g.
-  `cat index.md`) to load it.
+- Read with the Read tool, not `cat`, `sed`, `head` or `tail`; those serve only
+  as filters on command output.
+- Search with the Grep and Glob tools, not `grep`, `rg` or `find`.
+- Edit with the Edit and Write tools, not `sed -i`, `echo >` or heredocs.
+- Invoke a skill with the Skill tool, never its underlying scripts.
+- To load a standards file, reference it by path for the agent to Read, or
+  `@import` it, never through a shell command such as `cat`.
