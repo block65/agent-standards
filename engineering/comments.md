@@ -18,8 +18,10 @@ A comment earns its place only by carrying information the code cannot.
   pass counts: they are wrong after the next commit.
 - **A known fix is a task, not a comment.** Apply it, or file an issue and
   reference it.
-- **Shortening a comment keeps its claim.** Delete words or the whole comment;
-  never swap the true reason for a plausible generic one.
+- **Delete a comment that carries nothing; tighten the why, never delete it.**
+  Deletion is the default for a comment without value. One that carries a
+  reason stays: shorten its words, never swap the true reason for a plausible
+  generic one.
 
 ## Form in JavaScript & TypeScript
 
