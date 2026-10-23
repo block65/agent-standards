@@ -28,8 +28,6 @@
 - **Loops that perform side effects or consume streams** have an explicit
   termination or cancellation condition, never `for (;;)`, `while (true)` or
   another constant condition.
-- **Early returns** belong at the top level of a function, as guards. Do not
-  return early from inside a conditional block.
 - **`iife()` for branching `const` values:** Use `iife()` from
   `@block65/toolkit` with a `switch` or `if/else`, instead of `let` +
   reassignment or a raw `(() => {})()`.
