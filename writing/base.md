@@ -8,14 +8,15 @@ specific module if needed.
 - **Delete adjectives:** Remove subjective or hyperbolic descriptors. If a
   sentence works without the adjective, delete it.
 - **No unsubstantiated claims:** Avoid bold assertions like "this is rarely
-  done" or "industry standard" unless they are verifiable facts. If there is no
-  evidence, do not state it.
+  done" or "industry standard" unless they are verifiable facts. Cite the
+  evidence with the claim, or cut the claim.
 
 ## Write for Humans
 
 - **Structure:** Avoid robotic or legalistic tones. Vary sentence structure.
 - **Cohesion:** Combine fragmented thoughts into cohesive paragraphs.
 - **No metaphors:** Do not use metaphors, analogies, or figurative language.
+  Name the literal mechanism or effect.
   - **Established idioms are fine:** Settled idioms and technical terms such as
     "code smell", "escape hatch", "source of truth", and "user journey" are
     vocabulary, not figurative language. Novel metaphors coined for the sentence
@@ -39,9 +40,10 @@ specific module if needed.
 ## Prohibited Patterns
 
 - **Filler transitions:** Do not use "However,", "Furthermore,", "Moreover,",
-  "Additionally,", "It's important to note that,", "In today's world,".
-- **Excessive em-dashes:** Do not overuse em-dashes to hold a sentence together
-  where a comma, colon, or full stop would serve.
+  "Additionally,", "It's important to note that,", "In today's world,". Open the
+  sentence with its claim, and let sentence order carry the link.
+- **Excessive em-dashes:** Join clauses with a comma, colon, or full stop. Keep
+  the em-dash for a parenthetical aside.
 - **Unnecessary lists:** Use prose when a list adds no structural value.
 - **Banned vocabulary:** See [Banned Words](banned-words.md): words banned from
   all output (prose, comments, commits, chat).

@@ -8,10 +8,10 @@ Banned from all output: prose, comments, commits, chat.
 
 ### Permanent
 
-- "load bearing"
-- "seam"
-- "honest"
-- "fair"
+- "load bearing": say what depends on it.
+- "seam": name the boundary (the interface, parameter or module edge).
+- "honest": cut it, or say "accurate" or "complete".
+- "fair": cut it, or say "reasonable" or "correct".
 - "seed": when it means an origin, trigger, or starting point; name the thing
   itself. Literal uses (a random seed, a seed number, seeding a database, seed
   data) are fine.
@@ -31,11 +31,11 @@ Currently-watched words. The date is when an entry was added, not an expiry; a
 flavour can outlast its month. When editing this file, re-test entries older
 than six months: remove one, and re-add it if the behaviour recurs.
 
-- "tautology" (since 2026-05)
-- "tension" (since 2026-05)
-- "smoking gun" (since 2025-08)
-- "tractable" (since 2026-06)
-- "belt-and-braces" (since 2026-08)
+- "tautology" (since 2026-05): say "restates" or "always true".
+- "tension" (since 2026-05): say "conflict" or "trade-off".
+- "smoking gun" (since 2025-08): say "evidence" and cite it.
+- "tractable" (since 2026-06): say "solvable" or "feasible".
+- "belt-and-braces" (since 2026-08): name the second safeguard.
 
 ## Action signal
 

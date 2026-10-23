@@ -28,5 +28,6 @@ Follow this order for guides:
 ## Language
 
 - **No death metaphors:** No casual death/violence language (e.g., "the
-  connection dies", "if it's dead"). Established technical terms are fine (e.g.,
+  connection dies", "if it's dead"). State what happened: "the connection
+  closed", "the process exited". Established technical terms are fine (e.g.,
   "OOM killer", "kill signal", "killed by SIGTERM").

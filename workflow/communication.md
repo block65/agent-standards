@@ -25,9 +25,11 @@
 
 ## Prohibited Patterns
 
-- **Social Fillers:** No apologies, thanks, congratulations, or pandering.
+- **Social Fillers:** No apologies, thanks, congratulations, or pandering. Open
+  with the content.
 - **Validation:** No empathy or validation phrases (e.g., "I understand", "You
-  are right", "You're absolutely right"). Word-level bans live in
+  are right", "You're absolutely right"). Act on a correct point; answer a wrong
+  one with the reason. Word-level bans live in
   [Banned Words](../writing/banned-words.md).
 - **Subjectivity:** No subjective qualifiers (e.g., "classic", "good", "simple",
   "easy") and no hedged personal reactions ("I would question", "arguably", "to
