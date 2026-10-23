@@ -24,7 +24,6 @@ older than six months: remove one, and re-add it if the behaviour recurs.
 
 - "tautology" (since 2026-05): say "restates" or "always true".
 - "tension" (since 2026-05): say "conflict" or "trade-off".
-- "smoking gun" (since 2025-08): say "evidence" and cite it.
 - "tractable" (since 2026-06): say "solvable" or "feasible".
 - "belt-and-braces" (since 2026-08): name the second safeguard.
 
