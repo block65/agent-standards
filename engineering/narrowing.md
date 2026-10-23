@@ -1,45 +1,31 @@
 # Narrowing
 
-Narrowing is turning a richer value into a poorer one: an instance into its
-status, a `Temporal` into a string, a whole object into the one field you sliced
-off it. Two facts make early narrowing a defect. It is lossy and directional
-(rich to narrow is always available later, narrow to rich is not), so narrowing
-before you must only subtracts options from every frame downstream, with no gain
-that waiting would not also give. And whoever narrows decides what downstream
-needs; narrow early and one frame makes that decision for every frame after it,
-without the requirement in front of it.
+Narrowing turns a richer value into a poorer one: an instance into its status, a
+`Temporal` into a string, an object into one field. It is lossy and one-way, and
+the frame that narrows decides for every frame after it what they can have.
 
-The rule follows from those two facts:
-
-**Narrowing is consumption. Only the frame that consumes the narrow form is
-entitled to produce it; everything upstream passes the value at its richest.**
+**Only the frame that consumes the narrow form produces it; everything upstream
+passes the value at its richest.**
 
 ## The test
 
-Follow any value through the code. At each frame ask: does this frame use the
-narrow form, or does it narrow only to pass the result onward? A frame that
-transforms-then-passes (stringifies to pass, slices to pass, derives a status to
-pass) holds a narrowing that belongs to its consumer. Move it down to the frame
-that uses it.
-
-One question replaces a list of named anti-patterns, and it catches cases nobody
-has enumerated yet.
+At each frame a value passes through, ask whether the frame uses the narrow form
+or narrows only to pass the result on. A frame that stringifies, slices or
+derives a status to pass it on holds a narrowing that belongs to its consumer.
+Move it down to that consumer.
 
 ## What it catches
 
 - **Create-then-lower.** Building a `Temporal.ZonedDateTime` and calling
-  `.toString()` on it at once, because something several frames down wants a
-  string. Every frame in between now holds a string it cannot compare, offset,
-  or reformat. Carry the `Temporal`; stringify at the frame that writes it out.
-- **Read-and-thread.** Reading a derived value off a handle, then threading that
-  value down instead of the handle itself. Each caller repeats the read, and no
-  frame can re-derive it or reach another field once the value is narrowed. Pass
-  the handle; let each consumer read what it needs.
+  `.toString()` at once because a frame further down takes a string. Every frame
+  between holds a string it cannot compare, offset or reformat. Carry the
+  `Temporal`; stringify where it is written out.
+- **Read-and-thread.** Reading a derived value off a handle and threading that
+  value down. No frame below can reach another field. Pass the handle; let each
+  consumer read what it needs.
 
 ## Where narrowing belongs
 
-Narrowing is not the defect; placing it early is. It belongs at genuine exits:
-the serialization edge, the wire, a cache key, a log line. Those frames consume
-the narrow form, so that is where the lowering lives. The rule is not "never
-narrow"; it is narrow at the boundary that needs it, which is almost always
-further down than the first place it is convenient.
+At the exits that consume the narrow form: the serialization edge, the wire, a
+cache key, a log line. That is usually further down than the first convenient
+place.

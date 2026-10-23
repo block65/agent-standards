@@ -2,13 +2,12 @@
 
 ## Dependencies
 
-- Audit via `cargo audit` / `cargo deny`.
-- Minimize features: `default-features = false`.
+- Audit with `cargo audit` / `cargo deny`.
+- Set `default-features = false` and enable only the features used.
 - Centralize versions in `[workspace.dependencies]`.
 
 ## Testing
 
-- Use `tests/` for integration.
 - Prefer `Result`-returning tests.
 - Use `proptest` for algorithms and `insta` for snapshots.
 

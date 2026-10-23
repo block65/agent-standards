@@ -2,27 +2,18 @@
 
 ## Columns
 
-- **No DB defaults:** Prefer optional fields over column-level defaults. Keep
-  value control at the application layer. Audit columns are the exception; see
-  Tables.
+- **No column defaults:** Make the field optional and set the value in the
+  application, booleans included. The exception is the audit columns
+  `create_time` and `update_time`, which most tables should have and which
+  carry defaults so no writer has to remember them.
 - **Tense-less names:** In SQL written by hand and in schemas defined outside
   Drizzle, use `create_time`, `expire_time`, never `created_at`, `expires_at`.
-- **Booleans:** Prefix with `is_` (e.g. `is_active`). No default; make the
-  application set it explicitly.
-
-## Tables
-
-- **Audit columns:** Most tables should have `create_time` and `update_time`.
-  These carry column-level defaults, since every writer would otherwise have to
-  remember them, which is what defaults exist to prevent. They are bookkeeping,
-  not business meaning, so the no-defaults rule does not apply.
+- **Booleans:** Prefix with `is_` (e.g. `is_active`).
 
 ## Migrations
 
-- **Never edit old migrations.** Applied migrations are history; you cannot
-  change the past. Add a new migration instead.
-- **Never hand-author what the tooling generates.** Schema migrations come from
-  the project's generator (Drizzle) diffing the schema; hand-writing them
-  invites drift between the schema and the migration. Changes the generator
-  cannot express are hand-written, as code or as SQL: data backfills,
+- **Never edit an applied migration.** Add a new one.
+- **Generate schema migrations** with the project's generator (Drizzle) from the
+  schema; a hand-written one drifts from the schema. Hand-write only what the
+  generator cannot express, as code or SQL: data backfills,
   `CREATE INDEX CONCURRENTLY`, and other operational DDL.

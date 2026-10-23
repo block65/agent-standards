@@ -1,127 +1,94 @@
 # JavaScript Standards
 
-## Philosophy
+## Platform and Tooling
 
 - **Web Native:** Prefer web-native solutions and browser-standard APIs.
-- **No `console`:** Use a logger module. Never call `console.*` directly.
+- **Task runner:** Use the repo's task runner (e.g. moonrepo) if present,
+  otherwise `package.json` scripts.
+- **pnpm catalogs:** Where the workspace has a catalog, a dependency used by
+  more than one package moves into it, and every `package.json` references it
+  as `"dependency-name": "catalog:"`, never a version string.
 
 ## Logging
 
-- **Log generously:** `trace` for noisy detail that would otherwise be swallowed
-  (failed parses, feature-test misses, optional-path errors), `debug` for flow,
-  `warn` for recoverable conditions, `error` for failures.
-- **Use the right level.** An expected-but-noted condition is `debug` or
-  `trace`, not `error`. Reserve `error` for things an operator should
-  investigate.
-- **Never delete logs** after adding them. Adjust the level or compile them out
-  if needed; silent code paths are impossible to debug in retrospect.
+- **Use a logger module,** never `console.*`.
+- **Log generously at the right level:** `trace` for detail that would otherwise
+  be swallowed (failed parses, feature-test misses, optional-path errors),
+  `debug` for flow, `warn` for recoverable conditions, `error` only for what an
+  operator should investigate.
+- **Keep logs once added.** Adjust the level or compile them out; a silent code
+  path cannot be debugged after the fact.
 
 ## Functional Style
 
-- **Pure functions:** Prefer input→output functions. Side effects should be
-  explicit and minimal.
-- **Transformation over mutation:** Build values with `.map()`, `.flatMap()`,
-  `.filter()`, `Object.fromEntries`, spread, or a builder that preserves types,
-  not with imperative loops and object mutation.
-- **No collection-building loops.** Do not fill an empty array or object with
-  `for`, `for…of`, `for…in`, `for await…of`, `while`, or `.forEach()`. Use a
-  transformation. Loops that perform side effects or consume streams still need
-  an explicit termination or cancellation condition; no `for (;;)`,
-  `while (true)`, or equivalent constant-condition loops.
-- **Early returns:** Return early at the top level of a function for a guard or
-  precondition check. Do not use early returns nested inside conditional blocks.
-- **`iife()` for complex `const` values:** Use `iife()` from `@block65/toolkit`
-  with a `switch` or `if/else` for `const` values needing branching logic,
-  instead of `let` + reassignment or raw `(() => {})()`.
+- **Build collections by transformation:** `.map()`, `.flatMap()`, `.filter()`,
+  `Object.fromEntries`, spread, or a type-preserving builder. Never fill an
+  empty array or object with `for`, `for…of`, `for…in`, `for await…of`,
+  `while`, or `.forEach()`.
+- **Loops that perform side effects or consume streams** have an explicit
+  termination or cancellation condition, never `for (;;)`, `while (true)` or
+  another constant condition.
+- **Early returns** belong at the top level of a function, as guards. Do not
+  return early from inside a conditional block.
+- **`iife()` for branching `const` values:** Use `iife()` from
+  `@block65/toolkit` with a `switch` or `if/else`, instead of `let` +
+  reassignment or a raw `(() => {})()`.
 
-## File Organization
+## Modules
 
-- **Module constants at the top:** True module-level constants (fixed runtime
-  values, typically `UPPER_SNAKE_CASE`, such as `const MAX_RETRIES = 3` or
-  `const API_VERSION = 'v2'`) go directly below the imports, before any
-  functions, classes, or logic. Don't scatter module-scoped config next to the
-  function that happens to use it.
-
-## Exports
-
-- **No namespace objects:** Never build namespaces by property assignment
-  (`Foo.Bar = Bar`). Use module re-exports
-  (`export * as Foo from './parts.ts'`).
-- **No unused exports:** Never `export` a function, type, or value that is not
-  imported elsewhere. `export` is a public contract, not a default.
-- **Separate files over inline exports:** Do not pile exports into one file for
-  the sake of it. Split into focused files when it aids readability. Use a
-  barrel (`main.ts`) only as a convenience re-export layer for consumers and
-  tree-shaking; the barrel is not where logic lives.
+- **Module constants at the top:** Fixed module-level values (typically
+  `UPPER_SNAKE_CASE`) go directly below the imports, not beside the function
+  that uses them.
+- **No namespace objects:** Build a namespace with a module re-export
+  (`export * as Foo from './parts.ts'`), never by property assignment
+  (`Foo.Bar = Bar`).
+- **Export only what something imports.** `export` is a public contract.
+- **Split into focused files.** A barrel (`main.ts`) only re-exports; logic
+  lives elsewhere.
+- **Keep call stacks shallow.** If following the execution path takes more than
+  a few jumps, flatten the abstraction.
+- **A function exported from package `a` with one caller in package `b`** moves
+  to `b`, unless `b` is the wrong home for that logic.
+- **Generic helpers go in the shared toolkit** (`@block65/toolkit` or
+  equivalent), not feature modules: string/array/date, type guards, small
+  predicates. Grep the toolkit before writing one. Domain logic stays local.
 
 ## Error Handling
 
-- **Never throw a plain `Error`.** Throw a `CustomError` from
-  `@block65/custom-error`. A plain `Error` carries a string and nothing
-  else: no status, no machine-readable code, no way for the top-level handler to
-  decide what the user should see.
+- **Throw a `CustomError`** from `@block65/custom-error`, never a plain `Error`:
+  a plain one carries no status or machine-readable code for the top-level
+  handler. Tests tell errors apart by `CustomError` type, not message strings.
 - **Sensitive data goes in `debug`, never in the message.** `.debug({ ... })` is
-  private and appears only in `toJSON()`, which is server-side. `details` is
-  public and reaches the client via `toJSONSummary()`, so it holds only what a
-  user may read. Never put a token, credential, or raw upstream payload in the
-  message.
-- **The top-level handler owns what the user sees.** It filters the error and
-  renders human-readable output from the `CustomError` augmentations. Nothing
-  below it formats errors for display, and nothing below it decides what is safe
-  to expose.
-- **Default is bubble.** Most code should let rejections propagate. If the
-  framework above already surfaces them (React Query `query.error`, route
-  loaders to error boundaries, Hono's error pipeline, `withSentry`/equivalents
-  capturing unhandled rejections), then `.catch(console.error)` or `try/catch`
-  is redundant. Delete it; just `await`.
-- **Catch only at boundaries where the rejection has nowhere else to go.**
-  Fire-and-forget `waitUntil` / keepalive POSTs (response already sent),
-  top-level entry points outside any handler, code that must continue past a
-  non-essential failure. Everywhere else, bubble.
-- **Every catch must do one of:**
-  1. Manually report with `captureException(err)` or equivalent.
-  2. Rethrow so the established handler captures it (wrap with `{ cause: err }`
-     if adding context).
-  3. Log at the appropriate level: `error`, `warn`, `debug`, or `trace` per the
-     Logging rubric.
-  4. Throw a `CustomError` enriched with `debug` and `details` fields so the UI
-     layer can surface useful context to the user. A catch that does none of
-     these is a swallow, regardless of how it's spelled.
-- **Preserve the cause** when wrapping: always pass `{ cause: err }` so the
-  original stack survives.
-- **Never silently swallow rejections.** All of these look defensive; all are
-  bugs:
-  - `.catch(() => {})`
-  - `.catch(() => undefined)`
-  - `.catch(noop)`
-  - `.catch(console.error)` / `.catch(console.warn)`: `console` is banned (see
-    Philosophy) and these almost always sit under a framework that already
-    observes the rejection. Delete them.
-  - `.catch(() => ({ items: [] }))`: fabricating an empty/default success shape
-    from a failure is the worst variant; downstream code can't tell the
-    difference between "no items" and "the call failed". If you must return a
-    fallback shape, log/report the error first and document why a fallback is
-    the right behaviour at this boundary.
-  - empty `catch (e) {}` or argless `catch {}` with no body
-- **Recovery needs an explanation.** A catch that completes without throwing
-  must start with `// NOTE: …` explaining why recovery is appropriate at this
-  boundary, and log or report the error. A comment alone does not handle an
-  error; comment-only catch bodies and empty `.catch()` callbacks are forbidden.
-- **Route through the established error path:** Do not bypass the project's
-  error handler.
+  private and appears only in the server-side `toJSON()`. `details` reaches the
+  client via `toJSONSummary()`, so it holds only what a user may read.
+- **The top-level handler owns what the user sees.** Nothing below it formats
+  errors for display or decides what is safe to expose.
+- **Let rejections bubble.** Where the framework above already surfaces them
+  (React Query `query.error`, route loaders to error boundaries, Hono's error
+  pipeline, `withSentry`), `await` and let it propagate. Catch only where a
+  rejection has nowhere else to go: fire-and-forget `waitUntil` or keepalive POSTs, top-level
+  entry points outside any handler, code that must continue past a
+  non-essential failure.
+- **Every catch does one of:** report with `captureException(err)` or
+  equivalent; rethrow with `{ cause: err }`; log at the level the Logging rules
+  give; or throw a `CustomError` with `debug` and `details` for the UI. Anything
+  else is a swallow, including `.catch(noop)`, `.catch(console.error)` and an
+  empty `catch {}`. The worst is fabricating success from failure
+  (`.catch(() => ({ items: [] }))`), which downstream code cannot tell from an
+  empty result.
+- **A catch that recovers** starts with `// NOTE: …` saying why recovery is
+  correct at this boundary, and also logs or reports the error.
 
 ## Promises
 
-- **`Promise.withResolvers()` when `resolve`/`reject` escape the executor.**
-  Capturing them in an outer `let`, storing them on an object, or handing them
-  to a caller is the deferred pattern. One call replaces it.
-- **`new Promise` only wraps a callback or event API,** and only when the work
-  starts inside the executor. Never wrap something that already returns a
-  promise: `async`/`await` composes it, the constructor drops rejections between
-  the two layers.
-- **Never hand-roll a sleep.** `new Promise((r) => setTimeout(r, ms))` cannot be
-  cancelled. Use `setTimeout` from `node:timers/promises` with a `signal` in
-  Node, or a cancellable helper from the shared toolkit elsewhere.
+- **`Promise.withResolvers()` when `resolve`/`reject` escape the executor,**
+  whether into an outer `let`, an object, or a caller.
+- **`new Promise` only wraps a callback or event API,** with the work started
+  inside the executor. Compose an existing promise with `async`/`await`; the
+  constructor drops rejections between the two layers.
+- **Sleep with a cancellable timer:** `setTimeout` from `node:timers/promises`
+  with a `signal` in Node, or a cancellable toolkit helper elsewhere, never
+  `new Promise((r) => setTimeout(r, ms))`.
 
 BAD: `resolve` escapes the executor.
 
@@ -150,100 +117,56 @@ export function createGate() {
 }
 ```
 
-## Structure
+## Values
 
-- **No deep call stacks:** If following the execution path takes more than a few
-  jumps, flatten the abstraction.
-- **Single-caller across packages is a smell.** A function exported from package
-  `a` with one caller in package `b` is misplaced: move it to `b` (it isn't
-  really shared), or check whether `b` is the wrong home for that logic.
-  Cross-package indirection with no other consumer is pure friction.
-- **Promote generic helpers to the shared toolkit.** Generic utilities
-  (string/array/date, type guards, small predicates) belong in the shared
-  toolkit (`@block65/toolkit` or equivalent), not feature modules; it's
-  tree-shaken, so unused helpers cost nothing. Domain-specific logic stays
-  local. Grep the toolkit before writing a new helper.
-
-## Type Coercion
-
-- **`.toString()` over `String()`:** Use `value.toString()` for string
-  conversion, not `String(value)`. Narrow away `null`/`undefined` first, since
-  `.toString()` throws on them, and that loudness is the point; `String()`
-  silently prints `"undefined"`.
-
-## URLs and Paths
-
-- **Never concatenate URLs or paths by string.** Build with
-  `new URL(path, base)` so encoding, slashes, and query strings are correct.
-  `${host}/${path}` produces double-slashes, missing slashes, and unencoded
-  segments.
-- **For filesystem paths,** use `node:path` (`path.join`, `path.resolve`), never
-  string concat.
-
-## Project Verification
-
-- **Task Runners:** Use a dedicated task runner (e.g., moonrepo) if present.
-- **Scripts:** If no task runner exists, `package.json` scripts are acceptable.
-
-## Dependencies
-
-- **pnpm Catalogs:** If `catalog:` protocol entries exist in the workspace, use
-  them for versioning.
-- **Centralization:** Move any dependency used in multiple packages to the
-  central workspace catalog.
-- **Syntax:** Use `"dependency-name": "catalog:"` in `package.json`. Never
-  hardcode version strings for dependencies managed by a catalog.
+- **`.toString()` over `String()`:** Narrow away `null`/`undefined` first;
+  `.toString()` throws on them where `String()` silently prints `"undefined"`.
+- **Build URLs with `new URL(path, base)`** and filesystem paths with
+  `node:path`, never by string concatenation.
+- **Validation:** Give every string a min and max length, and trim and
+  constrain its charset where relevant. Give every number a range and say
+  integer or float.
 
 ## Naming
 
 - **Event parameters:** Name the event parameter in an event handler `e`.
-- **Never `index.ts`:** Entry points and barrels are always `main.ts`.
-- **No tense in variable names:** Prefer `expireTime` over `expiresAt`,
-  `expireTtlSecs` over `expiresIn`.
-- **Intentional abbreviations only:** Domain abbreviations (`ms`, `ctx`) only
-  when unambiguous and consistent across the codebase. Never abbreviate when the
-  short form is ambiguous.
-- **Grep before naming:** Search the codebase before naming anything. Match the
-  established vocabulary: `create` vs `insert`, `log` vs `entry`, etc.
+- **Entry points and barrels are `main.ts`,** never `index.ts`.
+- **No tense in names:** `expireTime` not `expiresAt`, `expireTtlSecs` not
+  `expiresIn`.
+- **Abbreviate only where unambiguous** and consistent across the codebase
+  (`ms`, `ctx`).
+- **Grep before naming** and match the established vocabulary (`create` vs
+  `insert`, `log` vs `entry`).
 
 ## Nullability
 
-Modelled on Rust's `Option<T>`: absence is one state, and it is resolved by the
-code that knows what missing means. Background: `compend get rust-book option`.
+Modelled on Rust's `Option<T>`: absence is one state, resolved by the code that
+knows what missing means. Background: `compend get rust-book option`.
 
 - **No `?? undefined` in domain logic.** The parse layer converts a boundary's
   absence value to `undefined`; a `?? undefined` above it means that boundary
-  sits in the wrong place.
-- **Never a sentinel.** `?? {}` or `?? []` on a value the code requires turns
-  "missing" into "present and wrong", so the failure surfaces somewhere
-  unrelated with nothing pointing back to the cause. `??` supplies a value that
-  is valid in the domain, or it does not appear.
-- **A required parameter is a promise.** Anything not `Option<T>` is present.
-  Widening a parameter to `| undefined` so one caller can skip deciding breaks
-  that promise for every other caller, and the signature ends up describing the
-  caller's uncertainty instead of the function's job. A parameter is optional
-  only when the function has defined behaviour for the absent case.
-- **Resolve absence where missing has a meaning.** Rust's `let ... else`
-  extracts or diverges. Here that is a top-level guard: return early, or throw a
-  `CustomError` naming what was missing.
-
-## Validation
-
-- **Strings:** Always specify min and max length. Check for empty strings, trim
-  if needed, constrain alphabets and charsets.
-- **Numbers:** Always set a range and specify integer or float.
+  is in the wrong place.
+- **Never a sentinel.** `?? {}` or `?? []` on a required value turns "missing"
+  into "present and wrong", and the failure surfaces somewhere unrelated. `??`
+  supplies a value that is valid in the domain, or it does not appear.
+- **A parameter is optional only when the function defines behaviour for the
+  absent case.** Never widen it to `| undefined` so one caller can skip
+  deciding.
+- **Resolve absence with a top-level guard** where missing has a meaning:
+  return early, or throw a `CustomError` naming what was missing.
 
 ## Readability
 
-- **A function body is paragraphs, not a block.** Separate each phase (guards,
-  inputs, the work, the result) with a blank line, and break any run of more
-  than about five lines that changes subject. An unbroken twenty-line body hides
-  where one step ends and the next begins, and it is the first thing to fix in
-  generated code.
+- **A function body is paragraphs.** Separate each phase (guards, inputs, the
+  work, the result) with a blank line, and break any run of more than about five
+  lines that changes subject. No blank line between a comment and the line it
+  describes.
 - **Blank lines are not extraction.** More than about four groups means the
   function does more than one job. Split it.
-- **No decorative blank lines:** none directly after `{` or before `}`, never
-  two in a row, and none between a comment and the line it describes.
+- **Destructure** at the top of the scope instead of indexing or repeating a
+  property chain: `const [first] = arr`, `const { id, name } = user`.
+
+GOOD: one blank line between phases.
 
 ```ts
 export async function publish(id: Id, body: Body) {
@@ -261,20 +184,3 @@ export async function publish(id: Id, body: Body) {
 	return parseReceipt(res);
 }
 ```
-
-- **Destructuring:** Always destructure arrays and objects rather than accessing
-  by index or property chain. `const [first] = arr` not `arr[0]`.
-  `const { id, name } = user` not `user.id` / `user.name` repeated. Destructure
-  at the top of the scope so narrowing and defaults are declared once, not
-  scattered through the function as repeated property guard clauses.
-
-## Testing
-
-- **`CustomError` over string matching:** Differentiate error types with
-  `CustomError`, not string comparison.
-
-## Troubleshooting
-
-- **Diagnostic approach:** Use evidence-based exploration. Identify the root
-  cause before changing anything, and change one thing at a time.
-- **Enable logging:** Add or enable debug/trace logging to track down an error.
