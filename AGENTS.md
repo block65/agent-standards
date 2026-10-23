@@ -5,8 +5,8 @@ Guidance for any agent working in this repository
 ## Load the standards
 
 **Always:** Read `index.md`, then follow all "Always load" standards listed
-there. **Before editing any document in this repo:** STOP. Read
-`writing/base.md` then `writing/technical.md` and follow both.
+there. **Before editing any document in this repo:** read `writing/base.md` then
+`writing/technical.md` and follow both.
 
 This repo is the source of the standards, so it dogfoods them: every doc here
 must obey `writing/base.md` and `writing/banned-words.md`. Paths above are

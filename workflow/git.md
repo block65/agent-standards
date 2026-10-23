@@ -51,8 +51,8 @@ passing mentions; close only the issue the commit actually resolves.
 
 ## Lint & Formatting
 
-**Lint/format changes are NEVER `fix:`.** `fix:` triggers a release; lint does
-not warrant one.
+**Lint/format changes are `chore:` or `style:`, never `fix:`.** `fix:` triggers
+a release; lint does not warrant one.
 
 - Before choosing commit type, ask: "Does this alter runtime behavior?" No →
   `chore:` or `style:`.
