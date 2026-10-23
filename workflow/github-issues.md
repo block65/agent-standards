@@ -1,17 +1,16 @@
 # GitHub Issue Authoring
 
-An issue states a **problem**; the **fix is decided in triage**, not in the
-issue. Write for the developer who picks it up, and keep the body to what that
-developer needs.
+An issue states a **problem** for the developer who picks it up; the **fix is
+decided in triage**. Follow [Writing (Base)](../writing/base.md) in the body and
+in comments.
 
 Project specifics (target repo, issue types, label vocabulary, attachment
-upload) are configured per project; see the consuming project's
-`## GitHub Issues` block. The `github-issue` skill automates create/update
-against this standard.
+upload) live in the consuming project's `## GitHub Issues` block. The
+`github-issue` skill automates create/update against this standard.
 
 ## Structure
 
-Fill the project's issue-template fields, and never invent sections
+Use only the project's issue-template fields, never invented sections
 (`## Mechanism`, `## Fix`, `## Acceptance criteria`). Canonical field set:
 
 - **bug** → _What happened_ (symptom) · _Steps to reproduce_ (tag provenance) ·
@@ -19,111 +18,92 @@ Fill the project's issue-template fields, and never invent sections
 - **enhancement** → _Problem / motivation_ · _Desired outcome_ (behaviour, not
   implementation) · _Alternatives_ (only if a real trade-off exists)
 
-The shape is the issue **Type**, a first-class GitHub field set with
-`gh issue create --type Bug` (or `--type Enhancement`), **not** a
-`bug`/`enhancement` label. It picks the field set above. A project may define
-other types (e.g. `Task`); follow its field set for those.
-
-Agents usually create via `gh issue create --body`, which bypasses the web-UI
-template, so reproduce these as the body headings.
+The shape is the issue **Type**, set with `gh issue create --type Bug` (or
+`--type Enhancement`), not a `bug`/`enhancement` label. Follow the field set of
+any other type the project defines (e.g. `Task`). `gh issue create --body`
+bypasses the web-UI template, so write these fields as the body headings.
 
 ## Open with the symptom
 
-First sentence = what a user/reader observes going wrong: the fuller symptom,
-not a verbatim echo of the symptom-first title. If it contains a `camelCase`
-identifier or a filename, restate the symptom first. Mechanism, if genuinely
-known, is one provisional line prefixed `Likely:` at the end, never a section
-and never manufactured.
+The first sentence is what a user or reader observes going wrong: the fuller
+symptom, not an echo of the symptom-first title, and free of `camelCase`
+identifiers and filenames. A mechanism, if genuinely known, is one provisional
+line prefixed `Likely:` at the end, never a section and never manufactured.
 
 ## Never prescribe the fix
 
-Banned: `Fix`/`Resolution`/`Approach` sections, "resolution is one of A/B/C"
-menus, naming a dependency/API to adopt, acceptance criteria or "tests first"
-deliverables, diffs, "in working tree pending commit". The ban binds sentences,
-not headings: a build plan under _Desired outcome_ is still a fix. Its tells are
-comparative-cost framing ("cheapest/simplest shape would be"), precedent to copy
-("there is precedent in [File]"), and costing the work ("it would need
-[Credential] as a repo secret"). Allowed: the one-line `Likely:` root-cause
-lead, and naming the affected service/component/route. For enhancements,
-describe the desired outcome (behaviour), not the implementation.
+Leave out `Fix`/`Resolution`/`Approach` sections, "resolution is one of A/B/C"
+menus, a dependency or API to adopt, acceptance criteria or "tests first"
+deliverables, diffs, and "in working tree pending commit". The ban binds
+sentences, not headings: a build plan under _Desired outcome_ is still a fix.
+Its tells are comparative-cost framing ("cheapest/simplest shape would be"),
+precedent to copy ("there is precedent in [File]"), and costing the work ("it
+would need [Credential] as a repo secret"). Allowed: the `Likely:` line, and
+naming the affected service, component or route. For an enhancement, describe
+the desired behaviour.
 
-A statement of fact is not a fix suggestion. Absence on the path that failed is
-evidence, and missing instrumentation there (no log, metric or trace) is itself
-a symptom: state it plainly, even where naming the gap names an API. The line is
-crossed when the issue says what to _do_ about it. Never omit a real gap for
-fear it reads as a fix; understating the symptom is the worse error. This
-licence covers the failing path. Framing every other fact as a lack is the
-register defect below, not evidence.
+A statement of fact is not a fix. Absence on the failing path is evidence, and
+missing instrumentation there (no log, metric or trace) is itself a symptom:
+state it, even where naming the gap names an API. The line is crossed when the
+issue says what to _do_ about it. Report every real gap: understating the
+symptom is a worse error than reading like a fix.
+This licence covers the failing path only; framing every other fact as a lack is
+the register defect below.
 
 ## State the present, positively, in concrete nouns
 
 The body is read once, by someone who was not in the investigation. Six habits
 write to the author's train of thought instead.
 
-- BAD: "I investigated this thoroughly and concluded that the paint is black,
-  not white. And it matters."
-- GOOD: "The paint is black."
-
 - **A negation must carry information.** It earns its place when the missing
-  thing sits on the failing path and its absence is the symptom. Where the issue
-  never asserts X, "not X" answers a question nobody asked. Default to the
-  positive form. A body about an absent thing will carry several licensed
-  negations, so test each one rather than counting them. The contrastive form
-  fails the same test: "X rather than Y", "not Y but X" and "X, never Y" assert
-  Y so they can deny it, so where nothing proposed Y, state X alone.
+  thing sits on the failing path and its absence is the symptom; test each one
+  rather than counting them. Otherwise use the positive form, and drop invented
+  contrast per [Communication](communication.md).
   - BAD: "Nothing tells [Service] when a [Record] changes."
   - GOOD: "[Record] publishes without notifying [Service]."
-- **No corrections.** The body states what is true now. When a finding changes,
-  edit the body to the current truth. Never append the revision, label the seam
-  `(corrected)`, or explain in parentheses why a line is present: the reader
-  never held the belief being corrected.
+- **No corrections.** When a finding changes, edit the body to the current
+  truth, with no appended revision, `(corrected)` label, or parenthesis
+  explaining why a line is present. The reader never held the earlier belief.
   - BAD: "The degradation is narrower than first described. The trigger is
     [Condition], not [Other]."
   - GOOD: "[Condition] triggers [Symptom]."
 - **Concrete nouns, no rankings.** Each sentence names the observable thing: the
   response, the record, the screen. Category nouns ("a good value") and rankings
-  ("the primary realistic trigger") claim something the reader cannot check,
-  against a set the issue never lists.
+  ("the primary realistic trigger") claim something the reader cannot check.
   - BAD: "The primary realistic trigger is a [Scope] that has never had a good
     value."
   - GOOD: "A new [Scope] with no [Record] serves an empty [Component]."
-- **Report, never steer.** Triage weighs the evidence; the body supplies it. Cut
-  "weigh that against", "defensible", "worth recording", and every sentence
-  arguing the issue's own importance. How the failure was found is not the
-  failure: provenance is the repro tag, and the rest is a story.
+- **Report, never steer.** Supply the evidence and leave the weighing to triage:
+  cut "weigh that against", "defensible", "worth recording", and every sentence
+  arguing the issue's own importance. How the failure was found belongs in the
+  repro tag only.
   - BAD: "Weigh that against the failure running undetected for months, found by
     accident via an unrelated [Test]."
   - GOOD: "[Symptom] was present in production for [Duration]."
-- **No narrator.** The body carries no author voice: no "I" or "we", no hedged
-  reaction ("I would question", "arguably", "to be fair"), no verdict on the
-  report's own contents. A support agent or developer logging a job writes flat
-  statements about the system; write those.
+- **No narrator.** Write flat statements about the system, with no "I" or "we"
+  and no verdict on the report's own contents.
   - BAD: "The part I would question is [Design], since it [Consequence]."
   - GOOD: "[Design] puts [Cost] on [Path]."
 - **No coined vocabulary.** Use the words the product and codebase already use,
-  or describe the thing. A term minted in the body asks the reader to know a
-  taxonomy that exists in this issue and nowhere else.
+  or describe the thing.
   - BAD: "Recorded here as the main path, not a footnote."
   - GOOD: "Every [Surface] in a new [Scope] shows [Symptom]."
 
 ## Detail level
 
 Name the affected service, route or user-facing surface. Filenames, paths,
-functions and constants go in the follow-up comment pinned to a SHA, never in
-the body: they rot as line numbers do, only slower, and a body full of dead
-paths is unreadable long before it is wrong. The `Likely:` line may carry one
-symbol where the mechanism turns on it.
+functions and constants go in the SHA-pinned comment, since they rot. The
+`Likely:` line may carry one symbol where the mechanism turns on it.
 
 ## Tag the repro's provenance, always
 
-Triage must know whether the steps are trustworthy. Start _Steps to reproduce_
-with one of:
+Start _Steps to reproduce_ with one of:
 
 - `Reported by user:`: the steps came from the reporter. Trust as-is.
 - `Inferred (unconfirmed):`: derived, not confirmed against the real failure.
-- `Not reproduced: <what's missing>`: no steps; file anyway, don't invent them.
-
-Never present inferred steps as if the user gave them.
+  Never present these as the user's.
+- `Not reproduced: <what's missing>`: no steps; file anyway, without inventing
+  them.
 
 ## One audience per issue
 
@@ -131,49 +111,28 @@ Never present inferred steps as if the user gave them.
 customer "why" is one impact sentence inside the first field, not a
 `## What the customer wants` wrapper around internals.
 
-## Length
+## Body and comments
 
 The body holds the sentences a triager reads to act: the symptom, the repro, and
-the evidence behind them. Nothing else belongs there. Never include CI/test
-results, bisect SHAs, self-referential meta-commentary, or a restatement of the
-title. Follow `writing/base.md`.
+the minimum evidence behind them. Leave out CI/test results, bisect SHAs,
+meta-commentary, and a restatement of the title. Post everything else as a
+comment immediately after filing, rather than compressing the body until a
+verified finding drops out:
 
-Depth goes in a comment (below), never into a body compressed until a verified
-finding drops out.
+- **Full verification data**: the tables, byte counts, headers, URL sweeps and
+  command output. The body keeps the one number that makes the case.
+- **Line numbers, filenames and symbols**, pinned to a commit SHA, with the
+  function or symbol named as the durable anchor.
+- **Adjacent findings** that aren't this bug, each with why it is out of scope
+  and what it should become (a `Task`, its own bug, a product decision).
 
-## Comments carry the depth
-
-The body is the triage-facing symptom report: what's broken, how to reproduce
-it, and the minimum evidence that makes the claim actionable. Everything else
-goes in a comment posted immediately after filing.
-
-Belongs in a comment:
-
-- **Full verification data**: the tables, byte counts, response headers, URL
-  sweeps and command output behind the body's summary. Don't restate it in both;
-  the body keeps the one number that makes the case, the comment holds the
-  working.
-- **Line numbers, filenames and symbols**, which the body may not carry. Pin
-  them to a commit SHA and name the function or symbol as the durable anchor,
-  since the numbers rot and the symbol doesn't.
-- **Adjacent findings** turned up while investigating that aren't this bug. Say
-  why each is out of scope and what it should become instead (a `Task`, its own
-  bug, a product decision). Recording them beats losing them; merging them into
-  the body is scope creep.
-
-A comment is not a loophole. More evidence for the same problem belongs in a
-comment; a second problem gets its own issue. If the body's _symptom_ sentence
-has to cover two unrelated failures, splitting is the answer, not a longer
-comment.
-
-The rules that still apply in comments: never prescribe the fix, and follow
-`writing/base.md`.
+A second problem gets its own issue, not a comment: if the symptom sentence has
+to cover two unrelated failures, split. The fix ban applies in comments too.
 
 ## Badges (AI-authored issues)
 
-When an agent files the issue, open the body with a one-line badge row so a
-developer sees provenance at a glance. Keep the alt text descriptive; it shows
-if shields.io fails to load.
+When an agent files the issue, open the body with a one-line badge row. Keep the
+alt text descriptive; it shows if shields.io fails to load.
 
 - AI-filed:
   `![AI-filed](https://img.shields.io/badge/AI--filed-genai-blueviolet)`
@@ -186,22 +145,21 @@ if shields.io fails to load.
   | Not reproduced         | `![repro: not reproduced](https://img.shields.io/badge/repro-not_reproduced-red)`        |
 
 Both badges on one line, then a blank line before the first field. When an
-inferred repro is later confirmed, edit the body to swap the orange badge for
-green and update the provenance tag.
+inferred repro is later confirmed, swap the orange badge for green and update
+the provenance tag.
 
 ## Attachments
 
 GitHub has no attachment API. Host the file in the project's public object store
-and embed the URL in the body:
+and embed the URL:
 
 - **Images** inline: `![alt](url)`
-- **Videos**: `<video controls src="url"></video>` renders a player only when
-  the src is a GitHub upload (`user-attachments`, added via the web UI); the
-  sanitizer strips `<video>` with any other host, so link externally hosted
-  video like any other file
+- **Videos**: `<video controls src="url"></video>` renders only when the src is
+  a GitHub upload (`user-attachments`); the sanitizer strips `<video>` with any
+  other host, so link externally hosted video like any other file
 - **Everything else** (PDF, logs, zips) as a link: `[name](url)`
 
-The project uploads under an unguessable key (256-bit random; on a
-public-readable, not writable, bucket the key is the only access control) and
-prints the URL. The `github-issue` skill calls it and embeds the URL. Unique
-keys stop GitHub's Camo cache serving stale images.
+The project's upload command stores the file under an unguessable key (256-bit
+random; on a public-readable, not writable, bucket the key is the only access
+control) and prints the URL. Unique keys also stop GitHub's Camo cache serving
+stale images.

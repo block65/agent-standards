@@ -1,11 +1,12 @@
 # Technical Documentation
 
-**Usage:** Load this file for documentation/support tasks. **Prerequisite:**
-Also follow the rules in [Writing (Base)](base.md).
+For documentation and support writing. Prerequisite:
+[Writing (Base)](base.md).
 
 ## Objectivity
 
-- **No "Your":** Software has no "you"; "your [Component]" is ambiguous.
+- **No "Your":** Name the component and its location; "your [Component]" is
+  ambiguous.
   - BAD: "Configure **your** [Component]."
   - GOOD: "Configure the **[Location]** [Component]."
 - **Subject = component:** In docs for a product, the component acts, never the
@@ -13,13 +14,10 @@ Also follow the rules in [Writing (Base)](base.md).
   - BAD: "[Product] [Action]s the [Component]."
   - GOOD: "The [Component] [Action]s."
 
-## Instruction Hierarchy
+## Instruction order
 
-Follow this order for guides:
-
-1. **Context:** Explain the problem being solved.
-2. **Establish:** Define the object or its default state.
-3. **Action:** The imperative instruction.
+In a guide, state the problem, then the object or its default state, then the
+imperative instruction.
 
 - BAD: "To [Result], click [Action]."
 - GOOD: "[Component] performs [Function] at the [Layer]. To [Action] it, run the
@@ -27,7 +25,6 @@ Follow this order for guides:
 
 ## Language
 
-- **No death metaphors:** No casual death/violence language (e.g., "the
-  connection dies", "if it's dead"). State what happened: "the connection
-  closed", "the process exited". Established technical terms are fine (e.g.,
-  "OOM killer", "kill signal", "killed by SIGTERM").
+- **No death metaphors:** State what happened: "the connection closed", "the
+  process exited", not "the connection dies". Established terms ("OOM killer",
+  "kill signal", "killed by SIGTERM") are fine.
