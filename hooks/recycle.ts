@@ -173,15 +173,21 @@ async function chooseRestart(
 	return handoverRestart($, turns, cwd, args);
 }
 
-// One second of sleep lets the command's reply show before the pane restarts
-function respawnScript(pane: string, cwd: string, model: string) {
+// One second of sleep lets the command's reply show before the pane restarts.
+// The shell is named, or respawn-pane reruns the pane's own start command
+function respawnScript(
+	pane: string,
+	cwd: string,
+	model: string,
+	shell: string,
+) {
 	// Quoted again inside, or the login shell globs a [1m] suffix
 	const claude = /^[\w.:[\]-]+$/.test(model)
 		? `claude --model ${quote(model)}`
 		: "claude";
 	const target = quote(pane);
 
-	return `sleep 1; tmux respawn-pane -k -t ${target} -c ${quote(cwd)} && tmux send-keys -t ${target} -l ${quote(claude)} && tmux send-keys -t ${target} Enter`;
+	return `sleep 1; tmux respawn-pane -k -t ${target} -c ${quote(cwd)} ${quote(shell)} -l && tmux send-keys -t ${target} -l ${quote(claude)} && tmux send-keys -t ${target} Enter`;
 }
 
 async function run($: EngineInterface, e: CommandRunInput) {
@@ -191,10 +197,11 @@ async function run($: EngineInterface, e: CommandRunInput) {
 		return { text: `${e.command}: not in a tmux pane, nothing to recycle.` };
 	}
 
-	const [cwd, model, messages] = await Promise.all([
+	const [cwd, model, messages, shell] = await Promise.all([
 		$.session.cwd(),
 		$.session.model(),
 		$.session.messages(),
+		$.env.get("SHELL"),
 	]);
 	const { context, kick, note } = await chooseRestart(
 		$,
@@ -205,7 +212,7 @@ async function run($: EngineInterface, e: CommandRunInput) {
 	const at = await $.clock.now();
 	await $.store.set(slot.key, { at, context, kick } satisfies Pending);
 
-	const script = respawnScript(slot.pane, cwd, model);
+	const script = respawnScript(slot.pane, cwd, model, shell || "/bin/sh");
 	const { exitCode, stderr } = await $.process.run([
 		"tmux",
 		"run-shell",

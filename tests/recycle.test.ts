@@ -32,6 +32,7 @@ const handover: ModelCompleteResult = {
 const env: Readonly<Record<string, string>> = {
 	TMUX_PANE: "%42",
 	TMUX: "/tmp/tmux-1000/default,4242,0",
+	SHELL: "/bin/bash",
 };
 const key = "pending:/tmp/tmux-1000/default:%42";
 
@@ -83,7 +84,7 @@ function inTmux(
 	return world;
 }
 
-const respawn = `sleep 1; tmux respawn-pane -k -t '%42' -c '/work/it'\\''s here' && tmux send-keys -t '%42' -l 'claude --model '\\''claude-opus-5-5'\\''' && tmux send-keys -t '%42' Enter`;
+const respawn = `sleep 1; tmux respawn-pane -k -t '%42' -c '/work/it'\\''s here' '/bin/bash' -l && tmux send-keys -t '%42' -l 'claude --model '\\''claude-opus-5-5'\\''' && tmux send-keys -t '%42' Enter`;
 
 test("/handover stores a Haiku handover for the pane and types claude into a fresh shell", async ($, on) => {
 	const world = inTmux(on, handover);
