@@ -1,6 +1,6 @@
 import type { On } from "claude-code";
-import { registerRecycle } from "./recycle.ts";
+import { registerCompactLast } from "./compact-last.ts";
 
 export function register(on: On) {
-	registerRecycle(on);
+	registerCompactLast(on);
 }
