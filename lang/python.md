@@ -44,6 +44,10 @@ these are the rules. On conflict, these win.
   targeting Python below 3.14, and builtin generics (`list[str]`).
 - **`# type: ignore` carries a specific code and a reason.** Fix the type rather
   than work around it at runtime.
+- **Never a sentinel.** `.get(key, "")`, `x or ""` or `or {}` on a required
+  value hides its absence from mypy, which no linter here catches. Keep it
+  `T | None` and guard where missing has a meaning, as in
+  [JavaScript](javascript.md#nullability).
 
 ## Comments and Docstrings
 

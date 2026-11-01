@@ -12,7 +12,7 @@ const conversation: SessionMessage[] = [
 	{ role: "assistant", text: "did it", toolUses: [] },
 ];
 
-// The engine's own compaction, beneath the plugin
+// Stands in for engine compaction beneath the plugin
 function core(on: On) {
 	const world = { compactions: new Array<string | undefined>() };
 	on("session.compact", async (_, e) => {

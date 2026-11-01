@@ -86,7 +86,7 @@ def state_path(session: str, suffix: str) -> str | None:
     base = state_dir()
     if base is None:
         return None
-    return os.path.join(base, f"{session or 'nosession'}.{suffix}")
+    return os.path.join(base, f"{session}.{suffix}")
 
 
 def prune_state() -> None:
@@ -221,7 +221,9 @@ def rows(items: list[dict]) -> list[str]:
 def describe(flagged: list[dict], judgeable: list[dict] = ()) -> str:
     lines: list[str] = []
     if flagged:
-        lines.append(f"diff-check: {len(flagged)} flagged in files you edited this session.")
+        lines.append(
+            f"diff-check: {len(flagged)} flagged in files you edited this session."
+        )
         lines.extend(rows(flagged))
         lines.append(ADVICE)
     if judgeable:
@@ -251,16 +253,24 @@ def main() -> int:
         return 0
 
     cwd = payload.get("cwd") or os.getcwd()
-    session = payload.get("session_id", "")
-    event = payload.get("hook_event_name", "")
+    session = payload.get("session_id")
+    event = payload.get("hook_event_name")
+    # Edits are attributed per session, so without one there is nothing to check
+    if (
+        not isinstance(session, str)
+        or not session
+        or event not in ("PostToolUse", "Stop")
+    ):
+        return 0
 
     root = repo_root(cwd)
     if root is None:
         return 0
 
     if event == "PostToolUse":
-        edited = (payload.get("tool_input") or {}).get("file_path", "")
-        if not edited:
+        tool_input = payload.get("tool_input")
+        edited = tool_input.get("file_path") if isinstance(tool_input, dict) else None
+        if not isinstance(edited, str) or not edited:
             return 0
         # Absolute, so an edit still attributes if the session's cwd moves.
         edited = os.path.realpath(os.path.join(cwd, edited))

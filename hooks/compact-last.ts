@@ -52,7 +52,11 @@ export function tailContext(
 }
 
 export function linesAsked(instructions: string | undefined) {
-	const match = LAST.exec(instructions ?? "");
+	if (instructions === undefined) {
+		return undefined;
+	}
+
+	const match = LAST.exec(instructions);
 
 	return match ? Number(match[1] ?? DEFAULT_LINES) : undefined;
 }

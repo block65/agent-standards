@@ -144,8 +144,9 @@ knows what missing means. Background: `compend get rust-book option`.
 - **No `?? undefined` in domain logic.** The parse layer converts a boundary's
   absence value to `undefined`; a `?? undefined` above it means that boundary
   is in the wrong place.
-- **Never a sentinel.** `?? {}` or `?? []` on a required value turns "missing"
-  into "present and wrong", and the failure surfaces somewhere unrelated. `??`
+- **Never a sentinel.** `?? ""`, `?? {}` or `?? []` on a required value turns
+  "missing" into "present and wrong", hiding from the type system the absence
+  it would make you handle, and the failure surfaces somewhere unrelated. `??`
   supplies a value that is valid in the domain, or it does not appear.
 - **A parameter is optional only when the function defines behaviour for the
   absent case.** Never widen it to `| undefined` so one caller can skip
