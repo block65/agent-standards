@@ -43,15 +43,18 @@ one line and file anyway.
 
 ## Create
 
-1. Write the body: badge row, then the bug fields (or the enhancement fields
-   for a capability gap), steps tagged with their provenance.
+1. Write the title as the standard's "Title: the working outcome" says: the
+   behaviour that should hold, in the shape for its type, with no area prefix
+   and no mechanism. Then the body: badge row, then the fields for its type
+   (bug, enhancement for a capability gap, task for a chore), steps tagged with
+   their provenance.
 2. Create it. If a configured label does not exist in the repo, drop it and
    name it in the output; create no labels, and let no missing label or type
    block the create.
 
    ```sh
    gh issue create --repo "$REPO" \
-     --title "<area>: <symptom-first, specific>" \
+     --title "<the working outcome>" \
      --body "<body>" \
      --type Bug --label "$AI_LABEL" --label area/<surface>
    ```
@@ -69,6 +72,10 @@ Fetch current state first:
 gh issue view <n> --repo "$REPO" --json number,title,body,labels,issueType,state
 ```
 
+Before adding anything, check whether it changes what "done" means for the
+issue. If it does, file a new linked issue instead (the standard's "One job per
+issue").
+
 Comment for new information (a follow-up, extra evidence, a repro
 confirmation). Edit the body only to correct or upgrade what is there or to
 insert media, and keep every human's words.
@@ -81,8 +88,10 @@ insert media, and keep every human's words.
   `Reported by user:`.
 - **Relabel / retype**: `gh issue edit <n> --repo "$REPO"` with
   `--add-label`, `--remove-label` or `--type`.
-- **Close / reopen**: a resolving commit closes it via `Closes #N`. Close by
-  hand only without one (duplicate, won't-fix, fixed elsewhere):
+- **Close / reopen**: an issue is resolved when its fix reaches the default
+  branch, not when it is deployed. A resolving commit closes it via
+  `Closes #N`. Close by hand only without one (duplicate, won't-fix, fixed
+  elsewhere, or a fix already on the default branch):
   `gh issue close <n> --repo "$REPO" --reason completed` (or `not planned`);
   `gh issue reopen <n> --repo "$REPO"`.
 

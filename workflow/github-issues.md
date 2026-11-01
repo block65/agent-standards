@@ -17,16 +17,60 @@ Use only the project's issue-template fields, never invented sections
   _Expected behaviour_ · _Evidence_
 - **enhancement** → _Problem / motivation_ · _Desired outcome_ (behaviour, not
   implementation) · _Alternatives_ (only if a real trade-off exists)
+- **task** → _Task_ (what to do, as numbered steps when there are several) ·
+  _Done when_ (the observable result)
 
 The shape is the issue **Type**, set with `gh issue create --type Bug` (or
 `--type Enhancement`), not a `bug`/`enhancement` label. Follow the field set of
 any other type the project defines (e.g. `Task`). `gh issue create --body`
 bypasses the web-UI template, so write these fields as the body headings.
 
+## Title: the working outcome
+
+A developer reads the title alone, in a list, and knows what it is, roughly why
+it happens and how big it is, without opening the body. When the issue closes,
+the title reads as what people now have. State the behaviour that should hold,
+in the product's words: a fix is the side effect of wanting working behaviour,
+as a green test is of correct code. Leave out an area prefix (the label carries
+it), the mechanism, and an environment qualifier unless the problem exists only
+there.
+
+- **Bug**: what should be true, the fix in plain words, or the plain problem a
+  user meets.
+  - BAD: "[Component] throws on [Condition] in [Function] on production"
+  - GOOD: "[Pages] should not error or redirect if [Input] fails validation"
+  - GOOD: "Unable to drag to reorder [Items] in [Surface]"
+- **Feature**: "Allow [who] to [do what] [where]" for a capability people use,
+  or "Add [thing] to [place]" when the value lies elsewhere (SEO, analytics)
+  and the title just names the work.
+  - BAD: "[Actor] cannot [Action]"
+  - BAD: "[Page] offers no [jargon for the missing thing]" (a feature described
+    by reporting its absence)
+  - GOOD: "Allow deactivation of [Record]s via [Surface]"
+  - GOOD: "Add popular searches links to the search hero in [Page]"
+- **Task**: an outcome verb first (Ensure, Investigate and verify, Confirm),
+  detail in brackets.
+  - BAD: "[Worker]'s [Messages] never reach [Consumer] in dev"
+  - GOOD: "Ensure [Messages] are delivered in dev"
+
+## One job per issue
+
+An issue is one job with one "done". It closes when the commit that delivers it
+reaches the default branch, whatever has been deployed. Follow-on scope, a
+separate open question, and a chore someone does by hand (configuring a
+third-party webhook, rotating a secret) are new linked issues, never additions
+to this one. An issue that grows until nothing can close it reads to a client
+as work never done.
+
+Before adding to an open issue, check whether the addition changes what "done"
+means; if it does, file a new issue and link it. Fold decisions into the body as
+the current truth, never a dated log. An open issue whose fix is already on the
+default branch closes, with any remainder split out first.
+
 ## Open with the symptom
 
 The first sentence is what a user or reader observes going wrong: the fuller
-symptom, not an echo of the symptom-first title, and free of `camelCase`
+symptom, not an echo of the title, and free of `camelCase`
 identifiers and filenames. A mechanism, if genuinely known, is one provisional
 line prefixed `Likely:` at the end, never a section and never manufactured.
 
