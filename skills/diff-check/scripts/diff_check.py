@@ -102,9 +102,9 @@ REASON_RE = re.compile(
 )
 
 RULES = {
-    "comment-on-deletion": "engineering/comments.md — never narrate past state in prose",
-    "reason-deleted": "engineering/comments.md — tighten the why, never delete it",
-    "comment-added": "engineering/comments.md — comment the non-obvious, never the obvious",
+    "comment-on-deletion": "engineering/comments.md — a comment exists only where the code cannot tell the whole story",
+    "reason-deleted": "engineering/comments.md — a comment that carries a reason: rewrite it, never delete it to clear the warning",
+    "comment-added": "engineering/comments.md — a comment exists only where the code cannot tell the whole story",
 }
 
 
