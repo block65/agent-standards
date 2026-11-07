@@ -29,3 +29,8 @@ Move it down to that consumer.
 At the exits that consume the narrow form: the serialization edge, the wire, a
 cache key, a log line. That is usually further down than the first convenient
 place.
+
+A host or vendor boundary is the one entry that narrows. The adapter converts
+the host's objects (a request event, an execution context, an SDK client) into
+the core's own types, so every host passes the core the same shape and the core
+names no platform type.

@@ -178,6 +178,9 @@ knows what missing means. Background: `compend get rust-book option`.
 
 ## Readability
 
+- **Never call a returned function in place.** `[make]()([args])` makes the
+  reader work out what `[make]` returns. Expose it under a name
+  (`[instance].[handle]([args])`), or bind it to a `const` first.
 - **A function body is paragraphs.** Separate each phase (guards, inputs, the
   work, the result) with a blank line, and break any run of more than about five
   lines that changes subject. No blank line between a comment and the line it
