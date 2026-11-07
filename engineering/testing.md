@@ -46,9 +46,13 @@ unit or component level; e2e keeps one representative shape.
 
 ## Inputs and data
 
-- **Real randomness, every run.** UUIDs, timestamps, faker with no fixed seed;
-  no canonical "Test User". Log the seed or inputs on failure so a flake can be
-  reproduced.
+- **Real randomness, every run.** UUIDs, timestamps, faker with no fixed seed.
+  Log the seed or inputs on failure so a flake can be reproduced.
+- **Principals come from setup.** The shared fixtures create the principals a
+  suite uses through the production path, with fresh values each run, and a
+  test grants a role the way the application grants it. A test that creates
+  its own principal, hands it the permission under test and then asserts the
+  permission tests itself, not the code.
 - **Real failure modes.** Cover empty, oversized, concurrent, dropped and
   malformed inputs, not only the shapes that work.
 - **Each test owns its data.** Generate unique identifiers per test; no shared
