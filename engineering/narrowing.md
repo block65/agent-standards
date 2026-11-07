@@ -7,6 +7,12 @@ the frame that narrows decides for every frame after it what they can have.
 **Only the frame that consumes the narrow form produces it; everything upstream
 passes the value at its richest.**
 
+Absence runs the other way. The caller knows what a missing value means, so it
+resolves `null` and `undefined` before the call, and the callee's parameter
+admits only what it needs; see
+[Nullability](../lang/javascript.md#nullability). Both rules put a decision in
+the one frame that holds the knowledge for it.
+
 ## The test
 
 At each frame a value passes through, ask whether the frame uses the narrow form
