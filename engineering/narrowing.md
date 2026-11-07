@@ -19,10 +19,14 @@ Move it down to that consumer.
 - **Create-then-lower.** Building a `Temporal.ZonedDateTime` and calling
   `.toString()` at once because a frame further down takes a string. Every frame
   between holds a string it cannot compare, offset or reformat. Carry the
-  `Temporal`; stringify where it is written out.
+  `Temporal`; stringify where it is written out. A parse back to a date further
+  down proves the string was never needed.
 - **Read-and-thread.** Reading a derived value off a handle and threading that
   value down. No frame below can reach another field. Pass the handle; let each
   consumer read what it needs.
+- **Caller-side narrowing.** `[adapt]([instance].[part]())`, where `[adapt]`
+  always needs `[part]`. Every caller repeats the selection and can pick the
+  wrong part. `[adapt]` takes `[instance]` and calls `[part]` itself.
 
 ## Where narrowing belongs
 
