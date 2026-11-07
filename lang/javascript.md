@@ -11,12 +11,7 @@
 
 ## Logging
 
-- **Use a logger module,** never `console.*` directly.
-- **A library consumers vendor takes a console-shaped logger:** an option typed
-  `Pick<Console, "debug" | "info" | "warn" | "error">`, defaulting to
-  `globalThis.console` where it exists. Support no other logger API; a host
-  passes `console` or adapts its own logger to that subset. Send `trace` detail
-  to `debug`, since `console.trace` prints a stack.
+- **Use a logger module,** never `console.*`.
 - **Log generously at the right level:** `trace` for detail that would otherwise
   be swallowed (failed parses, feature-test misses, optional-path errors),
   `debug` for flow, `warn` for recoverable conditions, `error` only for what an
