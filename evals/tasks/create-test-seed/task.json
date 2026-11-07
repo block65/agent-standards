@@ -1,0 +1,7 @@
+{
+	"kind": "create",
+	"prompt": "Tests for the orders code need a database (src/db/client.ts) holding three users, each with two orders in different statuses. Add the helper tests will call to get that database ready. Put it wherever fits the project.",
+	"judge": [
+		"The helper's name says that it creates or seeds data, not merely that it gets or returns fixtures."
+	]
+}

@@ -3,5 +3,6 @@
 		"@block65/tsconfig/vanilla",
 		"@block65/tsconfig/noprojref",
 		"./.claude-plugin/types/tsconfig.json"
-	]
+	],
+	"exclude": ["node_modules", "evals/fixture", "evals/tasks", "evals/.results"]
 }

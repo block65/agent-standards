@@ -1,0 +1,9 @@
+{
+	"kind": "fix",
+	"prompt": "Bug report: users who never set a display name see \"Hello, null\" in the page header. Fix it.",
+	"judge": [
+		"The API's null display name is resolved at the mapping boundary (src/users/map.ts), to a value valid in the domain or to an absent optional property; no `as` cast, empty string or other placeholder stands in for it.",
+		"Inside the domain (src/domain, src/ui), absence is modelled as an optional property or undefined, never as null.",
+		"Code downstream of the mapper handles the absence the domain type declares without an empty-string or arbitrary fallback value."
+	]
+}

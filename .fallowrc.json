@@ -4,7 +4,26 @@
 		"hooks/register.ts",
 		"tests/*.test.ts",
 		"oxfmt.config.ts",
-		"oxlint.config.ts"
+		"oxlint.config.ts",
+		"evals/run.ts",
+		"evals/grader/grading.config.ts",
+		"evals/grader/plugin.ts",
+		"evals/grader/plugin.spec.ts"
 	],
-	"ignoreDependencies": ["claude-code"]
+	"ignoreDependencies": ["claude-code"],
+	"ignorePatterns": [
+		"**/.claude/**",
+		"evals/fixture/**",
+		"evals/tasks/**",
+		"evals/.results/**"
+	],
+	"overrides": [
+		{
+			"files": ["evals/**"],
+			"rules": {
+				"complexity-crap": "warn",
+				"dev-dependencies-in-production": "off"
+			}
+		}
+	]
 }

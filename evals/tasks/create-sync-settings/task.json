@@ -1,0 +1,7 @@
+{
+	"kind": "create",
+	"prompt": "Add a module holding the settings for an order sync job: the order statuses it syncs (open and paid), its page size (50), and how long it waits before retrying for each HTTP status code (429: 30 seconds, 503: 5 seconds). Also add a small function the job will call to get the retry delay for a status code. Put it wherever fits the project.",
+	"judge": [
+		"A status code with no configured delay is handled explicitly (an error or a documented choice), not silently mapped to an arbitrary default such as 0."
+	]
+}

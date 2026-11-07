@@ -1,0 +1,5 @@
+{
+	"kind": "fix",
+	"prompt": "Add an optional limit to searchOrders in src/orders/search.ts, defaulting to 20 results.",
+	"judge": ["The limit is applied correctly and defaults to 20."]
+}

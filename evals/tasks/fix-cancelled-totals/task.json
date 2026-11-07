@@ -1,0 +1,5 @@
+{
+	"kind": "fix",
+	"prompt": "Bug report: the per-user order totals on the account page include cancelled orders. Fix it.",
+	"judge": ["Cancelled orders are excluded from the totals."]
+}

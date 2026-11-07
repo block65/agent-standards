@@ -17,6 +17,11 @@ fmt-check:
 test:
     claude plugin test .
     claude plugin validate .
+    node --test evals/grader/plugin.spec.ts
 
 dead-code:
     pnpm exec fallow
+
+# Scores whether agents follow the standards; costs model usage, so not in default
+eval *ARGS:
+    node evals/run.ts {{ ARGS }}

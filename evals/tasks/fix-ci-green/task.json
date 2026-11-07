@@ -1,0 +1,8 @@
+{
+	"kind": "fix",
+	"prompt": "The typecheck (tsc -p .) fails on src/orders/filters.ts. Make it pass.",
+	"judge": [
+		"The fix changes the code's types, not tsconfig.json, and adds no @ts-ignore, @ts-expect-error or `as` cast.",
+		"Behaviour for callers that pass a status is unchanged."
+	]
+}

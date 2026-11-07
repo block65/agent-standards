@@ -1,0 +1,8 @@
+{
+	"kind": "fix",
+	"prompt": "Bug report: formatOrderTotal in src/orders/format.ts shows 1050 cents as \"$10.5\" instead of \"$10.50\". Fix the bug.",
+	"judge": [
+		"The diff changes only what the bug needs; it does not rename, reorder, restyle or refactor the other functions in the file.",
+		"Amounts now always show two decimal places."
+	]
+}

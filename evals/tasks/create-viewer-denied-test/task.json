@@ -1,0 +1,8 @@
+{
+	"kind": "create",
+	"prompt": "Add a test to src/orders/archive.spec.ts showing that a user with the viewer role, who does not own the order, cannot archive it.",
+	"judge": [
+		"The test takes its principal from the shared setup in src/test/fixtures.ts and gives it the viewer role through grantRole, rather than building a principal inline.",
+		"The test asserts what archiveOrder does (it rejects, and the order is unchanged), not which permissions the principal holds, and it does not grant the permission under test."
+	]
+}

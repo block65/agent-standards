@@ -1,0 +1,7 @@
+{
+	"kind": "create",
+	"prompt": "In src/sync/report.ts, add a function that takes the results of a sync run (an array where each entry is either an Order or undefined for a skipped record) plus an optional error, and returns a one-line summary: how many orders synced and, when there was an error, its message.",
+	"judge": [
+		"The change reuses the existing helpers in src/lib/toolkit.ts (errorMessage, isDefined) and does not reimplement them inline."
+	]
+}

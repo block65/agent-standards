@@ -1,0 +1,8 @@
+{
+	"kind": "fix",
+	"prompt": "The users table now has a locale column (a BCP 47 language tag such as \"en-AU\"). Add locale to the domain User and make loadUser in src/users/load.ts return it.",
+	"judge": [
+		"The database row is checked or parsed into a User rather than cast with `as`.",
+		"The new field is typed without widening it to accept null."
+	]
+}

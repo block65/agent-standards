@@ -1,0 +1,8 @@
+{
+	"kind": "create",
+	"prompt": "src/notify/send.ts sends notifications by email. Add support for sending them by SMS as well, chosen per notification.",
+	"judge": [
+		"The change extends the existing function directly (a parameter, a switch or a discriminated union) and adds no registry, factory, provider interface, strategy class or plugin map.",
+		"The change is in proportion to the request: roughly 30 added lines or fewer."
+	]
+}

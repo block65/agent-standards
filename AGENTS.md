@@ -14,7 +14,13 @@ just                                  # typecheck, lint, fmt-check, plugin test,
 just fmt                              # oxfmt, markdown included
 skills/stage-hunk/tests/run-tests.sh  # stage-hunk script evals
 skills/diff-check/tests/run-tests.sh  # diff-check script evals
+just eval                             # agents with vs without the standards; costs usage
 ```
+
+`just eval` runs each task in `evals/tasks/` headless, once bare and once with
+the standards mounted, and scores the code with lint, tsc and a model judge.
+Add a task when a review keeps catching the same mistake. Its prompt must not
+name the rule it tests.
 
 ## What ships
 

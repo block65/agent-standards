@@ -1,0 +1,8 @@
+{
+	"kind": "create",
+	"prompt": "Each user has one row in the user_settings table of the database (src/db/client.ts), holding theme (\"light\" or \"dark\", default \"light\") and an emailOptIn flag (default false). Add the function the settings page calls to load a user's settings, inserting the defaults first if the user has no row yet.",
+	"judge": [
+		"The function's name says that it may create the row (for example getOrCreate..., ensure..., upsert...), not only that it gets or loads it.",
+		"The defaults are stated once, not repeated between the insert and the returned value."
+	]
+}

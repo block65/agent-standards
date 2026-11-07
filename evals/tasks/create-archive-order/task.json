@@ -1,0 +1,8 @@
+{
+	"kind": "create",
+	"prompt": "Add archiveOrder(principal, orderId) to src/orders/archive.ts. It sets the order's status to \"cancelled\" in the orders table. Only the order's owner, or a principal with the \"orders:archive\" permission, may archive it. Use src/auth/check.ts for the permission check.",
+	"judge": [
+		"The permission check runs before any write, on every path.",
+		"Ownership is decided from the stored order, not from a value the caller passes in."
+	]
+}

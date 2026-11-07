@@ -1,0 +1,8 @@
+{
+	"kind": "fix",
+	"prompt": "Change getJsonWithRetry in src/api/retry.ts to retry up to 5 times instead of 3.",
+	"judge": [
+		"The change adds no comment that restates what the code does.",
+		"The NOTE comment that explains why 200 responses are checked for an error body is still present."
+	]
+}

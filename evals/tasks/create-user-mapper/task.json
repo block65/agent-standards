@@ -1,0 +1,9 @@
+{
+	"kind": "create",
+	"prompt": "src/api/types.ts has the user shape the REST API returns, and src/domain/user.ts has our domain User. Add the code that turns the API's users into domain Users, plus a way for the profile page to look a user up by id. Put it wherever fits the project.",
+	"judge": [
+		"Absent API values (display_name null, tags missing or null) are resolved once, at the mapping boundary, to a value valid in the domain or to an absent optional property; no empty-string or other placeholder stands in for a missing value.",
+		"Inside the domain, absence is modelled as an optional property or undefined, never as null.",
+		"Each function name says everything the function does."
+	]
+}
