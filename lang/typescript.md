@@ -17,6 +17,24 @@
 - **Infer types, exported return types included.** Annotate a return type only
   when it defines an intended contract, enables recursion, or is a type
   predicate or assertion signature.
+- **Name the parameter type of an exported function that takes one object.**
+  Declare the type, then destructure and set defaults against it, so the
+  contract does not sit inside the destructuring pattern.
+
+  BAD:
+
+  ```ts
+  export function [action]({ [a], [b] = 1 }: { [a]: string; [b]?: number }) {}
+  ```
+
+  GOOD:
+
+  ```ts
+  type [Action]Params = { [a]: string; [b]?: number };
+
+  export function [action]({ [a], [b] = 1 }: [Action]Params) {}
+  ```
+
 - **`satisfies` over type annotation:** `const x = { ... } satisfies T` keeps
   the inferred literal types that `const x: T = { ... }` discards.
 - **`const` type parameters:** Use `function<const T>` to preserve literal types

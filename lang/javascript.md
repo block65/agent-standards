@@ -22,9 +22,12 @@
 ## Functional Style
 
 - **Build collections by transformation:** `.map()`, `.flatMap()`, `.filter()`,
-  `Object.fromEntries`, spread, or a type-preserving builder. Never fill an
-  empty array or object with `for`, `for…of`, `for…in`, `for await…of`,
-  `while`, or `.forEach()`.
+  `Object.fromEntries`, spread, or a type-preserving builder. Never push into
+  an array or assign into an object from inside `for`, `for…of`, `for…in`,
+  `for await…of`, `while`, or `.forEach()`.
+- **Iterate for side effects with `.forEach()`,** not a `for` loop: calls and
+  I/O, never building a value. Keep `for…of` for a body that awaits in
+  sequence, exits early, or consumes an iterator or stream.
 - **Loops that perform side effects or consume streams** have an explicit
   termination or cancellation condition, never `for (;;)`, `while (true)` or
   another constant condition.
@@ -34,9 +37,8 @@
 
 ## Modules
 
-- **Module constants at the top:** Fixed module-level values (typically
-  `UPPER_SNAKE_CASE`) go directly below the imports, not beside the function
-  that uses them.
+- **Module constants at the top:** Fixed module-level values go directly below
+  the imports, not beside the function that uses them.
 - **No namespace objects:** Build a namespace with a module re-export
   (`export * as Foo from './parts.ts'`), never by property assignment
   (`Foo.Bar = Bar`).
@@ -50,6 +52,11 @@
 - **Generic helpers go in the shared toolkit** (`@block65/toolkit` or
   equivalent), not feature modules: string/array/date, type guards, small
   predicates. Grep the toolkit before writing one. Domain logic stays local.
+- **Write the generic form when the logic allows one.** A function that maps,
+  groups or transforms without depending on the domain type becomes a generic
+  in the toolkit (`mapObject<T, U>`), and the caller passes the domain parts.
+- **Inline a function of up to three lines that has one caller.** It adds a jump
+  without adding a name the reader needs.
 
 ## Error Handling
 
@@ -127,6 +134,13 @@ export function createGate() {
 
 ## Naming
 
+- **`UPPER_SNAKE_CASE` only for an immutable value:** a scalar literal, an
+  `as const` literal, or a value deep-frozen at runtime. A `Set`, `Map`, array
+  or object is camelCase even when bound with `const`, which fixes the binding,
+  not the contents.
+- **Name a function for everything it does.** A `get[Thing]` that also seeds
+  a database hides its side effects from every caller; name the whole job, or
+  split the function.
 - **Event parameters:** Name the event parameter in an event handler `e`.
 - **Entry points and barrels are `main.ts`,** never `index.ts`.
 - **No tense in names:** `expireTime` not `expiresAt`, `expireTtlSecs` not
@@ -144,13 +158,21 @@ knows what missing means. Background: `compend get rust-book option`.
 - **No `?? undefined` in domain logic.** The parse layer converts a boundary's
   absence value to `undefined`; a `?? undefined` above it means that boundary
   is in the wrong place.
-- **Never a sentinel.** `?? ""`, `?? {}` or `?? []` on a required value turns
+- **Never a scalar sentinel.** `?? ""` or `?? 0` on a required value turns
   "missing" into "present and wrong", hiding from the type system the absence
-  it would make you handle, and the failure surfaces somewhere unrelated. `??`
-  supplies a value that is valid in the domain, or it does not appear.
+  it would make you handle, and the failure surfaces somewhere unrelated.
+  `?? []` is allowed where an absent list means no items and the fallback
+  reads more simply than a guard.
+- **`??` needs a reason.** Most are a sentinel, an arbitrary default or a
+  workaround for a loose type. Write one only where the absent case has a
+  defined default, such as a documented option default; otherwise tighten the
+  type or guard.
 - **A parameter is optional only when the function defines behaviour for the
   absent case.** Never widen it to `| undefined` so one caller can skip
   deciding.
+- **Tighten a parameter that accepts more than the function uses,** then fix
+  each caller the checker flags. Absorbing `null` or `undefined` deep in the
+  stack hides the frame that produced it, usually a boundary several calls up.
 - **Resolve absence with a top-level guard** where missing has a meaning:
   return early, or throw a `CustomError` naming what was missing.
 

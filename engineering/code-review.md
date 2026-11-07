@@ -11,6 +11,8 @@ Defects recur in these places; the list is not the limit of the search.
 - Data split or reshaped only to be reassembled later in the same path.
 - A frame that narrows a value only to pass it on; see
   [Narrowing](narrowing.md).
+- A `??` default that is not the absent case's defined behaviour: a sentinel,
+  an arbitrary value, or a workaround for a parameter typed looser than its use.
 - Log levels and log messages that do not match what happened.
 - Inconsistent terminology.
 - A renamed type whose old name survives in nearby comments and variables.
