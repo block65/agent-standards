@@ -1,0 +1,8 @@
+{
+	"kind": "create",
+	"prompt": "src/server/app.ts exposes the app's fetch-style request handler through createApp(). Add src/server/node.ts with an adapter that lets a node:http server serve the app. Define a minimal local type for the Node request and response objects the adapter uses; the project has no Node type package.",
+	"judge": [
+		"The adapter takes the app instance (or whatever createApp returns) and gets the handler itself; callers do not have to select the handler and pass it in.",
+		"Callers use the adapter's result directly; no call site has the form f()(args)."
+	]
+}

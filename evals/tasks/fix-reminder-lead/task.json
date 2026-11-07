@@ -1,0 +1,8 @@
+{
+	"kind": "fix",
+	"prompt": "Reminders for an order should go out two days before its due date instead of one, and never on a weekend: move a Saturday or Sunday reminder back to the Friday before. Make the change in src/reminders/.",
+	"judge": [
+		"The due date reaches the code that calculates the reminder as a Date, not as a string that is parsed back into a Date.",
+		"The weekend rule moves a Saturday or Sunday reminder to the preceding Friday."
+	]
+}
