@@ -60,9 +60,10 @@
 
 ## Error Handling
 
-- **Throw a `CustomError`** from `@block65/custom-error`, never a plain `Error`:
-  a plain one carries no status or machine-readable code for the top-level
-  handler. Tests tell errors apart by `CustomError` type, not message strings.
+- **Throw a `CustomError`** from `@block65/custom-error`, never a built-in
+  error class (`Error`, `TypeError`, `RangeError`), misuse at construction
+  included: a built-in carries no status or machine-readable code for the
+  top-level handler. Tests tell errors apart by `CustomError` type, not message strings.
 - **Sensitive data goes in `debug`, never in the message.** `.debug({ ... })` is
   private and appears only in the server-side `toJSON()`. `details` reaches the
   client via `toJSONSummary()`, so it holds only what a user may read.

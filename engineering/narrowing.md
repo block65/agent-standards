@@ -5,7 +5,8 @@ Narrowing turns a richer value into a poorer one: an instance into its status, a
 the frame that narrows decides for every frame after it what they can have.
 
 **Only the frame that consumes the narrow form produces it; everything upstream
-passes the value at its richest.**
+passes the value at its richest. The exception is a host boundary, whose
+adapter converts host objects into the core's own types.**
 
 Absence runs the other way. The caller knows what a missing value means, so it
 resolves `null` and `undefined` before the call, and the callee's parameter

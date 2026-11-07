@@ -28,8 +28,7 @@ standards win.
 - [Playwright](engineering/playwright.md): end-to-end tests.
 - [Database](engineering/database.md): schema, columns or migrations.
 - [Comments](engineering/comments.md): adding or editing a code comment.
-- [Narrowing](engineering/narrowing.md): passing a value to a function, or
-  converting one (`.toString()`, a field read off it) to pass it on.
 - [TypeScript](lang/typescript.md), [JavaScript](lang/javascript.md),
   [React](lang/react.md), [Rust](lang/rust.md), [Python](lang/python.md):
-  writing or reviewing code in that language.
+  writing or reviewing code in that language. Load
+  [Narrowing](engineering/narrowing.md) with any of them.
